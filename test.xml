@@ -1,1 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectWebsite>
+    <project>
+        <name>CARGO SHIPPING</name>
+        <imagePath>CARGOSHIPPING.PNG</imagePath>
+        <pdfPath>cargoShipping.pdf</pdfPath>
+        <description>
+        Cargo shipping is all about booking cargo to move from one place to another. Owner can add new shipsand he can also track ships.User can register for cargo and he can also track ships.Admin has the right to view detailsof owner, to add a new company and also update price of ship. This software hasa very nice GUI to give a very nice presentation of a cargo management system.
+        </description>
+        <amount>4000</amount>
+    </project>
+    <project>
+        <name>E-BAZZAR</name>
+        <imagePath>ebazzar.PNG</imagePath>
+        <pdfPath>eBazar.pdf</pdfPath>
+        <description>
+        This project emphasizes on taking bookings of pat ient in a web portal system.Patient can search for the doctor and book for appointment . Doctor can check and confirm appointment so patient can visit accordingly.Also admin is provided to add doctors in the portal,moreover customer list can be seen as well.
+        </description>
+        <amount>4000</amount>
+    </project>
+</projectWebsite>
 
