@@ -36,6 +36,9 @@
             function changeSrc(loc) {
                 document.getElementById('MyFrame').src = loc;
             }
+  function clickyClick() {
+    document.getElementById('MyFrame').src = 'https://player.twitch.tv/?channel=' + document.getElementById("newid").value +'&parent=chicktv.github.io&parent=chicktv.github.io';
+    }
       </script>
   <div id="choose">
  <button onclick="changeSrc('https://player.twitch.tv/?channel=cegami8590&parent=chicktv.github.io&parent=chicktv.github.io')">C</button>
@@ -52,7 +55,8 @@
   <button onclick="changeSrc('https://player.twitch.tv/?channel=cutjerlunstream2&parent=chicktv.github.io&parent=chicktv.github.io')">13</button>
   <button onclick="changeSrc('https://player.twitch.tv/?channel=hun121&parent=chicktv.github.io&parent=chicktv.github.io')">14</button>
    <button onclick="changeSrc('https://olympics.i-cable.com/home/61')">cb</button>
-    <button onclick="changeSrc('https://nowplayer.now.com/tvguide/channeldetail/601/1')">now</button>
+   <input type="text" name="newid" id="newid">
+<button onclick="clickyClick()">新台id</button>
 </div>
 <div>
  <iframe id="MyFrame" class="MyFrame" src="https://player.twitch.tv/?channel=cegami8590&parent=chicktv.github.io&parent=chicktv.github.io" frameborder="0" allowfullscreen="true" scrolling="yes" height="550" width="70%"></iframe>
