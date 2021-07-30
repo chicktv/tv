@@ -8,7 +8,7 @@
     function readXMLFile() {
         var i;
         var xml = new XMLHttpRequest();
-        xml.open('GET', 'projectRelatedData.xml', false);
+        xml.open('GET', 'test.xml', false);
         xml.send();
         var xmlData = xml.responseXML;
             xmlData=(new DOMParser()).parseFromString(xml.responseText,'text/xml');
