@@ -1,8 +1,38 @@
- <script src="form.js"></script>
-<link rel="stylesheet"     href="code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
-<script src="code.jquery.com/jquery-1.10.2.js"></script>
-                <html>
-<br>Site URL (EG: http://intranet)</br>
-                <input type="text" id="siteURL" name="siteURL" value="blank..." />
-<button onclick="loadFunction()">Load Configuration</button>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.js"></script>
+<title>Please Check Data</title>
+<script type="text/javascript">
+    function readXMLFile() {
+        var i;
+        var xml = new XMLHttpRequest();
+        xml.open('GET', 'projectRelatedData.xml', false);
+        xml.send();
+        var xmlData = xml.responseXML;
+            xmlData=(new DOMParser()).parseFromString(xml.responseText,'text/xml');
+        var projectData=xmlData.getElementsByTagName("project");
+        //alert(projectData.length);
+        for(i=0;i<projectData.length;i++)
+            {
+        var name=projectData[i].getElementsByTagName("name")[0].firstChild.data;
+        var imageName=projectData[i].getElementsByTagName("imagePath")[0].firstChild.data;
+        var pdfName=projectData[i].getElementsByTagName("pdfPath")[0].firstChild.data;
+        var description=projectData[i].getElementsByTagName("description")[0].firstChild.data;
+        var amount=projectData[i].getElementsByTagName("amount")[0].firstChild.data;
+        //alert("number of Project : "+projectData.length);
+        document.write(name+'<br>');
+        document.write(imageName+'<br>');
+        document.write(pdfName+'<br>');
+        document.write(description+'<br>');
+        document.write(amount+'<br>');
+            }
+    }
+</script>
+</head>
+<body>
+    <button onclick="readXMLFile()">Click</button>
+    <p id="ccc"></p>
+</body>
 </html>
