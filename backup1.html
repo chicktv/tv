@@ -1,1 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
 
+.MyFrame {
+  position: float;
+  top: 10;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  border: none;
+}
+
+.mychat {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  right: 0;
+  border: none;
+}
+</style>
+
+
+
+
+<body style="background-color:rgb(60, 60, 60);">
+
+<script>
+ 
+            function changeSrc(loc) {
+                document.getElementById('MyFrame').src = loc;
+            }
+function clickyClick() {
+    document.getElementById('MyFrame').src = 'https://player.twitch.tv/?channel=' + document.getElementById("newid").value +'&parent=chicktv.github.io&parent=chicktv.github.io';
+    }
+      </script>
+  <div id="choose">
+ <button onclick="changeSrc('https://player.twitch.tv/?channel=cegami8590&parent=chicktv.github.io&parent=chicktv.github.io')">©</button>
+    <button onclick="changeSrc('https://player.twitch.tv/?channel=fahoma4315&parent=chicktv.github.io&parent=chicktv.github.io')">c</button>
+<button onclick="changeSrc('https://player.twitch.tv/?channel=pkn123999&parent=chicktv.github.io&parent=chicktv.github.io')">3</button>
+<button onclick="changeSrc('https://player.twitch.tv/?channel=Clscompany1&parent=chicktv.github.io&parent=chicktv.github.io')">4</button>
+ <button onclick="changeSrc('https://player.twitch.tv/?channel=ayatv1&parent=chicktv.github.io&parent=chicktv.github.io')">5</button>
+   <button onclick="changeSrc('https://player.twitch.tv/?channel=peter_918&parent=chicktv.github.io&parent=chicktv.github.io')">6</button>
+    <button onclick="changeSrc('https://player.twitch.tv/?channel=rabbittvlittlegirl&parent=chicktv.github.io&parent=chicktv.github.io')">7</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=azbycx0001&parent=chicktv.github.io&parent=chicktv.github.io')">8</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=thankstwitch1222&parent=chicktv.github.io&parent=chicktv.github.io')">9</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=fedex0215&parent=chicktv.github.io&parent=chicktv.github.io')">10</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=satomictv&parent=chicktv.github.io&parent=chicktv.github.io')">11</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=1984farm&parent=chicktv.github.io&parent=chicktv.github.io')">12</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=cutjerlunstream2&parent=chicktv.github.io&parent=chicktv.github.io')">13</button>
+  <button onclick="changeSrc('https://player.twitch.tv/?channel=hun121&parent=chicktv.github.io&parent=chicktv.github.io')">14</button>
+    
+   
+   
+    
+    <input type="text" name="newid" id="newid" placeholder="twitch channel id"/>
+<button onclick="clickyClick()">submit</button>
+
+</div>
+<div>
+ <iframe id="MyFrame" class="MyFrame" src="https://player.twitch.tv/?channel=cegami8590&parent=chicktv.github.io&parent=chicktv.github.io" frameborder="0" allowfullscreen="true" scrolling="yes" height="550" width="70%"></iframe>
+
+ </div>
+
+
+<script>
+
+</script>
+
+</body>
+</html>
+
+<html>
+<body>
+ <iframe
+ class="mychat"
+  id="chat_embed"
+  src="https://www.twitch.tv/embed/hkc2021/chat?darkpopout&parent=chicktv.github.io&parent=chicktv.github.io"
+  height="100%"
+  width="30%">
+</iframe>
+</body>
+</html>
