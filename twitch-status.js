@@ -8,7 +8,7 @@ $(document).ready(function(){
     twitchStatusLinks.each(function(index, value) {
         var twitchStatusLink = $(this);
         twitchStatusLink.html('<div class="icon"></div><div class="text">off</div>');
-        login = twitchStatusLink.attr('href').split('/');
+        login = twitchStatusLink.attr('scr').split('/');
         login = login[3]; // get username from link
         
         // check for parameter override - useful for iframe links
