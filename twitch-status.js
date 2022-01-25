@@ -7,7 +7,7 @@ $(document).ready(function(){
     // loop through each link
     twitchStatusLinks.each(function(index, value) {
         var twitchStatusLink = $(this);
-        twitchStatusLink.html('<div class="icon"></div><div class="text">Offline</div>');
+        twitchStatusLink.html('<div class="icon"></div><div class="text">off</div>');
         login = twitchStatusLink.attr('href').split('/');
         login = login[3]; // get username from link
         
