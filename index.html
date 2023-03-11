@@ -69,7 +69,30 @@ function clickyClick() {
 
 </div>
 <div>
- <iframe id="MyFrame" class="MyFrame" src="//ok.ru/videoembed/2979723943539?nochat=1&autoplay=1" frameborder="0" allowfullscreen="true" scrolling="yes" style="resize: both; overflow: auto;"></iframe>
+ <iframe id="MyFrame" class="MyFrame" src="//ok.ru/videoembed/2979723943539?nochat=1&autoplay=1" frameborder="0" allowfullscreen="true" scrolling="yes"></iframe>
+
+<script>
+    var frame = document.getElementById("MyFrame");
+    frame.addEventListener("mousedown", startDragging, false);
+
+    function startDragging(e) {
+        window.addEventListener("mousemove", resizeFrame, false);
+        window.addEventListener("mouseup", stopDragging, false);
+    }
+
+    function stopDragging(e) {
+        window.removeEventListener("mousemove", resizeFrame, false);
+        window.removeEventListener("mouseup", stopDragging, false);
+    }
+
+    function resizeFrame(e) {
+        var width = e.clientX - frame.offsetLeft;
+        var height = e.clientY - frame.offsetTop;
+        frame.style.width = width + "px";
+        frame.style.height = height + "px";
+    }
+</script>
+
 
 
  </div>
