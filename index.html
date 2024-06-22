@@ -37,8 +37,15 @@
                 document.getElementById('MyFrame').src = loc;
             }
 function clickyClick() {
-    document.getElementById('MyFrame').src = 'https://player.twitch.tv/?channel=' + document.getElementById("newid").value +'&parent=chicktv.github.io&parent=chicktv.github.io';
-    }
+   var password = document.getElementById("newid").value;
+        if (password.value.includes('[k]')) {
+		const channelName = password.value.replace('[k]', '');
+            document.getElementById('MyFrame').src = 'https://player.kick.com/' + channelName;
+        }
+        else{
+           document.getElementById('MyFrame').src = 'https://player.twitch.tv/?channel=' + document.getElementById("newid").value +'&parent=chicktv.wixsite.com&parent=chicktv-wixsite-com.filesusr.com';
+        }
+		
   
             function changechatSrc(loc2) {
                 document.getElementById('chat_embed').src = loc2;
