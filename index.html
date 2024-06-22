@@ -37,13 +37,15 @@
                 document.getElementById('MyFrame').src = loc;
             }
 function clickyClick() {
-   var password = document.getElementById("newid").value;
-        if (password.value.includes('[k]')) {
-		const channelName = password.value.replace('[k]', '');
-            document.getElementById('MyFrame').src = 'https://player.kick.com/' + channelName;
-        }
-        else{
-           document.getElementById('MyFrame').src = 'https://player.twitch.tv/?channel=' + document.getElementById("newid").value +'&parent=chicktv.wixsite.com&parent=chicktv-wixsite-com.filesusr.com';
+  const newid = document.getElementById('newid').value;
+            const frame = document.getElementById('MyFrame');
+            
+            if (newid.includes('[k]')) {
+                const channelName = newid.replace('[k]', ''); // 去掉 '[k]'
+                frame.src = 'https://player.kick.com/' + channelName;
+            } else {
+                frame.src = 'https://player.twitch.tv/?channel=' + newid+'&parent=chicktv.wixsite.com&parent=chicktv-wixsite-com.filesusr.com';
+            }
         }
 		
   
