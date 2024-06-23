@@ -37,19 +37,17 @@
                 document.getElementById('MyFrame').src = loc;
             }
 function clickyClick() {
-  const newid = document.getElementById('newid').value;
+            const newid = document.getElementById('newid').value;
             const frame = document.getElementById('MyFrame');
             
             if (newid.includes('[k]')) {
                 const channelName = newid.replace('[k]', ''); // 去掉 '[k]'
                 frame.src = 'https://player.kick.com/' + channelName;
-            } 
-		     else if (newid.includes('[o]')) {
+            } else if (newid.includes('[o]')) {
                 const channelName = newid.replace('[o]', ''); // 去掉 '[o]'
                 frame.src = 'https://ok.ru/videoembed/' + channelName + '?nochat=1&autoplay=1';
-            } 
-	    else {
-                frame.src = 'https://player.twitch.tv/?channel=' + newid+'&parent=chicktv.github.io&parent=chicktv.github.io';
+            } else {
+                frame.src = 'https://player.twitch.tv/?channel=' + newid + '&parent=chicktv.github.io&parent=chicktv.github.io';
             }
         }
 		
