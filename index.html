@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>chicktv</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/jquery-ui.js"></script>
     <style>
@@ -22,9 +22,16 @@
             justify-content: space-around; /* 在容器內部居中 */
         }
 
-        .MyFrame, .mychat {
-            width: 100%; /* 填滿父容器 */
-            height: 400px; /* 預設高度 */
+        .MyFrame {
+            width: 66.66%; /* 佔全屏 2/3 */
+            height: 600px; /* 預設高度，可以自行調整 */
+            border: none;
+            margin-bottom: 10px;
+        }
+
+        .mychat {
+            width: 33.33%; /* 佔全屏 1/3 */
+            height: 600px; /* 預設高度，可以自行調整 */
             border: none;
             margin-bottom: 10px;
         }
@@ -38,19 +45,13 @@
         /* 媒體查詢：小於768px時調整布局 */
         @media (max-width: 768px) {
             .MyFrame, .mychat {
+                width: 100%; /* 在小屏幕上佔滿寬度 */
                 height: 250px; /* 小屏幕時調整高度 */
             }
 
             button, input {
                 padding: 8px;
                 font-size: 14px;
-            }
-        }
-
-        /* 媒體查詢：大於1200px時調整布局 */
-        @media (min-width: 1200px) {
-            .MyFrame, .mychat {
-                height: 600px; /* 大屏幕時調整高度 */
             }
         }
     </style>
