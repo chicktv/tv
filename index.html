@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>chicktv</title>
+    <title></title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/jquery-ui.js"></script>
     <style>
@@ -44,6 +44,13 @@
             button, input {
                 padding: 8px;
                 font-size: 14px;
+            }
+        }
+
+        /* 媒體查詢：大於1200px時調整布局 */
+        @media (min-width: 1200px) {
+            .MyFrame, .mychat {
+                height: 600px; /* 大屏幕時調整高度 */
             }
         }
     </style>
@@ -110,4 +117,3 @@
 
 </body>
 </html>
-
