@@ -108,77 +108,57 @@
         }
 document.addEventListener('DOMContentLoaded', () => {
             const channels = [
-                { id: 'cobra2024', url: 'https://kick.com/api/v2/channels/cobra2024' },
-                { id: 'nanase-maru525', url: 'https://kick.com/api/v2/channels/nanase-maru525' },
-				{ id: 'qt369', url: 'https://kick.com/api/v2/channels/qt369' },
-				{ id: 'jeukpo', url: 'https://kick.com/api/v2/channels/jeukpo' },
-				{ id: 'collartv', url: 'https://kick.com/api/v2/channels/collartv' },
-				{ id: 'WhiteWing000', url: 'https://kick.com/api/v2/channels/WhiteWing000' },
-				{ id: 'Eastsnake25', url: 'https://kick.com/api/v2/channels/Eastsnake25' },
-		    
-            ];
-const twitchChannel = {
-            id: 'alancml',
-            url: 'https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=alancml'
-        };
-            async function fetchStatus(url, elementId) {
-                const statusElement = document.getElementById(elementId);
+            { id: 'cobra2024', url: 'https://kick.com/api/v2/channels/cobra2024', type: 'kick' },
+            { id: 'nanase-maru525', url: 'https://kick.com/api/v2/channels/nanase-maru525', type: 'kick' },
+            { id: 'qt369', url: 'https://kick.com/api/v2/channels/qt369', type: 'kick' },
+            { id: 'jeukpo', url: 'https://kick.com/api/v2/channels/jeukpo', type: 'kick' },
+            { id: 'collartv', url: 'https://kick.com/api/v2/channels/collartv', type: 'kick' },
+            { id: 'WhiteWing000', url: 'https://kick.com/api/v2/channels/WhiteWing000', type: 'kick' },
+            { id: 'Eastsnake25', url: 'https://kick.com/api/v2/channels/Eastsnake25', type: 'kick' },
+            { id: 'alancml', url: 'https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=alancml', type: 'twitch' }
+        ];
 
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-
-                    if (data.livestream) {
-                        if (data.livestream.is_live) {
-                            statusElement.classList.add('live');
-                            statusElement.classList.remove('not-live', 'not-available');
-                        } else {
-                            statusElement.classList.add('not-live');
-                            statusElement.classList.remove('live', 'not-available');
-                        }
-                    } else {
-                        statusElement.classList.add('not-available');
-                        statusElement.classList.remove('live', 'not-live');
-                    }
-                } catch (error) {
-                    console.error('Error fetching status:', error);
-                    statusElement.classList.add('not-available');
-                    statusElement.classList.remove('live', 'not-live');
-                }
-            }
-               async function fetchTwitchStatus(url, elementId) {
+          async function fetchStatus(url, elementId, type) {
             const statusElement = document.getElementById(elementId);
 
             try {
                 const response = await fetch(url);
                 const data = await response.json();
 
-                const isLive = data.data && data.data.length > 0 ? data.data[0].type === 'live' : false;
+                let isLive = false;
+
+                if (type === 'kick') {
+                    isLive = data.livestream && typeof data.livestream.is_live === 'boolean' && data.livestream.is_live;
+                } else if (type === 'twitch') {
+                    isLive = data.data && data.data.length > 0 ? data.data[0].type === 'live' : false;
+                }
 
                 if (isLive) {
                     statusElement.classList.add('live');
                     statusElement.classList.remove('not-live', 'not-available');
-                    
+                    statusElement.textContent = '正在直播';
                 } else {
                     statusElement.classList.add('not-live');
                     statusElement.classList.remove('live', 'not-available');
-                   
+                    statusElement.textContent = '不在线';
                 }
             } catch (error) {
-                console.error('Error fetching Twitch status:', error);
+                console.error('Error fetching status:', error);
                 statusElement.classList.add('not-available');
                 statusElement.classList.remove('live', 'not-live');
-                
+                statusElement.textContent = '无法获取状态';
             }
         }
-           function fetchAllStatuses() {
-            kickChannels.forEach(channel => {
-                fetchKickStatus(channel.url, channel.id);
+
+        function fetchAllStatuses() {
+            channels.forEach(channel => {
+                fetchStatus(channel.url, channel.id, channel.type);
             });
-            fetchTwitchStatus(twitchChannel.url, twitchChannel.id);
         }
-            fetchAllStatuses();
-            setInterval(fetchAllStatuses, 480000); // 每30秒更新一次状态
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAllStatuses();  // 初始加载
+            setInterval(fetchAllStatuses, 8 * 60 * 1000); // 每 8 分钟自动更新
         });
         
         
