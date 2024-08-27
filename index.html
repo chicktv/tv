@@ -171,12 +171,12 @@ const twitchChannel = {
                 
             }
         }
-            function fetchAllStatuses() {
-                channels.forEach(channel => {
-                    fetchStatus(channel.url, channel.id);
-                });
-            }
-
+           function fetchAllStatuses() {
+            kickChannels.forEach(channel => {
+                fetchKickStatus(channel.url, channel.id);
+            });
+            fetchTwitchStatus(twitchChannel.url, twitchChannel.id);
+        }
             fetchAllStatuses();
             setInterval(fetchAllStatuses, 480000); // 每30秒更新一次状态
         });
