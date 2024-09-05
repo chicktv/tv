@@ -179,6 +179,49 @@
                 hideShowButton.textContent = '▼';
             }
         }
+        async function fetchWeatherWarnings() {
+            const url = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc';
+
+            const typeToImage = {
+                "三號強風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_02_tc3.png",
+                "一號戒備信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_01_tc1.png",
+                "八號東南烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_05_tc08se.png",
+                "八號西南烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_06_tc08sw.png",
+                "八號東北烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_03_tc08ne.png",
+                "八號西北烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_04_tc08nw.png",
+                "九號烈風或暴風風力增強信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_07_tc09.png",
+                "十號颶風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_08_tc10.png",
+                "紅色暴雨警告信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_10_rain%20red.png",
+                "黑色暴雨警告信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_11_rain%20black.png"
+            };
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('無法獲取資料');
+
+                const data = await response.json();
+                const warningInfo = document.getElementById('warning-info');
+                warningInfo.innerHTML = ''; // 清空預設內容
+
+                // 顯示每個警告的圖像
+                Object.values(data).forEach(warning => {
+                    if (warning.type && typeToImage[warning.type]) {
+                        const img = document.createElement('img');
+                        img.src = typeToImage[warning.type];
+                        warningInfo.appendChild(img);
+                    }
+                });
+
+            } catch (error) {
+                document.getElementById('warning-info').textContent = `錯誤：${error.message}`;
+            }
+        }
+
+        // 初次加載
+        fetchWeatherWarnings();
+
+        // 每3分鐘更新一次
+        setInterval(fetchWeatherWarnings, 3 * 60 * 1000);
     </script>
 
     <div id="lists" class="lists">
@@ -201,7 +244,7 @@
         <button onclick="clickyClick()">submit</button>
         <button onclick="changechatSrc('//sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button> 
         <button onclick="changechatSrc('https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io&parent=chicktv.github.io')">Tchat</button> 
-
+        <button id="warning-info" width="10" height="10"></button>
     </div>
  <button id="hide" class="hide" onclick="toggleButtons()">▲</button>   
     <div class="content">
