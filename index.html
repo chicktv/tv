@@ -133,7 +133,7 @@
                 if (type === 'kick') {
                     isLive = data.livestream && typeof data.livestream.is_live === 'boolean' && data.livestream.is_live;
                 } else if (type === 'twitch') {
-                    isLive = data.data && data.data.length > 0 ? data.data[0].type === 'live' : false;
+                    isLive = data.data.length > 0 || (data.pagination?.cursor && data.pagination.cursor !== '');
                 }
 
                 if (isLive) {
