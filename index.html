@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
+    <title>Streaming Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
@@ -48,7 +48,10 @@
     gap: 5px;
     white-space: nowrap; /* 防止輸入框和按鈕換行 */
 }
-
+    .unknown {
+            background-color: white;
+           
+        }
 #lists {
     display: flex;
     flex-wrap: wrap;
@@ -202,6 +205,12 @@
         const btn = document.getElementById(`btn-${channel.id}`);
         let url = getPlatformUrl(channel);
 
+        
+        if (channel.platform === "ok") {
+            btn.classList.add("unknown");
+            btn.classList.remove("live", "not-live");
+            return;
+        }
         try {
             const response = await fetch(url);
             const data = await response.json();
@@ -291,8 +300,8 @@
 <div id="top-bar">
     <div id="lists"></div>
     <div id="input-container">
-        <input type="text" id="newid" placeholder="加台:twitch id / k台 id 前加 [k]" />
-        <button onclick="clickyClick()">加台</button>
+        <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
+        <button onclick="clickyClick()">Submit</button>
 		<button onclick="editClick()">del台</button>
 		<button onclick="changechatSrc('https://sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button>
     <button onclick="changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io')">Tchat</button>
