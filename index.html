@@ -42,6 +42,13 @@
     padding: 10px;
 }
 
+#input-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap; /* 防止輸入框和按鈕換行 */
+}
+
 #lists {
     display: flex;
     flex-wrap: wrap;
@@ -50,12 +57,12 @@
     flex-grow: 1; /* 讓按鈕區域可自適應 */
 }
 
-#input-container {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap; /* 防止輸入框和按鈕換行 */
-}
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            order: 99;
+        }
 
         .content {
             display: flex;
@@ -100,121 +107,185 @@
 <body>
 
 <script>
-    const channels = [
-        { id: 'kww291603', type: 'kick', name: 'Ⓚ翼' },
-		{ id: 'ww291603', type: 'twitch', name: 'Ⓣ翼' },
-		{ id: '9013975129715', type: 'ok', name: 'ⓞ翼' },
-        { id: 'Eastsnake25', type: 'kick', name: 'ⓀN' },
-        { id: 'alancml', type: 'twitch', name: 'ⓉA' },
-        { id: 'collartv', type: 'kick', name: 'ⓀA' },
-        { id: 'nanase-maru525', type: 'kick', name: 'Ⓚ西' },
-        { id: 'jeukpo', type: 'kick', name: 'Ⓚ爵' },
-        { id: 'mingpig930_2', type: 'twitch', name: 'Ⓣ朗' },
-        { id: 'qt369', type: 'kick', name: 'ⓀQT' },
-        { id: 'cobra2024', type: 'kick', name: '哥' },
-        { id: 'yaubotai2', type: 'twitch', name: 'Ⓣ友' },
-        
-        { id: '3849262800563', type: 'ok', name: 'ⓞQT' }
+    let channels = [
+        { name: "翼", id: "kww291603", platform: "kick" },
+		{ name: "翼", id: "ww291603", platform: "twitch" },
+        { name: "N", id: "Eastsnake25", platform: "kick" },
+        { name: "A", id: "collartv", platform: "kick" },
+        { name: "西", id: "nanase-maru525", platform: "kick" },
+        { name: "爵", id: "jeukpo", platform: "kick" },
+        { name: "QT", id: "qt369", platform: "kick" },
+        { name: "哥", id: "cobra2024", platform: "kick" },
+        { name: "A", id: "alancml", platform: "twitch" },
+        { name: "朗", id: "mingpig930_2", platform: "twitch" },
+        { name: "哥", id: "godzilla_2025", platform: "twitch" },
+        { name: "友", id: "yaubotai2", platform: "twitch" },
+        { name: "OK-QT", id: "3849262800563", platform: "ok" },
+        { name: "OK-翼", id: "9013975129715", platform: "ok" }
     ];
 
-    function getChannelUrl(channel) {
-        if (channel.type === 'kick') {
-            return `https://player.kick.com/${channel.id}`;
-        } else if (channel.type === 'twitch') {
-            return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io&parent=chicktv.github.io`;
-        } else if (channel.type === 'ok') {
-            return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
-        }
-        return '';
+    function saveChannelsToStorage() {
+        localStorage.setItem("customChannels", JSON.stringify(channels.filter(ch => !isDefaultChannel(ch))));
     }
 
-    function changeSrc(loc, clickedButton = null) {
-        document.getElementById('MyFrame').src = loc;
+    function loadChannelsFromStorage() {
+        const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
+        channels = [...channels.filter(isDefaultChannel), ...storedChannels];
+    }
 
-        // 清除所有按鈕的 active 樣式
-        document.querySelectorAll('.status-button').forEach(button => {
-            button.classList.remove('active');
-        });
-
-        // 只有在點擊按鈕時才高亮
-        if (clickedButton) {
-            clickedButton.classList.add('active');
-        }
+    function isDefaultChannel(channel) {
+        return ["ww291603", "Eastsnake25", "collartv", "nanase-maru525", "jeukpo", "qt369", "cobra2024", 
+                "alancml", "mingpig930_2", "godzilla_2025", "yaubotai2", "3849262800563", "9013975129715"]
+               .includes(channel.id);
     }
 
     function generateButtons() {
-        const listsDiv = document.getElementById('lists');
-        listsDiv.innerHTML = '';
-
-        channels.forEach(channel => {
-            const button = document.createElement('button');
-            button.id = channel.id;
-            button.className = 'status-button';
-            button.textContent = channel.name;
-            button.onclick = () => changeSrc(getChannelUrl(channel), button);
-            listsDiv.appendChild(button);
-        });
-		
+        const container = document.getElementById("lists");
+        container.innerHTML = "";  // Clear previous buttons
+        channels.forEach(channel => addButton(channel));
+        fetchAllStatuses();
     }
 
-    function clickyClick() {
-        const inputField = document.getElementById('newid');
-        const userInput = inputField.value.trim();
+    function addButton(channel) {
+        const container = document.getElementById("lists");
 
-        if (!userInput) {
-            alert("請輸入 Twitch ID 或 Kick ID（Kick 的話請在前面加 [k]）");
-            return;
+        // Create button to switch live stream
+        const btn = document.createElement("button");
+        btn.className = "status-button";
+        btn.id = `btn-${channel.id}`;
+        btn.innerText = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : "ⓞ"}${channel.name}`;
+
+        // Button event handler to change live stream source
+        btn.onclick = () => {
+            console.log("Switching to stream for:", channel.name);
+            changeSrc(getStreamUrl(channel)); // Call function to change the iframe source
+        };
+
+        // Create delete button
+        const deleteBtn = document.createElement("button");
+        deleteBtn.innerText = "刪除";
+        deleteBtn.style.display = "none"; // Initially hide delete button
+
+        // Delete button event handler
+        deleteBtn.onclick = () => {
+            console.log("Deleting channel:", channel.name);
+            channels = channels.filter(ch => ch.id !== channel.id); // Remove channel from list
+            saveChannelsToStorage();
+            generateButtons();  // Regenerate buttons after deletion
+        };
+
+        // Wrapper for both buttons
+        const buttonWrapper = document.createElement("div");
+        buttonWrapper.appendChild(btn);
+        buttonWrapper.appendChild(deleteBtn);
+
+        container.appendChild(buttonWrapper);
+    }
+
+    // Helper function to fetch stream URL based on platform
+    function getStreamUrl(channel) {
+        if (channel.platform === "kick") {
+            return `https://player.kick.com/${channel.id}`;
+        } else if (channel.platform === "twitch") {
+            return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+        } else if (channel.platform === "ok") {
+            return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
         }
+    }
 
-        let streamUrl = "";
-        if (userInput.startsWith("[k]")) {
-            const kickId = userInput.replace("[k]", "");
-            streamUrl = `https://player.kick.com/${kickId}`;
+    // Function to change the iframe src to the selected channel's stream
+    function changeSrc(url) {
+        document.getElementById("MyFrame").src = url; // Change the source of the iframe
+    }
+
+    async function fetchStatus(channel) {
+        const btn = document.getElementById(`btn-${channel.id}`);
+        let url = getPlatformUrl(channel);
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            let isLive = false;
+
+            if (channel.platform === "kick") {
+                isLive = data.livestream && data.livestream.is_live;
+            } else if (channel.platform === "twitch") {
+                isLive = data.data.length > 0;
+            }
+
+            if (isLive) {
+                btn.classList.add('live');
+                btn.classList.remove('not-live');
+            } else {
+                btn.classList.add('not-live');
+                btn.classList.remove('live');
+            }
+        } catch (error) {
+            console.error('Error fetching status:', error);
+            btn.classList.add('not-live');
+            btn.classList.remove('live');
+        }
+    }
+
+    // Helper function to generate platform specific URL
+    function getPlatformUrl(channel) {
+        if (channel.platform === "kick") {
+            return `https://kick.com/api/v2/channels/${channel.id}`;
+        } else if (channel.platform === "twitch") {
+            return `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}`;
         } else {
-            streamUrl = `https://player.twitch.tv/?channel=${userInput}&parent=chicktv.github.io&parent=chicktv.github.io`;
+            return "";
         }
-
-        changeSrc(streamUrl);
-    }
-
-    function fetchStatus(channel) {
-        const statusElement = document.getElementById(channel.id);
-        const url = channel.type === 'kick' 
-            ? `https://kick.com/api/v2/channels/${channel.id}` 
-            : `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}`;
-
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const isLive = channel.type === 'kick' 
-                    ? data?.livestream?.is_live ?? false 
-                    : data?.data?.length > 0;
-
-                if (isLive) {
-                    statusElement.classList.add('live');
-                    statusElement.classList.remove('not-live');
-                } else {
-                    statusElement.classList.add('not-live');
-                    statusElement.classList.remove('live');
-                }
-            })
-            .catch(error => {
-                console.error(`Error fetching status for ${channel.id}:`, error);
-                statusElement.classList.add('not-live');
-                statusElement.classList.remove('live');
-            });
     }
 
     function fetchAllStatuses() {
-        channels.forEach(fetchStatus);
+        channels.forEach(channel => fetchStatus(channel));
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        generateButtons();
-        fetchAllStatuses();
-        setInterval(fetchAllStatuses, 8 * 60 * 1000);
-    });
+    function clickyClick() {
+        let input = document.getElementById("newid").value.trim();
+        if (!input) return;
 
+        let platform = "twitch"; // 默認平台為Twitch
+        let id = input;
+
+        if (input.startsWith("[k]")) {
+            platform = "kick"; // 如果以 [k] 開頭，設置平台為 Kick
+            id = input.substring(3); // 去掉 [k] 前綴
+        } else if (input.startsWith("[o]")) {
+            platform = "ok"; // 如果以 [o] 開頭，設置平台為 OK
+            id = input.substring(3); // 去掉 [o] 前綴
+        }
+
+        const existingChannelIndex = channels.findIndex(ch => ch.id === id);
+        if (existingChannelIndex > -1) {
+            channels[existingChannelIndex].platform = platform;
+        } else {
+            const newChannel = { name: id, id, platform };
+            channels.push(newChannel);
+        }
+
+        saveChannelsToStorage();
+        generateButtons();
+    }
+
+    function editClick() {
+    // 找到所有的刪除按鈕，並讓它們顯示
+    const deleteButtons = document.querySelectorAll("button");
+    deleteButtons.forEach(btn => {
+        if (btn.innerText === "刪除") {
+            btn.style.display = "inline"; // 顯示刪除按鈕
+        }
+    });
+}
+
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadChannelsFromStorage();
+        generateButtons();
+        setInterval(fetchAllStatuses, 480000);
+    });
 </script>
 
 <div id="top-bar">
@@ -222,6 +293,7 @@
     <div id="input-container">
         <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
         <button onclick="clickyClick()">Submit</button>
+		<button onclick="editClick()">del台</button>
 		<button onclick="changechatSrc('https://sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button>
     <button onclick="changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io')">Tchat</button>
     </div>
