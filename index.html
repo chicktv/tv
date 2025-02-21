@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Page Title</title>
+    <title>Streaming Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/jquery-ui.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
         body {
@@ -12,22 +11,51 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            color: white;
+            text-align: center;
         }
-       .live {
-           color: #32CD32;
-            box-shadow: 0 0 10px #32CD32,
-                0 0 10px #32CD32,
-                0 0 40px #32CD32,
-                0 0 10px #52D017 inset;
-                transform: scale(1.05);
+        .live {
+            color: #32CD32;
+            box-shadow: 0 0 10px #32CD32, 0 0 10px #32CD32, 0 0 40px #32CD32, 0 0 10px #52D017 inset;
+            transform: scale(1.05);
         }
         .not-live {
             background-color: red;
         }
-        #lists {
-            padding: 10px;
-            text-align: center;
+        .active {
+            background-color: yellow;
         }
+        .status-button {
+    margin-right: 5px;
+    margin-bottom: 5px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+ #top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 左右對齊 */
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px;
+}
+
+#lists {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    flex-grow: 1; /* 讓按鈕區域可自適應 */
+}
+
+#input-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap; /* 防止輸入框和按鈕換行 */
+}
 
         .content {
             display: flex;
@@ -35,229 +63,174 @@
             flex-direction: column;
             height: 100%;
         }
-
         .video, .chat {
             border: none;
         }
-
         .video {
-            
             height: 30vh;
             width: 100%;
         }
-
         .chat {
-            
             height: 70vh;
             width: 100%;
         }
-        .hide {
-                display: block;
-                 margin: 0 auto;
-            }
-
+        input {
+            padding: 5px;
+            margin-right: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
         @media (min-width: 768px) {
             .content {
                 flex-direction: row;
             }
-
             .video {
                 height: 100%;
                 width: 70%;
             }
-
             .chat {
                 height: 100%;
                 width: 30%;
-            }
-            .hide {
-            display: none;
-        }
-            #lists {
-                width: 100%;
-                padding: 10px;
-                text-align: center;
-                flex: 0 0 auto;
             }
         }
     </style>
 </head>
 <body>
-    <script>
-        function changeSrc(loc) {
-            document.getElementById('MyFrame').src = loc;
-        }
 
-        function clickyClick() {
-            const newid = document.getElementById('newid').value;
-            const frame = document.getElementById('MyFrame');
-            
-            if (newid.includes('[k]')) {
-                const channelName = newid.replace('[k]', '');
-                frame.src = 'https://player.kick.com/' + channelName;
-            } else if (newid.includes('[o]')) {
-                const channelName = newid.replace('[o]', '');
-                frame.src = 'https://ok.ru/videoembed/' + channelName + '?nochat=1&autoplay=1';
-            } else {
-                frame.src = 'https://player.twitch.tv/?channel=' + newid + '&parent=chicktv.github.io&parent=chicktv.github.io';
-            }
-        }
+<script>
+    const channels = [
+        { id: 'ww291603', type: 'kick', name: 'Ⓚ翼' },
+		{ id: 'ww291603', type: 'twitch', name: 'Ⓣ翼' },
+		{ id: '9013975129715', type: 'ok', name: 'ⓞ翼' },
+        { id: 'Eastsnake25', type: 'kick', name: 'ⓀN' },
+        { id: 'alancml', type: 'twitch', name: 'ⓉA' },
+        { id: 'collartv', type: 'kick', name: 'ⓀA' },
+        { id: 'nanase-maru525', type: 'kick', name: 'Ⓚ西' },
+        { id: 'jeukpo', type: 'kick', name: 'Ⓚ爵' },
+        { id: 'mingpig930_2', type: 'twitch', name: 'Ⓣ朗' },
+        { id: 'qt369', type: 'kick', name: 'ⓀQT' },
+        { id: 'cobra2024', type: 'kick', name: '哥' },
+        { id: 'yaubotai2', type: 'twitch', name: 'Ⓣ友' },
         
-        function changechatSrc(loc2) {
-            document.getElementById('chat_embed').src = loc2;
+        { id: '3849262800563', type: 'ok', name: 'ⓞQT' }
+    ];
+
+    function getChannelUrl(channel) {
+        if (channel.type === 'kick') {
+            return `https://player.kick.com/${channel.id}`;
+        } else if (channel.type === 'twitch') {
+            return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io&parent=chicktv.github.io`;
+        } else if (channel.type === 'ok') {
+            return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
+        }
+        return '';
+    }
+
+    function changeSrc(loc, clickedButton = null) {
+        document.getElementById('MyFrame').src = loc;
+
+        // 清除所有按鈕的 active 樣式
+        document.querySelectorAll('.status-button').forEach(button => {
+            button.classList.remove('active');
+        });
+
+        // 只有在點擊按鈕時才高亮
+        if (clickedButton) {
+            clickedButton.classList.add('active');
+        }
+    }
+
+    function generateButtons() {
+        const listsDiv = document.getElementById('lists');
+        listsDiv.innerHTML = '';
+
+        channels.forEach(channel => {
+            const button = document.createElement('button');
+            button.id = channel.id;
+            button.className = 'status-button';
+            button.textContent = channel.name;
+            button.onclick = () => changeSrc(getChannelUrl(channel), button);
+            listsDiv.appendChild(button);
+        });
+		
+    }
+
+    function clickyClick() {
+        const inputField = document.getElementById('newid');
+        const userInput = inputField.value.trim();
+
+        if (!userInput) {
+            alert("請輸入 Twitch ID 或 Kick ID（Kick 的話請在前面加 [k]）");
+            return;
         }
 
-            const channels = [
-            { id: 'cobra2024', url: 'https://kick.com/api/v2/channels/cobra2024', type: 'kick' },
-            { id: 'nanase-maru525', url: 'https://kick.com/api/v2/channels/nanase-maru525', type: 'kick' },
-            { id: 'qt369', url: 'https://kick.com/api/v2/channels/qt369', type: 'kick' },
-            { id: 'mingpig930_2', url: 'https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=mingpig930_2', type: 'twitch' },		    
-            { id: 'jeukpo', url: 'https://kick.com/api/v2/channels/jeukpo', type: 'kick' },
-	    { id: 'yaubotai2', url: 'https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=yaubotai2', type: 'twitch' },
-            { id: 'collartv', url: 'https://kick.com/api/v2/channels/collartv', type: 'kick' },
-            { id: 'kww291603', url: 'https://kick.com/api/v2/channels/ww291603', type: 'kick' },
-            { id: 'Eastsnake25', url: 'https://kick.com/api/v2/channels/Eastsnake25', type: 'kick' },
-            { id: 'alancml', url: 'https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=alancml', type: 'twitch' },
-            { id: 'ww291603', url: 'https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=ww291603', type: 'twitch' }
-        ];
+        let streamUrl = "";
+        if (userInput.startsWith("[k]")) {
+            const kickId = userInput.replace("[k]", "");
+            streamUrl = `https://player.kick.com/${kickId}`;
+        } else {
+            streamUrl = `https://player.twitch.tv/?channel=${userInput}&parent=chicktv.github.io&parent=chicktv.github.io`;
+        }
 
-          async function fetchStatus(url, elementId, type) {
-            const statusElement = document.getElementById(elementId);
+        changeSrc(streamUrl);
+    }
 
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
+    function fetchStatus(channel) {
+        const statusElement = document.getElementById(channel.id);
+        const url = channel.type === 'kick' 
+            ? `https://kick.com/api/v2/channels/${channel.id}` 
+            : `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}`;
 
-                let isLive = false;
-
-                if (type === 'kick') {
-                    isLive = data.livestream && typeof data.livestream.is_live === 'boolean' && data.livestream.is_live;
-                } else if (type === 'twitch') {
-                    isLive = data.data.length > 0 || (data.pagination?.cursor && data.pagination.cursor !== '');
-                }
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const isLive = channel.type === 'kick' 
+                    ? data?.livestream?.is_live ?? false 
+                    : data?.data?.length > 0;
 
                 if (isLive) {
                     statusElement.classList.add('live');
-                    statusElement.classList.remove('not-live', 'not-available');
-                   
+                    statusElement.classList.remove('not-live');
                 } else {
                     statusElement.classList.add('not-live');
-                    statusElement.classList.remove('live', 'not-available');
-                   
+                    statusElement.classList.remove('live');
                 }
-            } catch (error) {
-                console.error('Error fetching status:', error);
-                statusElement.classList.add('not-available');
-                statusElement.classList.remove('live', 'not-live');
-                
-            }
-        }
-
-        function fetchAllStatuses() {
-            channels.forEach(channel => {
-                fetchStatus(channel.url, channel.id, channel.type);
+            })
+            .catch(error => {
+                console.error(`Error fetching status for ${channel.id}:`, error);
+                statusElement.classList.add('not-live');
+                statusElement.classList.remove('live');
             });
-        }
+    }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchAllStatuses();  // 
-            setInterval(fetchAllStatuses, 8 * 60 * 1000); // 
-        });
-        
-        
-          function toggleButtons() {
-            const listsDiv = document.getElementById('lists');
-            const hideShowButton = document.getElementById('hide'); // Assuming "hide" button is the last one
+    function fetchAllStatuses() {
+        channels.forEach(fetchStatus);
+    }
 
-            if (listsDiv.style.display === 'none') {
-                // Show the lists div
-                listsDiv.style.display = 'block';
-                // Change the button text to "hide"
-                hideShowButton.textContent = '▲';
-            } else {
-                // Hide the lists div
-                listsDiv.style.display = 'none';
-                // Change the button text to "show"
-                hideShowButton.textContent = '▼';
-            }
-        }
-        async function fetchWeatherWarnings() {
-            const url = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc';
+    document.addEventListener('DOMContentLoaded', () => {
+        generateButtons();
+        fetchAllStatuses();
+        setInterval(fetchAllStatuses, 8 * 60 * 1000);
+    });
 
-            const typeToImage = {
-                "三號強風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_02_tc3.png",
-                "一號戒備信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_01_tc1.png",
-                "八號東南烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_05_tc08se.png",
-                "八號西南烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_06_tc08sw.png",
-                "八號東北烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_03_tc08ne.png",
-                "八號西北烈風或暴風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_04_tc08nw.png",
-                "九號烈風或暴風風力增強信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_07_tc09.png",
-                "十號颶風信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_08_tc10.png",
-                "紅色暴雨警告信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_10_rain%20red.png",
-                "黑色暴雨警告信號": "https://www.hko.gov.hk/images/HKOWarningSymbols_m/warn800_11_rain%20black.png"
-            };
+</script>
 
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('無法獲取資料');
-
-                const data = await response.json();
-                const warningInfo = document.getElementById('warning-info');
-                warningInfo.innerHTML = ''; // 清空預設內容
-
-                // 顯示每個警告的圖像
-                Object.values(data).forEach(warning => {
-                    if (warning.type && typeToImage[warning.type]) {
-                        const img = document.createElement('img');
-                        img.src = typeToImage[warning.type];
-                        warningInfo.appendChild(img);
-                    }
-                });
-
-            } catch (error) {
-                document.getElementById('warning-info').textContent = `錯誤：${error.message}`;
-            }
-        }
-
-        // 初次加載
-        fetchWeatherWarnings();
-
-        // 每50分鐘更新一次
-        setInterval(fetchWeatherWarnings, 50 * 60 * 1000);
-    </script>
-
-    <div id="lists" class="lists">
-    <button id="kww291603" class="status-button" onclick="changeSrc('https://player.kick.com/ww291603')">Ⓚ翼</button>
-    <button onclick="changeSrc('https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1')">ⓞ翼</button>
-    
-    <button id="Eastsnake25" class="status-button" onclick="changeSrc('https://player.kick.com/Eastsnake25')">ⓀN</button>
-    <button id="ww291603"onclick="changeSrc('https://player.twitch.tv/?channel=ww291603&parent=chicktv.github.io&parent=chicktv.github.io')">Ⓣ翼</button>
-    <button id="alancml" class="status-button" onclick="changeSrc('https://player.twitch.tv/?channel=alancml&parent=chicktv.github.io&parent=chicktv.github.io')">ⓉA</button>
-    <button id="collartv" class="status-button" onclick="changeSrc('https://player.kick.com/collartv')">ⓀA</button>
-    <button id="nanase-maru525" class="status-button" onclick="changeSrc('https://player.kick.com/nanase-maru525')">Ⓚ西</button>
-    <button id="jeukpo" class="status-button" onclick="changeSrc('https://player.kick.com/jeukpo')">Ⓚ爵</button>
-    <button onclick="changeSrc('https://player.twitch.tv/?channel=aquariusottercereal&parent=chicktv01.wixsite.com&parent=chicktv.github.io&parent=chicktv.github.io')" style="display:none">ⓉA</button>
-    <button id="mingpig930_2" onclick="changeSrc('https://player.twitch.tv/?channel=mingpig930_2&parent=chicktv.github.io&parent=chicktv.github.io')">Ⓣ朗</button>
-    <button id="qt369" class="status-button" onclick="changeSrc('https://player.kick.com/qt369')">ⓀQT</button>
-    <button id="cobra2024" class="status-button" onclick="changeSrc('https://player.kick.com/cobra2024')">哥</button>
-    <button id="okqt" class="status-button" onclick="changeSrc('https://ok.ru/videoembed/3849262800563?nochat=1&autoplay=1')">ⓞQT</button>
-    <button id="yaubotai2"onclick="changeSrc('https://player.twitch.tv/?channel=yaubotai2&parent=chicktv.github.io&parent=chicktv.github.io')">Ⓣ友</button>
-	
-        <input type="text" name="newid" id="newid" placeholder="twitch id k台id前面加[k]"/>
-        <button onclick="clickyClick()">submit</button>
-        <button onclick="changechatSrc('//sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button> 
-        <button onclick="changechatSrc('https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io&parent=chicktv.github.io')">Tchat</button> 
-        <button id="warning-info" width="40" height="10"></button>
+<div id="top-bar">
+    <div id="lists"></div>
+    <div id="input-container">
+        <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
+        <button onclick="clickyClick()">Submit</button>
+		<button onclick="changechatSrc('https://sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button>
+    <button onclick="changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io')">Tchat</button>
     </div>
- <button id="hide" class="hide" onclick="toggleButtons()">▲</button>   
-    <div class="content">
-        <iframe id="MyFrame" class="video" src="https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1" frameborder="0" allowfullscreen="true" scrolling="no"></iframe>
+</div>
 
-        <iframe
-            class="chat"
-            id="chat_embed"
-            src="https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io&parent=chicktv.github.io">
-        </iframe>
-    </div>
+<div class="content">
+    <iframe id="MyFrame" class="video" src="https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
+    <iframe class="chat" id="chat_embed" src="https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io"></iframe>
+</div>
+
 </body>
 </html>
