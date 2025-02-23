@@ -165,14 +165,14 @@
         }
 
         // Get the correct stream URL for a given channel
-        function getStreamUrl(channel) {
-            if (channel.platform === "kick") {
-                return `https://player.kick.com/${channel.id}`;
-            } else if (channel.platform === "twitch") {
-                return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
-            } else {
-                return "";
-            }
+       function getStreamUrl(channel) {
+        if (channel.platform === "kick") {
+            return `https://player.kick.com/${channel.id}`;
+        } else if (channel.platform === "twitch") {
+            return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+        } else if (channel.platform === "ok") {
+            return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
+        }
         }
 
         // Fetch the status of each channel to determine if it's live or not
