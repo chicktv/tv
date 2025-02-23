@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
+    <title>Multi Stream Selector</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
@@ -132,6 +132,8 @@
 
         // Start watching the selected channels
         function watchSelectedChannels() {
+		 const selectionDiv = document.getElementById("channel-selection");
+            selectionDiv.style.display = selectionDiv.style.display === "block" ? "none" : "none";
             const container = document.getElementById("multi-stream-container");
             container.innerHTML = "";
 
