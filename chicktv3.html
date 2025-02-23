@@ -142,6 +142,8 @@
         }
 
         function watchSelectedChannels() {
+		  const selectionDiv = document.getElementById("channel-selection");
+            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
             const container = document.getElementById("multi-stream-container");
             container.innerHTML = "";
 
