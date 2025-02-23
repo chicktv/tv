@@ -111,20 +111,25 @@
     try {
         const response = await fetch('https://chicktv.github.io/tv/channels.txt');
         const data = await response.text();
-        // Assuming the file contains the channel info in a comma-separated format (name, id, platform)
         const channelLines = data.split('\n');
 
-        channels = channelLines.map(line => {
-            // Split the line by comma and trim spaces
+        const defaultChannels = channelLines.map(line => {
             const parts = line.split(',').map(part => part.trim());
-            // Ensure the line contains exactly 3 parts (name, id, platform)
             if (parts.length === 3) {
                 const [name, id, platform] = parts;
                 return { name, id, platform };
-            } else {
-                return null; // Skip invalid lines
             }
-        }).filter(channel => channel !== null); // Remove null entries
+            return null;
+        }).filter(channel => channel !== null);
+
+        // **合并默认频道和本地存储的自定义频道**
+        const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
+        const allChannels = [...defaultChannels, ...storedChannels];
+
+        // **去重：优先保留本地存储的频道信息**
+        channels = allChannels.filter((ch, index, self) =>
+            index === self.findIndex(c => c.id === ch.id)
+        );
 
         saveChannelsToStorage();
         generateButtons();
@@ -134,9 +139,12 @@
 }
 
 
-    function saveChannelsToStorage() {
-        localStorage.setItem("customChannels", JSON.stringify(channels.filter(ch => !isDefaultChannel(ch))));
-    }
+
+   function saveChannelsToStorage() {
+    const customChannels = channels.filter(ch => !isDefaultChannel(ch));
+    localStorage.setItem("customChannels", JSON.stringify(customChannels));
+}
+
 
     function loadChannelsFromStorage() {
         const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
@@ -295,7 +303,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadChannelsFromUrl(); // Load channels from the URL when the page loads
+	        loadChannelsFromUrl(); // Load channels from the URL when the page loads
+			loadChannelsFromStorage();
         setInterval(fetchAllStatuses, 480000);
     });
 </script>
