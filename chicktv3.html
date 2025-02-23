@@ -38,6 +38,11 @@
             height: 70%;
             border: none;
         }
+        .full-screen-video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
         #multi-stream-container {
             display: flex;
             flex-wrap: wrap;
@@ -105,33 +110,47 @@
                 container.appendChild(label);
                 container.appendChild(document.createElement("br"));
             });
-            fetchAllStatuses();
+            fetchAllStatuses(); // Initial status fetch
         }
 
         function watchSelectedChannels() {
             const container = document.getElementById("multi-stream-container");
             container.innerHTML = ""; 
-            
+
             const checkboxes = document.querySelectorAll("#channel-options input:checked");
-            checkboxes.forEach((cb, index) => {
-                const channel = { id: cb.value, platform: cb.dataset.platform };
+            const selectedChannels = Array.from(checkboxes).map(cb => {
+                return { id: cb.value, platform: cb.dataset.platform };
+            });
+
+            if (selectedChannels.length === 1) {
+                // If only one channel is selected, make it full-screen
+                const channel = selectedChannels[0];
                 const iframe = document.createElement("iframe");
-                iframe.className = "video";
+                iframe.className = "full-screen-video";
                 iframe.src = getStreamUrl(channel);
                 iframe.allowFullscreen = true;
                 container.appendChild(iframe);
-                
-                if ((index + 1) % 2 === 0) {
-                    container.appendChild(document.createElement("br"));
-                }
-            });
+            } else {
+                // If more than one channel is selected, show them in the grid layout
+                selectedChannels.forEach((channel, index) => {
+                    const iframe = document.createElement("iframe");
+                    iframe.className = "video";
+                    iframe.src = getStreamUrl(channel);
+                    iframe.allowFullscreen = true;
+                    container.appendChild(iframe);
+                    
+                    if ((index + 1) % 2 === 0) {
+                        container.appendChild(document.createElement("br"));
+                    }
+                });
+            }
         }
 
         function getStreamUrl(channel) {
             if (channel.platform === "kick") {
                 return `https://player.kick.com/${channel.id}`;
             } else if (channel.platform === "twitch") {
-                return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+                return `https://player.twitch.tv/?channel=${channel.id}&parent=yourdomain.com`;
             } else {
                 return "";
             }
@@ -179,6 +198,9 @@
         function fetchAllStatuses() {
             channels.forEach(channel => fetchStatus(channel));
         }
+
+        // Fetch statuses every 8 minutes (480000 milliseconds)
+        setInterval(fetchAllStatuses, 480000); // 8 minutes
     </script>
 </body>
 </html>
