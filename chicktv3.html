@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Multi Stream Selector</title>
+    <title></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
@@ -16,7 +16,7 @@
         }
         #multi-stream-container-wrapper {
             display: flex;
-            flex-direction: row; /* Align horizontally */
+            flex-direction: row;
             justify-content: space-between;
             gap: 10px;
             height: 70%;
@@ -26,12 +26,12 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 10px;
-            width: 70%; /* Adjust the width for video container */
+            width: 70%;
         }
         .chat {
-            width: 28%; /* Adjust the width for the chat */
+            width: 28%;
             border: none;
-            height: 140%; /* Ensure chat fills the height */
+            height: 140%;
         }
         .video {
             width: 48%;
@@ -57,7 +57,9 @@
         .not-live {
             color: red;
         }
-		  
+        .unknown {
+            color: gray;
+        }
     </style>
 </head>
 <body>
@@ -67,6 +69,17 @@
         <h3>選擇要觀看的台：</h3>
         <div id="channel-options"></div>
         <button onclick="watchSelectedChannels()">開始觀看</button>
+        <hr>
+        <h3>新增/刪除頻道：</h3>
+        <input type="text" id="channel-name" placeholder="頻道名稱">
+        <input type="text" id="channel-id" placeholder="頻道ID">
+        <select id="channel-platform">
+            <option value="twitch">Twitch</option>
+            <option value="kick">Kick</option>
+            <option value="ok">OK.ru</option>
+        </select>
+        <button onclick="addChannel()">新增頻道</button>
+        <button onclick="deleteSelectedChannels()">刪除選中的頻道</button>
     </div>
     <div id="multi-stream-container-wrapper">
         <div id="multi-stream-container" class="video-wrapper"></div>
@@ -76,35 +89,31 @@
     <script>
         let channels = [];
 
-        // Fetch channel list from external URL
         async function loadChannelsFromUrl() {
             try {
                 const response = await fetch('https://chicktv.github.io/tv/channels.txt');
                 const data = await response.text();
-
-                // Assuming the format in the file is "name,id,platform" for each line
                 const channelLines = data.split('\n');
+
                 channels = channelLines.map(line => {
                     const parts = line.split(',').map(part => part.trim());
                     if (parts.length === 3) {
-                        const [name, id, platform] = parts;
-                        return { name, id, platform };
+                        return { name: parts[0], id: parts[1], platform: parts[2] };
                     }
                     return null;
-                }).filter(channel => channel !== null); // Remove null entries
+                }).filter(channel => channel !== null);
+
                 saveChannelsToStorage();
                 generateChannelOptions();
             } catch (error) {
-                console.error('Error loading channels from URL:', error);
+                console.error('Error loading channels:', error);
             }
         }
 
-        // Save channels to localStorage (optional)
         function saveChannelsToStorage() {
             localStorage.setItem("channels", JSON.stringify(channels));
         }
 
-        // Generate channel options for the user to select
         function generateChannelOptions() {
             const container = document.getElementById("channel-options");
             container.innerHTML = "";
@@ -121,120 +130,94 @@
                 container.appendChild(label);
                 container.appendChild(document.createElement("br"));
             });
-            fetchAllStatuses(); // Initial status fetch
+            fetchAllStatuses();
         }
 
-        // Toggle the display of the channel selection
         function toggleChannelSelection() {
             const selectionDiv = document.getElementById("channel-selection");
             selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
         }
 
-        // Start watching the selected channels
         function watchSelectedChannels() {
 		 const selectionDiv = document.getElementById("channel-selection");
-            selectionDiv.style.display = selectionDiv.style.display === "block" ? "none" : "none";
+            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
             const container = document.getElementById("multi-stream-container");
             container.innerHTML = "";
 
             const checkboxes = document.querySelectorAll("#channel-options input:checked");
-            const selectedChannels = Array.from(checkboxes).map(cb => {
-                return { id: cb.value, platform: cb.dataset.platform };
-            });
+            const selectedChannels = Array.from(checkboxes).map(cb => ({ id: cb.value, platform: cb.dataset.platform }));
 
-            if (selectedChannels.length === 1) {
-                // If only one channel is selected, make it full-screen
-                const channel = selectedChannels[0];
+            selectedChannels.forEach(channel => {
                 const iframe = document.createElement("iframe");
-                iframe.className = "full-screen-video";
+                iframe.className = selectedChannels.length === 1 ? "full-screen-video" : "video";
                 iframe.src = getStreamUrl(channel);
                 iframe.allowFullscreen = true;
                 container.appendChild(iframe);
-            } else {
-                // If more than one channel is selected, show them in the grid layout
-                selectedChannels.forEach((channel, index) => {
-                    const iframe = document.createElement("iframe");
-                    iframe.className = "video";
-                    iframe.src = getStreamUrl(channel);
-                    iframe.allowFullscreen = true;
-                    container.appendChild(iframe);
-
-                    if ((index + 1) % 2 === 0) {
-                        container.appendChild(document.createElement("br"));
-                    }
-                });
-            }
+            });
         }
 
-        // Get the correct stream URL for a given channel
-       function getStreamUrl(channel) {
-        if (channel.platform === "kick") {
-            return `https://player.kick.com/${channel.id}`;
-        } else if (channel.platform === "twitch") {
-            return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
-        } else if (channel.platform === "ok") {
-            return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
-        }
+        function getStreamUrl(channel) {
+            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}`;
+            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
         }
 
-        // Fetch the status of each channel to determine if it's live or not
         async function fetchStatus(channel) {
             const label = document.getElementById(`status-${channel.id}`);
+            if (!label) return;
+
             let url = getPlatformUrl(channel);
- 
-                  if (channel.platform === "ok") {
-            label.classList.add("unknown");
-            label.classList.remove("live", "not-live");
-            return;
-        }
+
+            if (channel.platform === "ok") {
+                label.classList.add("unknown");
+                label.classList.remove("live", "not-live");
+                return;
+            }
+
             try {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 const data = await response.json();
-                let isLive = false;
 
-                if (channel.platform === "kick") {
-                    isLive = data.livestream && data.livestream.is_live;
-                } else if (channel.platform === "twitch") {
-                    isLive = data.data.length > 0;
-                }
+                let isLive = channel.platform === "kick" ? data.livestream?.is_live :
+                             channel.platform === "twitch" ? data.data?.length > 0 : false;
 
-                if (isLive) {
-                    label.classList.add('live');
-                    label.classList.remove('not-live');
-                } else {
-                    label.classList.add('not-live');
-                    label.classList.remove('live');
-                }
+                label.classList.toggle('live', isLive);
+                label.classList.toggle('not-live', !isLive);
             } catch (error) {
-                console.error('Error fetching status:', error);
+                console.error(`Error fetching status for ${channel.name}:`, error);
                 label.classList.add('not-live');
-                label.classList.remove('live');
             }
         }
 
-        // Get the API URL for a given platform
         function getPlatformUrl(channel) {
-            if (channel.platform === "kick") {
-                return `https://kick.com/api/v2/channels/${channel.id}`;
-            } else if (channel.platform === "twitch") {
-                return `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}`;
-            } else {
-                return "";
+            return channel.platform === "kick" ? `https://kick.com/api/v2/channels/${channel.id}` :
+                   channel.platform === "twitch" ? `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}` : "";
+        }
+
+        function fetchAllStatuses() {
+            channels.forEach(fetchStatus);
+        }
+
+        function addChannel() {
+            const name = document.getElementById("channel-name").value;
+            const id = document.getElementById("channel-id").value;
+            const platform = document.getElementById("channel-platform").value;
+            if (name && id) {
+                channels.push({ name, id, platform });
+                saveChannelsToStorage();
+                generateChannelOptions();
             }
         }
 
-        // Fetch the status for all channels
-        function fetchAllStatuses() {
-            channels.forEach(channel => fetchStatus(channel));
+        function deleteSelectedChannels() {
+            channels = channels.filter(channel => !document.querySelector(`#channel-options input[value="${channel.id}"]`).checked);
+            saveChannelsToStorage();
+            generateChannelOptions();
         }
 
-        // Fetch statuses every 8 minutes (480000 milliseconds)
-        setInterval(fetchAllStatuses, 480000); // 8 minutes
-
-        // Load channels from URL when the page is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            loadChannelsFromUrl();
-        });
+        document.addEventListener('DOMContentLoaded', loadChannelsFromUrl);
+        setInterval(fetchAllStatuses, 480000);
     </script>
 </body>
 </html>
