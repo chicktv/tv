@@ -26,47 +26,42 @@
             background-color: yellow;
         }
         .status-button {
-    margin-right: 5px;
-    margin-bottom: 5px;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
- #top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* 左右對齊 */
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 10px;
-}
-
-#input-container {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap; /* 防止輸入框和按鈕換行 */
-}
-    .unknown {
-            background-color: white;
-           
+            margin-right: 5px;
+            margin-bottom: 5px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
         }
-#lists {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 5px;
-    flex-grow: 1; /* 讓按鈕區域可自適應 */
-}
-
+        #top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 10px;
+        }
+        #input-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .unknown {
+            background-color: white;
+        }
+        #lists {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px;
+            flex-grow: 1;
+        }
         .input-container {
             display: flex;
             align-items: center;
             gap: 5px;
             order: 99;
         }
-
         .content {
             display: flex;
             flex: 1;
@@ -110,22 +105,34 @@
 <body>
 
 <script>
-    let channels = [
-        { name: "翼", id: "kww291603", platform: "kick" },
-	{ name: "翼", id: "ww291603", platform: "twitch" },
-        { name: "N", id: "Eastsnake25", platform: "kick" },
-        { name: "A", id: "collartv", platform: "kick" },
-        { name: "西", id: "nanase-maru525", platform: "kick" },
-        { name: "爵", id: "jeukpo", platform: "kick" },
-        { name: "QT", id: "qt369", platform: "kick" },
-        { name: "哥", id: "cobra2024", platform: "kick" },
-        { name: "A", id: "alancml", platform: "twitch" },
-        { name: "朗", id: "mingpig930_2", platform: "twitch" },
-        { name: "哥", id: "godzilla_2025", platform: "twitch" },
-        { name: "友", id: "yaubotai2", platform: "twitch" },
-        { name: "QT", id: "3849262800563", platform: "ok" },
-        { name: "翼", id: "9013975129715", platform: "ok" }
-    ];
+    let channels = [];
+
+   async function loadChannelsFromUrl() {
+    try {
+        const response = await fetch('https://chicktv.github.io/tv/channels.txt');
+        const data = await response.text();
+        // Assuming the file contains the channel info in a comma-separated format (name, id, platform)
+        const channelLines = data.split('\n');
+
+        channels = channelLines.map(line => {
+            // Split the line by comma and trim spaces
+            const parts = line.split(',').map(part => part.trim());
+            // Ensure the line contains exactly 3 parts (name, id, platform)
+            if (parts.length === 3) {
+                const [name, id, platform] = parts;
+                return { name, id, platform };
+            } else {
+                return null; // Skip invalid lines
+            }
+        }).filter(channel => channel !== null); // Remove null entries
+
+        saveChannelsToStorage();
+        generateButtons();
+    } catch (error) {
+        console.error('Error loading channels from URL:', error);
+    }
+}
+
 
     function saveChannelsToStorage() {
         localStorage.setItem("customChannels", JSON.stringify(channels.filter(ch => !isDefaultChannel(ch))));
@@ -205,7 +212,6 @@
         const btn = document.getElementById(`btn-${channel.id}`);
         let url = getPlatformUrl(channel);
 
-        
         if (channel.platform === "ok") {
             btn.classList.add("unknown");
             btn.classList.remove("live", "not-live");
@@ -279,20 +285,17 @@
     }
 
     function editClick() {
-    // 找到所有的刪除按鈕，並讓它們顯示
-    const deleteButtons = document.querySelectorAll("button");
-    deleteButtons.forEach(btn => {
-        if (btn.innerText === "刪除") {
-            btn.style.display = "inline"; // 顯示刪除按鈕
-        }
-    });
-}
-
-
+        // 找到所有的刪除按鈕，並讓它們顯示
+        const deleteButtons = document.querySelectorAll("button");
+        deleteButtons.forEach(btn => {
+            if (btn.innerText === "刪除") {
+                btn.style.display = "inline"; // 顯示刪除按鈕
+            }
+        });
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadChannelsFromStorage();
-        generateButtons();
+        loadChannelsFromUrl(); // Load channels from the URL when the page loads
         setInterval(fetchAllStatuses, 480000);
     });
 </script>
@@ -300,11 +303,11 @@
 <div id="top-bar">
     <div id="lists"></div>
     <div id="input-container">
-        <input type="text" id="newid" placeholder="twitch id / k台id前加[k] ok台:[o]" />
-        <button onclick="clickyClick()">加台</button>
-		<button onclick="editClick()">del台</button>
-		<button onclick="changechatSrc('https://sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button>
-    <button onclick="changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io')">Tchat</button>
+        <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
+        <button onclick="clickyClick()">Submit</button>
+        <button onclick="editClick()">del台</button>
+        <button onclick="changechatSrc('https://sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button>
+        <button onclick="changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io')">Tchat</button>
     </div>
 </div>
 
