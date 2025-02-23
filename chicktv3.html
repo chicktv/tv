@@ -57,6 +57,7 @@
         .not-live {
             color: red;
         }
+		  
     </style>
 </head>
 <body>
@@ -73,27 +74,37 @@
     </div>
 
     <script>
-        let channels = [
-            { name: "翼", id: "kww291603", platform: "kick" },
-            { name: "翼", id: "ww291603", platform: "twitch" },
-            { name: "N", id: "Eastsnake25", platform: "kick" },
-            { name: "A", id: "collartv", platform: "kick" },
-            { name: "西", id: "nanase-maru525", platform: "kick" },
-            { name: "爵", id: "jeukpo", platform: "kick" },
-            { name: "QT", id: "qt369", platform: "kick" },
-            { name: "哥", id: "cobra2024", platform: "kick" },
-            { name: "A", id: "alancml", platform: "twitch" },
-            { name: "朗", id: "mingpig930_2", platform: "twitch" },
-            { name: "哥", id: "godzilla_2025", platform: "twitch" },
-            { name: "友", id: "yaubotai2", platform: "twitch" }
-        ];
+        let channels = [];
 
-        function toggleChannelSelection() {
-            const selectionDiv = document.getElementById("channel-selection");
-            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
-            generateChannelOptions();
+        // Fetch channel list from external URL
+        async function loadChannelsFromUrl() {
+            try {
+                const response = await fetch('https://chicktv.github.io/tv/channels.txt');
+                const data = await response.text();
+
+                // Assuming the format in the file is "name,id,platform" for each line
+                const channelLines = data.split('\n');
+                channels = channelLines.map(line => {
+                    const parts = line.split(',').map(part => part.trim());
+                    if (parts.length === 3) {
+                        const [name, id, platform] = parts;
+                        return { name, id, platform };
+                    }
+                    return null;
+                }).filter(channel => channel !== null); // Remove null entries
+                saveChannelsToStorage();
+                generateChannelOptions();
+            } catch (error) {
+                console.error('Error loading channels from URL:', error);
+            }
         }
 
+        // Save channels to localStorage (optional)
+        function saveChannelsToStorage() {
+            localStorage.setItem("channels", JSON.stringify(channels));
+        }
+
+        // Generate channel options for the user to select
         function generateChannelOptions() {
             const container = document.getElementById("channel-options");
             container.innerHTML = "";
@@ -113,9 +124,16 @@
             fetchAllStatuses(); // Initial status fetch
         }
 
+        // Toggle the display of the channel selection
+        function toggleChannelSelection() {
+            const selectionDiv = document.getElementById("channel-selection");
+            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
+        }
+
+        // Start watching the selected channels
         function watchSelectedChannels() {
             const container = document.getElementById("multi-stream-container");
-            container.innerHTML = ""; 
+            container.innerHTML = "";
 
             const checkboxes = document.querySelectorAll("#channel-options input:checked");
             const selectedChannels = Array.from(checkboxes).map(cb => {
@@ -138,7 +156,7 @@
                     iframe.src = getStreamUrl(channel);
                     iframe.allowFullscreen = true;
                     container.appendChild(iframe);
-                    
+
                     if ((index + 1) % 2 === 0) {
                         container.appendChild(document.createElement("br"));
                     }
@@ -146,6 +164,7 @@
             }
         }
 
+        // Get the correct stream URL for a given channel
         function getStreamUrl(channel) {
             if (channel.platform === "kick") {
                 return `https://player.kick.com/${channel.id}`;
@@ -156,10 +175,16 @@
             }
         }
 
+        // Fetch the status of each channel to determine if it's live or not
         async function fetchStatus(channel) {
             const label = document.getElementById(`status-${channel.id}`);
             let url = getPlatformUrl(channel);
-
+ 
+                  if (channel.platform === "ok") {
+            label.classList.add("unknown");
+            label.classList.remove("live", "not-live");
+            return;
+        }
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -185,6 +210,7 @@
             }
         }
 
+        // Get the API URL for a given platform
         function getPlatformUrl(channel) {
             if (channel.platform === "kick") {
                 return `https://kick.com/api/v2/channels/${channel.id}`;
@@ -195,12 +221,18 @@
             }
         }
 
+        // Fetch the status for all channels
         function fetchAllStatuses() {
             channels.forEach(channel => fetchStatus(channel));
         }
 
         // Fetch statuses every 8 minutes (480000 milliseconds)
         setInterval(fetchAllStatuses, 480000); // 8 minutes
+
+        // Load channels from URL when the page is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChannelsFromUrl();
+        });
     </script>
 </body>
 </html>
