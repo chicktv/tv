@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi Stream Selector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            background-color: rgb(50, 50, 50);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: white;
+            text-align: center;
+        }
+        #multi-stream-container-wrapper {
+            display: flex;
+            flex-direction: row; /* Align horizontally */
+            justify-content: space-between;
+            gap: 10px;
+            height: 70%;
+        }
+        .video-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            width: 70%; /* Adjust the width for video container */
+        }
+        .chat {
+            width: 28%; /* Adjust the width for the chat */
+            border: none;
+            height: 140%; /* Ensure chat fills the height */
+        }
+        .video {
+            width: 48%;
+            height: 70%;
+            border: none;
+        }
+        #multi-stream-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            height: 100%;
+        }
+        .live {
+            color: #32CD32;
+            font-weight: bold;
+        }
+        .not-live {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="lists"></div>
+    <button id="more-channels-btn" onclick="toggleChannelSelection()">看更多台</button>
+    <div id="channel-selection" style="display: none;">
+        <h3>選擇要觀看的台：</h3>
+        <div id="channel-options"></div>
+        <button onclick="watchSelectedChannels()">開始觀看</button>
+    </div>
+    <div id="multi-stream-container-wrapper">
+        <div id="multi-stream-container" class="video-wrapper"></div>
+        <iframe class="chat" id="chat_embed" src="https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io"></iframe>
+    </div>
+
+    <script>
+        let channels = [
+            { name: "翼", id: "kww291603", platform: "kick" },
+            { name: "翼", id: "ww291603", platform: "twitch" },
+            { name: "N", id: "Eastsnake25", platform: "kick" },
+            { name: "A", id: "collartv", platform: "kick" },
+            { name: "西", id: "nanase-maru525", platform: "kick" },
+            { name: "爵", id: "jeukpo", platform: "kick" },
+            { name: "QT", id: "qt369", platform: "kick" },
+            { name: "哥", id: "cobra2024", platform: "kick" },
+            { name: "A", id: "alancml", platform: "twitch" },
+            { name: "朗", id: "mingpig930_2", platform: "twitch" },
+            { name: "哥", id: "godzilla_2025", platform: "twitch" },
+            { name: "友", id: "yaubotai2", platform: "twitch" }
+        ];
+
+        function toggleChannelSelection() {
+            const selectionDiv = document.getElementById("channel-selection");
+            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
+            generateChannelOptions();
+        }
+
+        function generateChannelOptions() {
+            const container = document.getElementById("channel-options");
+            container.innerHTML = "";
+            channels.forEach(channel => {
+                const label = document.createElement("label");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = channel.id;
+                checkbox.dataset.platform = channel.platform;
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(`${channel.name} (${channel.platform})`));
+                label.classList.add("not-live");
+                label.id = `status-${channel.id}`;
+                container.appendChild(label);
+                container.appendChild(document.createElement("br"));
+            });
+            fetchAllStatuses();
+        }
+
+        function watchSelectedChannels() {
+            const container = document.getElementById("multi-stream-container");
+            container.innerHTML = ""; 
+            
+            const checkboxes = document.querySelectorAll("#channel-options input:checked");
+            checkboxes.forEach((cb, index) => {
+                const channel = { id: cb.value, platform: cb.dataset.platform };
+                const iframe = document.createElement("iframe");
+                iframe.className = "video";
+                iframe.src = getStreamUrl(channel);
+                iframe.allowFullscreen = true;
+                container.appendChild(iframe);
+                
+                if ((index + 1) % 2 === 0) {
+                    container.appendChild(document.createElement("br"));
+                }
+            });
+        }
+
+        function getStreamUrl(channel) {
+            if (channel.platform === "kick") {
+                return `https://player.kick.com/${channel.id}`;
+            } else if (channel.platform === "twitch") {
+                return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+            } else {
+                return "";
+            }
+        }
+
+        async function fetchStatus(channel) {
+            const label = document.getElementById(`status-${channel.id}`);
+            let url = getPlatformUrl(channel);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                let isLive = false;
+
+                if (channel.platform === "kick") {
+                    isLive = data.livestream && data.livestream.is_live;
+                } else if (channel.platform === "twitch") {
+                    isLive = data.data.length > 0;
+                }
+
+                if (isLive) {
+                    label.classList.add('live');
+                    label.classList.remove('not-live');
+                } else {
+                    label.classList.add('not-live');
+                    label.classList.remove('live');
+                }
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                label.classList.add('not-live');
+                label.classList.remove('live');
+            }
+        }
+
+        function getPlatformUrl(channel) {
+            if (channel.platform === "kick") {
+                return `https://kick.com/api/v2/channels/${channel.id}`;
+            } else if (channel.platform === "twitch") {
+                return `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}`;
+            } else {
+                return "";
+            }
+        }
+
+        function fetchAllStatuses() {
+            channels.forEach(channel => fetchStatus(channel));
+        }
+    </script>
+</body>
+</html>
