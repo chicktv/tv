@@ -43,13 +43,6 @@
             height: 100%;
             border: none;
         }
-        #multi-stream-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            height: 100%;
-        }
         .live {
             color: #32CD32;
             font-weight: bold;
@@ -57,13 +50,10 @@
         .not-live {
             color: red;
         }
-        .unknown {
-            color: gray;
-        }
+        
     </style>
 </head>
 <body>
-    <div id="lists"></div>
     <button id="more-channels-btn" onclick="toggleChannelSelection()">看更多台</button>
     <div id="channel-selection" style="display: none;">
         <h3>選擇要觀看的台：</h3>
@@ -88,6 +78,7 @@
 
     <script>
         let channels = [];
+        let defaultChannels = [];
 
         async function loadChannelsFromUrl() {
             try {
@@ -95,23 +86,35 @@
                 const data = await response.text();
                 const channelLines = data.split('\n');
 
-                channels = channelLines.map(line => {
+                defaultChannels = channelLines.map(line => {
                     const parts = line.split(',').map(part => part.trim());
-                    if (parts.length === 3) {
-                        return { name: parts[0], id: parts[1], platform: parts[2] };
-                    }
-                    return null;
+                    return parts.length === 3 ? { name: parts[0], id: parts[1], platform: parts[2], isDefault: true } : null;
                 }).filter(channel => channel !== null);
 
-                saveChannelsToStorage();
-                generateChannelOptions();
+                mergeChannels();
             } catch (error) {
                 console.error('Error loading channels:', error);
             }
         }
 
+        function mergeChannels() {
+            const savedChannels = JSON.parse(localStorage.getItem("customChannels")) || [];
+
+            // 避免重複加入內建頻道
+            const mergedChannels = [...defaultChannels];
+
+            savedChannels.forEach(customChannel => {
+                if (!mergedChannels.some(ch => ch.id === customChannel.id && ch.platform === customChannel.platform)) {
+                    mergedChannels.push(customChannel);
+                }
+            });
+
+            channels = mergedChannels;
+            generateChannelOptions();
+        }
+
         function saveChannelsToStorage() {
-            localStorage.setItem("channels", JSON.stringify(channels));
+            localStorage.setItem("customChannels", JSON.stringify(channels.filter(c => !c.isDefault)));
         }
 
         function generateChannelOptions() {
@@ -139,8 +142,6 @@
         }
 
         function watchSelectedChannels() {
-		 const selectionDiv = document.getElementById("channel-selection");
-            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
             const container = document.getElementById("multi-stream-container");
             container.innerHTML = "";
 
@@ -162,18 +163,37 @@
             if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
         }
 
+        function addChannel() {
+            const name = document.getElementById("channel-name").value;
+            const id = document.getElementById("channel-id").value;
+            const platform = document.getElementById("channel-platform").value;
+            if (name && id) {
+                channels.push({ name, id, platform, isDefault: false });
+                saveChannelsToStorage();
+                generateChannelOptions();
+            }
+        }
+
+        function deleteSelectedChannels() {
+            channels = channels.filter(channel => {
+                const checkbox = document.querySelector(`#channel-options input[value="${channel.id}"]`);
+                return checkbox ? !checkbox.checked : channel.isDefault;
+            });
+
+            saveChannelsToStorage();
+            generateChannelOptions();
+        }
+
         async function fetchStatus(channel) {
             const label = document.getElementById(`status-${channel.id}`);
             if (!label) return;
 
             let url = getPlatformUrl(channel);
-
-            if (channel.platform === "ok") {
-                label.classList.add("unknown");
-                label.classList.remove("live", "not-live");
-                return;
-            }
-
+               if (channel.platform === "ok") {
+            label.classList.add("unknown");
+            label.classList.remove("live", "not-live");
+            return;
+        }
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -189,31 +209,19 @@
                 label.classList.add('not-live');
             }
         }
-
-        function getPlatformUrl(channel) {
-            return channel.platform === "kick" ? `https://kick.com/api/v2/channels/${channel.id}` :
-                   channel.platform === "twitch" ? `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}` : "";
-        }
-
-        function fetchAllStatuses() {
-            channels.forEach(fetchStatus);
-        }
-
-        function addChannel() {
-            const name = document.getElementById("channel-name").value;
-            const id = document.getElementById("channel-id").value;
-            const platform = document.getElementById("channel-platform").value;
-            if (name && id) {
-                channels.push({ name, id, platform });
-                saveChannelsToStorage();
-                generateChannelOptions();
+       
+	   function getPlatformUrl(channel) {
+            if (channel.platform === "kick") {
+                return `https://kick.com/api/v2/channels/${channel.id}`;
+            } else if (channel.platform === "twitch") {
+                return `https://twitch-proxy.freecodecamp.rocks/helix/streams?user_login=${channel.id}`;
+            } else {
+                return "";
             }
         }
-
-        function deleteSelectedChannels() {
-            channels = channels.filter(channel => !document.querySelector(`#channel-options input[value="${channel.id}"]`).checked);
-            saveChannelsToStorage();
-            generateChannelOptions();
+	   
+        function fetchAllStatuses() {
+            channels.forEach(fetchStatus);
         }
 
         document.addEventListener('DOMContentLoaded', loadChannelsFromUrl);
