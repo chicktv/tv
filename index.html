@@ -10,7 +10,7 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            min-height: 100vh;
             color: white;
             text-align: center;
         }
@@ -22,9 +22,6 @@
         .not-live {
             background-color: red;
         }
-        .active {
-            background-color: yellow;
-        }
         .status-button {
             margin-right: 5px;
             margin-bottom: 5px;
@@ -33,51 +30,81 @@
             cursor: pointer;
         }
         #top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
             padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .top-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         #input-container {
             display: flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
+            justify-content: flex-end;
         }
-        .unknown {
-            background-color: white;
-        }
+        
         #lists {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 5px;
-            flex-grow: 1;
+            flex: 1;
         }
         .input-container {
             display: flex;
             align-items: center;
             gap: 5px;
-            order: 99;
         }
-        .content {
+        #multi-stream-container-wrapper {
             display: flex;
-            flex: 1;
-            flex-direction: column;
+            flex-direction: row;
+            gap: 10px;
+            padding: 10px;
+            height: 90vh;
+        }
+        .video-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            width: 70%;
             height: 100%;
         }
-        .video, .chat {
+        .chat {
+            width: 28%;
             border: none;
+            height: 100%;
         }
         .video {
-            height: 30vh;
-            width: 100%;
+            width: 48%;
+            height: 48%;
+            border: none;
         }
-        .chat {
-            height: 70vh;
+		
+		.video1 {
             width: 100%;
+            height: 100%;
+            border: none;
+        }
+		
+        .full-screen-video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #multi-stream-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            height: 100%;
         }
         input {
             padding: 5px;
@@ -87,64 +114,79 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        #channel-selection {
+            margin: 10px;
+            width: 100%;
+        }
         @media (min-width: 768px) {
-            .content {
+            #multi-stream-container-wrapper {
                 flex-direction: row;
-            }
-            .video {
-                height: 100%;
-                width: 70%;
-            }
-            .chat {
-                height: 100%;
-                width: 30%;
             }
         }
     </style>
 </head>
 <body>
+    <div id="top-bar">
+        <div class="top-container">
+            <div id="lists"></div>
+            <div id="input-container">
+                <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
+                <button onclick="clickyClick()">加台</button>
+                <button onclick="editClick()">del台</button>
+                <button id="more-channels-btn" onclick="toggleChannelSelection()">看更台</button>
+            </div>
+        </div>
+        <div id="channel-selection" style="display: none;">
+            <h3>選擇要觀看的台：</h3>
+            <div id="channel-options"></div>
+            <button onclick="watchSelectedChannels()">開始觀看</button>
+        </div>
+    </div>
+
+    <div id="multi-stream-container-wrapper">
+        <div id="multi-stream-container" class="video-wrapper">
+		<iframe id="MyFrame" class="video1" src="https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
+		</div>
+		
+        <iframe class="chat" id="chat_embed" src="https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io"></iframe>
+    </div>
 
 <script>
     let channels = [];
 
-   async function loadChannelsFromUrl() {
-    try {
-        const response = await fetch('https://chicktv.github.io/tv/channels.txt');
-        const data = await response.text();
-        const channelLines = data.split('\n');
+    async function loadChannelsFromUrl() {
+        try {
+            const response = await fetch('https://chicktv.github.io/tv/channels.txt');
+            const data = await response.text();
+            const channelLines = data.split('\n');
 
-        const defaultChannels = channelLines.map(line => {
-            const parts = line.split(',').map(part => part.trim());
-            if (parts.length === 3) {
-                const [name, id, platform] = parts;
-                return { name, id, platform };
-            }
-            return null;
-        }).filter(channel => channel !== null);
+            const defaultChannels = channelLines.map(line => {
+                const parts = line.split(',').map(part => part.trim());
+                if (parts.length === 3) {
+                    const [name, id, platform] = parts;
+                    return { name, id, platform };
+                }
+                return null;
+            }).filter(channel => channel !== null);
 
-        // **合并默认频道和本地存储的自定义频道**
-        const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
-        const allChannels = [...defaultChannels, ...storedChannels];
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
+            const allChannels = [...defaultChannels, ...storedChannels];
 
-        // **去重：优先保留本地存储的频道信息**
-        channels = allChannels.filter((ch, index, self) =>
-            index === self.findIndex(c => c.id === ch.id)
-        );
+            channels = allChannels.filter((ch, index, self) =>
+                index === self.findIndex(c => c.id === ch.id)
+            );
 
-        saveChannelsToStorage();
-        generateButtons();
-    } catch (error) {
-        console.error('Error loading channels from URL:', error);
+            saveChannelsToStorage();
+            generateButtons();
+        } catch (error) {
+            console.error('Error loading channels from URL:', error);
+        }
     }
-}
 
-
-
-   function saveChannelsToStorage() {
-    const customChannels = channels.filter(ch => !isDefaultChannel(ch));
-    localStorage.setItem("customChannels", JSON.stringify(customChannels));
-}
-
+    function saveChannelsToStorage() {
+        const customChannels = channels.filter(ch => !isDefaultChannel(ch));
+        localStorage.setItem("customChannels", JSON.stringify(customChannels));
+    }
 
     function loadChannelsFromStorage() {
         const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
@@ -159,7 +201,7 @@
 
     function generateButtons() {
         const container = document.getElementById("lists");
-        container.innerHTML = "";  // Clear previous buttons
+        container.innerHTML = "";
         channels.forEach(channel => addButton(channel));
         fetchAllStatuses();
     }
@@ -167,32 +209,27 @@
     function addButton(channel) {
         const container = document.getElementById("lists");
 
-        // Create button to switch live stream
         const btn = document.createElement("button");
         btn.className = "status-button";
         btn.id = `btn-${channel.id}`;
         btn.innerText = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : "ⓞ"}${channel.name}`;
 
-        // Button event handler to change live stream source
         btn.onclick = () => {
             console.log("Switching to stream for:", channel.name);
-            changeSrc(getStreamUrl(channel)); // Call function to change the iframe source
+            changeSrc(getStreamUrl(channel));
         };
 
-        // Create delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.innerText = "刪除";
-        deleteBtn.style.display = "none"; // Initially hide delete button
+        deleteBtn.style.display = "none";
 
-        // Delete button event handler
         deleteBtn.onclick = () => {
             console.log("Deleting channel:", channel.name);
-            channels = channels.filter(ch => ch.id !== channel.id); // Remove channel from list
+            channels = channels.filter(ch => ch.id !== channel.id);
             saveChannelsToStorage();
-            generateButtons();  // Regenerate buttons after deletion
+            generateButtons();
         };
 
-        // Wrapper for both buttons
         const buttonWrapper = document.createElement("div");
         buttonWrapper.appendChild(btn);
         buttonWrapper.appendChild(deleteBtn);
@@ -200,7 +237,54 @@
         container.appendChild(buttonWrapper);
     }
 
-    // Helper function to fetch stream URL based on platform
+    function toggleChannelSelection() {
+        generateChannelOptions();
+        const selectionDiv = document.getElementById("channel-selection");
+        selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
+    }
+
+    function watchSelectedChannels() {
+        const selectionDiv = document.getElementById("channel-selection");
+        selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
+        const container = document.getElementById("multi-stream-container");
+        container.innerHTML = "";
+
+        const checkboxes = document.querySelectorAll("#channel-options input:checked");
+        const selectedChannels = Array.from(checkboxes).map(cb => ({ 
+            id: cb.value, 
+            platform: cb.dataset.platform 
+        }));
+
+
+
+        selectedChannels.forEach(channel => {
+            const iframe = document.createElement("iframe");
+            iframe.className = selectedChannels.length === 1 ? "full-screen-video" : "video";
+            iframe.src = getStreamUrl(channel);
+            iframe.allowFullscreen = true;
+            container.appendChild(iframe);
+        });
+    }
+
+    function generateChannelOptions() {
+        const container = document.getElementById("channel-options");
+        container.innerHTML = "";
+        channels.forEach(channel => {
+            const label = document.createElement("label");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = channel.id;
+            checkbox.dataset.platform = channel.platform;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(`${channel.name} (${channel.platform})`));
+            label.classList.add("not-live");
+            label.id = `status-${channel.id}`;
+            container.appendChild(label);
+            container.appendChild(document.createElement("br"));
+        });
+        fetchAllStatuses();
+    }
+
     function getStreamUrl(channel) {
         if (channel.platform === "kick") {
             return `https://player.kick.com/${channel.id}`;
@@ -211,46 +295,51 @@
         }
     }
 
-    // Function to change the iframe src to the selected channel's stream
-    function changeSrc(url) {
-        document.getElementById("MyFrame").src = url; // Change the source of the iframe
-    }
+   function changeSrc(url) {
+    const container = document.getElementById("multi-stream-container");
+
+
+    container.innerHTML = `<iframe id="MyFrame" class="video1" src="${url}" frameborder="0" allowfullscreen></iframe>`;
+}
+
 
     async function fetchStatus(channel) {
-        const btn = document.getElementById(`btn-${channel.id}`);
-        let url = getPlatformUrl(channel);
+    const btn = document.getElementById(`btn-${channel.id}`);  // lists 内的按钮
+    const label = document.getElementById(`status-${channel.id}`); // channel-options 内的 label
+    let url = getPlatformUrl(channel);
 
-        if (channel.platform === "ok") {
-            btn.classList.add("unknown");
-            btn.classList.remove("live", "not-live");
-            return;
-        }
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            let isLive = false;
-
-            if (channel.platform === "kick") {
-                isLive = data.livestream && data.livestream.is_live;
-            } else if (channel.platform === "twitch") {
-                isLive = data.data.length > 0;
-            }
-
-            if (isLive) {
-                btn.classList.add('live');
-                btn.classList.remove('not-live');
-            } else {
-                btn.classList.add('not-live');
-                btn.classList.remove('live');
-            }
-        } catch (error) {
-            console.error('Error fetching status:', error);
-            btn.classList.add('not-live');
-            btn.classList.remove('live');
-        }
+    if (channel.platform === "ok") {
+        if (btn) btn.classList.add("unknown"), btn.classList.remove("live", "not-live");
+        if (label) label.classList.add("unknown"), label.classList.remove("live", "not-live");
+        return;
     }
 
-    // Helper function to generate platform specific URL
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        let isLive = false;
+
+        if (channel.platform === "kick") {
+            isLive = data.livestream && data.livestream.is_live;
+        } else if (channel.platform === "twitch") {
+            isLive = data.data.length > 0;
+        }
+
+        if (isLive) {
+            if (btn) btn.classList.add("live"), btn.classList.remove("not-live");
+            if (label) label.classList.add("live"), label.classList.remove("not-live");
+        } else {
+            if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
+            if (label) label.classList.add("not-live"), label.classList.remove("live");
+        }
+    } catch (error) {
+        console.error('Error fetching status:', error);
+        if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
+        if (label) label.classList.add("not-live"), label.classList.remove("live");
+    }
+}
+
+
     function getPlatformUrl(channel) {
         if (channel.platform === "kick") {
             return `https://kick.com/api/v2/channels/${channel.id}`;
@@ -269,15 +358,15 @@
         let input = document.getElementById("newid").value.trim();
         if (!input) return;
 
-        let platform = "twitch"; // 默認平台為Twitch
+        let platform = "twitch";
         let id = input;
 
         if (input.startsWith("[k]")) {
-            platform = "kick"; // 如果以 [k] 開頭，設置平台為 Kick
-            id = input.substring(3); // 去掉 [k] 前綴
+            platform = "kick";
+            id = input.substring(3);
         } else if (input.startsWith("[o]")) {
-            platform = "ok"; // 如果以 [o] 開頭，設置平台為 OK
-            id = input.substring(3); // 去掉 [o] 前綴
+            platform = "ok";
+            id = input.substring(3);
         }
 
         const existingChannelIndex = channels.findIndex(ch => ch.id === id);
@@ -293,39 +382,20 @@
     }
 
     function editClick() {
-        // 找到所有的刪除按鈕，並讓它們顯示
         const deleteButtons = document.querySelectorAll("button");
         deleteButtons.forEach(btn => {
             if (btn.innerText === "刪除") {
-                btn.style.display = "inline"; // 顯示刪除按鈕
+                btn.style.display = "inline";
             }
         });
     }
 
-   document.addEventListener('DOMContentLoaded', async () => {
-    loadChannelsFromStorage(); // 先加载本地存储的频道
-    await loadChannelsFromUrl(); // 再加载远程频道，并合并数据
-    setInterval(fetchAllStatuses, 480000);
-});
-
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadChannelsFromStorage();
+        await loadChannelsFromUrl();
+        setInterval(fetchAllStatuses, 480000);
+    });
 </script>
-
-<div id="top-bar">
-    <div id="lists"></div>
-    <div id="input-container">
-        <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
-        <button onclick="clickyClick()">加台</button>
-        <button onclick="editClick()">del台</button>
-		<button onclick="window.open('https://chicktv.github.io/tv/chicktv3.html', '_blank')">看更台</button>
-        <button onclick="changechatSrc('https://sk-knower.com/chat/whitewing940920?pop=true')">SKchat</button>
-        <button onclick="changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io')">Tchat</button>
-    </div>
-</div>
-
-<div class="content">
-    <iframe id="MyFrame" class="video" src="https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
-    <iframe class="chat" id="chat_embed" src="https://www.twitch.tv/embed/Whitewing940920/chat?darkpopout&parent=chicktv.github.io"></iframe>
-</div>
 
 </body>
 </html>
