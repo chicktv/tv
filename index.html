@@ -302,11 +302,12 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-	        loadChannelsFromUrl(); // Load channels from the URL when the page loads
-			loadChannelsFromStorage();
-        setInterval(fetchAllStatuses, 480000);
-    });
+   document.addEventListener('DOMContentLoaded', async () => {
+    loadChannelsFromStorage(); // 先加载本地存储的频道
+    await loadChannelsFromUrl(); // 再加载远程频道，并合并数据
+    setInterval(fetchAllStatuses, 480000);
+});
+
 </script>
 
 <div id="top-bar">
