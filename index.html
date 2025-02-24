@@ -151,7 +151,13 @@
         <div class="top-container">
             <div id="lists"></div>
             <div id="input-container">
-                <input type="text" id="newid" placeholder="twitch id / k台 id 前加 [k]" />
+          <input type="text" id="channel-name" placeholder="頻道名稱" size="5">
+        <input type="text" id="channel-id" placeholder="頻道ID" size="5">
+        <select id="channel-platform">
+            <option value="twitch">Twitch</option>
+            <option value="kick">Kick</option>
+            <option value="ok">OK.ru</option>
+        </select>
                 <button onclick="clickyClick()">加台</button>
                 <button onclick="editClick()">del台</button>
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">看更台</button>
@@ -161,6 +167,7 @@
             <h3>選擇要觀看的台：</h3>
             <div id="channel-options"></div>
             <button onclick="watchSelectedChannels()">開始觀看</button>
+			
         </div>
     </div>
 
@@ -376,25 +383,15 @@
     }
 
     function clickyClick() {
-        let input = document.getElementById("newid").value.trim();
-        if (!input) return;
-
-        let platform = "twitch";
-        let id = input;
-
-        if (input.startsWith("[k]")) {
-            platform = "kick";
-            id = input.substring(3);
-        } else if (input.startsWith("[o]")) {
-            platform = "ok";
-            id = input.substring(3);
-        }
+        const name = document.getElementById("channel-name").value;
+            const id = document.getElementById("channel-id").value;
+            const platform = document.getElementById("channel-platform").value;
 
         const existingChannelIndex = channels.findIndex(ch => ch.id === id);
         if (existingChannelIndex > -1) {
             channels[existingChannelIndex].platform = platform;
         } else {
-            const newChannel = { name: id, id, platform };
+            const newChannel = { name, id, platform };
             channels.push(newChannel);
         }
 
