@@ -388,6 +388,13 @@
         channels.forEach(channel => fetchStatus(channel));
     }
 
+    function cleardata() {
+       const inputchannelname = document.getElementById("channel-name");
+       inputchannelname.value = ``;
+       const inputchannelid = document.getElementById("channel-id");
+       inputchannelid.value = ``;
+    }
+
     function clickyClick() {
         const name = document.getElementById("channel-name").value;
             const id = document.getElementById("channel-id").value;
@@ -403,6 +410,7 @@
 
         saveChannelsToStorage();
         generateButtons();
+		cleardata();
     }
 
     function editClick() {
