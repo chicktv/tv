@@ -379,7 +379,7 @@ button {
             checkbox.value = channel.id;
             checkbox.dataset.platform = channel.platform;
             label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(`${channel.name} (${channel.platform})`));
+            label.appendChild(document.createTextNode(`${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : "ⓞ"}${channel.name}` ));
             label.classList.add("not-live");
             label.id = `status-${channel.id}`;
             container.appendChild(label);
