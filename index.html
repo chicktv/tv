@@ -98,7 +98,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: nowrap; /* 確保 input 和按鈕不會換行 */
+    flex-wrap: wrap; /* 確保 input 和按鈕不會換行 */
     overflow: hidden;
     white-space: nowrap;
     margin-top: 10px; /* 與 lists 分開 */
@@ -212,7 +212,17 @@ button {
         width: 100% !important;
         min-height: 60vh;
     }
-
+	
+	#input-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap; /* 確保 input 和按鈕不會換行 */
+    overflow: hidden;
+    white-space: wrap;
+    margin-top: 10px; /* 與 lists 分開 */
+}
+	
     #lists {
         max-width: 100%;
     }
@@ -302,7 +312,7 @@ button {
     }
 
     function isDefaultChannel(channel) {
-        return ["ww291603", "Eastsnake25", "collartv", "nanase-maru525", "jeukpo", "qt369", "cobra2024", 
+        return ["ww291603", "Eastsnake25", "collartv", "nanase-maru525", "jeukpo", "", "cobra2024", 
                 "alancml", "mingpig930_2", "godzilla_2025", "yaubotai2", "3849262800563", "9013975129715"]
                .includes(channel.id);
     }
