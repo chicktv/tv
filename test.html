@@ -422,8 +422,7 @@ button {
 }
 
 
-function loadsklive() {
- 
+(function() {
   // 封裝代碼避免污染全局作用域
   const url = window.location.href;
   const hostname = window.location.hostname;
@@ -445,7 +444,7 @@ function loadsklive() {
     script.onerror = () => console.error('Failed to load script'); // 錯誤處理
     document.head.appendChild(script);
   }
-})(); // 立即執行函數
+})();
 
 
 
@@ -537,7 +536,7 @@ function loadsklive() {
     document.addEventListener('DOMContentLoaded', async () => {
         loadChannelsFromStorage();
         await loadChannelsFromUrl();
-		loadsklive();
+		
         setInterval(fetchAllStatuses, 480000);
     });
 </script>
