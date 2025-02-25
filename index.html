@@ -104,6 +104,21 @@
     margin-top: 10px; /* 與 lists 分開 */
 }
 
+#channel-selection {
+    display: none;
+    position: fixed; /* Fix position relative to the viewport */
+    top: 10px; /* Distance from the top of the screen */
+    right: 80px; /* Distance from the right side of the screen */
+    background: rgba(0, 0, 0, 0.8); /* Optional: Add a background to make it stand out */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    z-index: 1000; /* Ensure it appears above other content */
+}
+
+
+
 input, select {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -217,14 +232,14 @@ button {
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">看更台</button>
             </div>
         </div>
-        <div id="channel-selection" style="display: none;">
+       
+    </div>
+ <div id="channel-selection" style="display: none;">
             <h3>選擇要觀看的台：</h3>
             <div id="channel-options"></div>
             <button onclick="watchSelectedChannels()">▶️ 開始觀看</button>
 			
         </div>
-    </div>
-
     <div id="multi-stream-container-wrapper">
         <div id="multi-stream-container" class="video-wrapper">
 		<iframe id="MyFrame" class="video1" src="https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
