@@ -7,188 +7,197 @@
    <style>
        
         body {
-            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            color: #eee;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-        }
-
-       
-        #top-bar {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .top-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-      
-        #lists {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: baseline;
-            overflow-x: auto;
-            padding: 5px 0;
-        }
-
-        .button-wrapper {
-            position: relative;
-            display: inline-flex;
-            margin-right: 5px;
-        }
-
-      
-        .status-button {
-            background: linear-gradient(145deg, #2d2d2d, #222);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #eee;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .status-button:hover {
-            background: linear-gradient(145deg, #383838, #2d2d2d);
-            transform: translateY(-1px);
-        }
-
-        
-        .live {
-		   color:#00ff88;
-		   animation: pulse-glow 1.5s infinite; /* 增加動畫速度 */
-           border: 2px solid #00ff88; /* 增加邊框寛度 */
-        }
-        .not-live {
-		    color: #ff3333;
-            
-            border-color: #ff3333!important;
-        }
-
-        @keyframes pulse-glow {
-  0%, 100% {
-    border-color: #00ff88;
-    box-shadow: 0 0 1px #00ff88, 0 0 2px #00ff88, 0 0 4px #00ff88;
-  }
-  50% {
-    border-color: #00cc66; /*  */
-    box-shadow: 0 0 4px #00ff88, 0 0 8px #00ff88, 0 0 16px #00ff88; /* 加強的陰影 */
-  }
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    color: #eee;
+    font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
-        
-        #input-container {
-            display: inline-flex !important;
-            vertical-align: middle;
-            white-space: nowrap;
-            gap: 8px;
-        }
+#top-bar {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+}
 
-        input, select {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            color: white;
-            padding: 8px 12px;
-            transition: all 0.2s ease;
-            min-width: 80px;
-        }
+.top-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 10px;
+}
 
-        button {
-            background: linear-gradient(145deg, #3a3a3a, #2f2f2f);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
+#lists {
+    display: flex;
+    flex-wrap: wrap; /* 允許內容換行 */
+    gap: 8px;
+    align-items: center;
+    overflow-x: hidden; /* 避免超出 */
+    white-space: normal; /* 允許換行 */
+    max-width: 100%; /* 允許擴展至整行 */
+    padding: 5px 0;
+}
 
-        
-        #multi-stream-container-wrapper {
-            display: flex;
-            gap: 15px;
-            padding: 15px;
-            flex-grow: 1;
-            min-height: 70vh;
-        }
+.button-wrapper {
+    position: relative;
+    display: inline-flex;
+    margin-right: 5px;
+}
 
-        .video-wrapper {
-            flex: 3;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+.status-button {
+    background: linear-gradient(145deg, #2d2d2d, #222);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #eee;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
 
-        .chat {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-		
-		 .video {
-            width: 48%;
-            height: 48%;
-            border: none;
-        }
-		
-		.video1 {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-		
-        .full-screen-video {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-		
-		#multi-stream-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            height: 100%;
-        }
+.status-button:hover {
+    background: linear-gradient(145deg, #383838, #2d2d2d);
+    transform: translateY(-1px);
+}
 
-        
-        @media (max-width: 768px) {
-            #multi-stream-container-wrapper {
-                flex-direction: column;
-                padding: 10px;
-            }
-            
-            #input-container {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                padding-bottom: 5px;
-            }
-            
-            .video-wrapper, .chat {
-                width: 100% !important;
-                min-height: 50vh;
-            }
-        }
+.live {
+    color: #00ff88;
+    animation: pulse-glow 1.5s infinite;
+    border: 2px solid #00ff88;
+}
+
+.not-live {
+    color: #ff3333;
+    border-color: #ff3333 !important;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        border-color: #00ff88;
+        box-shadow: 0 0 1px #00ff88, 0 0 2px #00ff88, 0 0 4px #00ff88;
+    }
+    50% {
+        border-color: #00cc66;
+        box-shadow: 0 0 4px #00ff88, 0 0 8px #00ff88, 0 0 16px #00ff88;
+    }
+}
+
+#input-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap; /* 確保 input 和按鈕不會換行 */
+    overflow: hidden;
+    white-space: nowrap;
+    margin-top: 10px; /* 與 lists 分開 */
+}
+
+input, select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+button {
+    background: linear-gradient(145deg, #3a3a3a, #2f2f2f);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+#multi-stream-container-wrapper {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    flex-grow: 1;
+    min-height: 70vh;
+}
+
+.video-wrapper {
+    flex: 3;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video {
+    width: 48%;
+    height: 48%;
+    border: none;
+}
+
+.video1 {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.full-screen-video {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+#multi-stream-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    #multi-stream-container-wrapper {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    #input-container {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+
+    .video-wrapper, .chat {
+        width: 100% !important;
+        min-height: 50vh;
+    }
+
+    #lists {
+        max-width: 100%;
+    }
+}
+
     </style>
 </head>
 <body>
