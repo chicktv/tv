@@ -423,18 +423,29 @@ button {
 
 
 function loadsklive() {
-  // 動態插入 JS
-  var script = document.createElement('script');
-  script.src = "https://live.sk-knower.com/lib/chat_loader.js?" + Math.random();
-  script.async = true; // 異步加載提升性能
-  document.head.appendChild(script);
+ 
+  // 封裝代碼避免污染全局作用域
+  const url = window.location.href;
+  const hostname = window.location.hostname;
 
-  // 動態插入 CSS
-  var css = document.createElement('link');
-  css.rel = 'stylesheet';
-  css.href = "https://live.sk-knower.com/lib/chat.css?" + Math.random();
-  document.head.appendChild(css);
-}
+  // 定義條件檢查函數
+  const shouldLoadScript = () => {
+    const isTwitchDomain = ['www.twitch.tv', 'dashboard.twitch.tv'].includes(hostname);
+    const hasHtmlWithoutPlayer = url.includes('.html') && !url.includes('player');
+    const isTwitchURL = url.startsWith('https://www.twitch.tv/') || url.startsWith('https://dashboard.twitch.tv/');
+    
+    return (hasHtmlWithoutPlayer || isTwitchURL) && isTwitchDomain;
+  };
+
+  // 動態加載腳本
+  if (shouldLoadScript()) {
+    const script = document.createElement('script');
+    script.src = `https://live.sk-knower.com/lib/beta_chat_loader.js?${Math.random().toString().slice(2)}`;
+    script.async = true; // 異步加載
+    script.onerror = () => console.error('Failed to load script'); // 錯誤處理
+    document.head.appendChild(script);
+  }
+})(); // 立即執行函數
 
 
 
