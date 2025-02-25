@@ -4,145 +4,230 @@
     <title></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <style>
+   <style>
+       
         body {
-            background-color: rgb(50, 50, 50);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            color: white;
-            text-align: center;
-        }
-        .live {
-            color: #32CD32;
-            box-shadow: 0 0 10px #32CD32, 0 0 10px #32CD32, 0 0 40px #32CD32, 0 0 10px #52D017 inset;
-            transform: scale(1.05);
-        }
-        .not-live {
-            background-color: red;
-        }
-        .status-button {
-            margin-right: 5px;
-            margin-bottom: 5px;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #top-bar {
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .top-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        #input-container {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            white-space: nowrap;
-            justify-content: flex-end;
-        }
-        
-        #lists {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 5px;
-            flex: 1;
-        }
-        .input-container {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        #multi-stream-container-wrapper {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            padding: 10px;
-            height: 90vh;
-        }
-        .video-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            width: 70%;
-            height: 100%;
-        }
-        .chat {
-            width: 28%;
-            border: none;
-            height: 100%;
-			
-        }
-        .video {
-            width: 48%;
-            height: 48%;
-            border: none;
-        }
-		
-		.video1 {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-		
-        .full-screen-video {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        #multi-stream-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            height: 100%;
-        }
-        input {
-            padding: 5px;
-            margin-right: 5px;
-        }
-        button {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        #channel-selection {
-            margin: 10px;
-            width: 100%;
-        }
-     
-   @media (max-width: 768px) {
-    #multi-stream-container-wrapper {
-    min-height: 30vh;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    margin: 0;
     display: flex;
-    flex-direction: column; 
-    max-width: 100%;
-    width: 100vw;	
+    flex-direction: column;
+    height: 98vh;
+    color: #eee;
+    font-family: 'Segoe UI', system-ui, sans-serif;
 }
-     
-	 #multi-stream-container {
-          width: 100%;
-            height: 100%;
-        }
-	 
+
+#top-bar {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.top-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+
+#lists {
+    display: flex;
+    flex-wrap: wrap; /* 允許內容換行 */
+    gap: 8px;
+    align-items: center;
+    overflow-x: hidden; /* 避免超出 */
+    white-space: normal; /* 允許換行 */
+    max-width: 100%; /* 允許擴展至整行 */
+    padding: 5px 0;
+}
+
+.button-wrapper {
+    position: relative;
+    display: inline-flex;
+    margin-right: 5px;
+}
+
+.status-button {
+    background: linear-gradient(145deg, #2d2d2d, #222);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #eee;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.status-button:hover {
+    background: linear-gradient(145deg, #383838, #2d2d2d);
+    transform: translateY(-1px);
+}
+
+.live {
+    background-image: url('');
+    color: #00ff88;
+    animation: pulse-glow 1.5s infinite;
+    border: 2px solid #00ff88;
+}
+
+.not-live {
+    color: #ff3333;
+    border-color: #ff3333 !important;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        border-color: #00ff88;
+        box-shadow: 0 0 1px #00ff88, 0 0 2px #00ff88, 0 0 4px #00ff88;
+    }
+    50% {
+        border-color: #00cc66;
+        box-shadow: 0 0 4px #00ff88, 0 0 8px #00ff88, 0 0 16px #00ff88;
+    }
+}
+
+#input-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap; /* 確保 input 和按鈕不會換行 */
+    overflow: hidden;
+    white-space: nowrap;
+    margin-top: 10px; /* 與 lists 分開 */
+}
+
+#channel-selection {
+    display: none;
+    position: fixed; /* Fix position relative to the viewport */
+    top: 10px; /* Distance from the top of the screen */
+    right: 80px; /* Distance from the right side of the screen */
+    background: rgba(0, 0, 0, 0.8); /* Optional: Add a background to make it stand out */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    z-index: 1000; /* Ensure it appears above other content */
+}
+
+
+
+input, select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+button {
+    background: linear-gradient(145deg, #3a3a3a, #2f2f2f);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+#multi-stream-container-wrapper {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    flex-grow: 1;
+    min-height: 70vh;
+}
+
+.video-wrapper {
+    flex: 3;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .chat {
-    min-height: 60vh;
-    width: 100%; 
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.video {
+    width: 48%;
+    height: 48%;
+    border: none;
 }
 
+.video1 {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 
+.full-screen-video {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 
+#multi-stream-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    #multi-stream-container-wrapper {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    #input-container {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+
+    .video-wrapper{
+        width: 100% !important;
+        min-height: 30vh;
+    }
+    
+    .chat {
+        width: 100% !important;
+        min-height: 60vh;
+    }
+	
+	#input-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap; /* 確保 input 和按鈕不會換行 */
+    overflow: hidden;
+    white-space: wrap;
+    margin-top: 10px; /* 與 lists 分開 */
+}
+	
+    #lists {
+        max-width: 100%;
+    }
+}
 
     </style>
 </head>
@@ -163,14 +248,14 @@
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">看更台</button>
             </div>
         </div>
-        <div id="channel-selection" style="display: none;">
+       
+    </div>
+ <div id="channel-selection" style="display: none;">
             <h3>選擇要觀看的台：</h3>
             <div id="channel-options"></div>
-            <button onclick="watchSelectedChannels()">開始觀看</button>
+            <button onclick="watchSelectedChannels()">▶️ 開始觀看</button>
 			
         </div>
-    </div>
-
     <div id="multi-stream-container-wrapper">
         <div id="multi-stream-container" class="video-wrapper">
 		<iframe id="MyFrame" class="video1" src="https://ok.ru/videoembed/9013975129715?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
@@ -228,7 +313,7 @@
     }
 
     function isDefaultChannel(channel) {
-        return ["ww291603", "Eastsnake25", "collartv", "nanase-maru525", "jeukpo", "qt369", "cobra2024", 
+        return ["ww291603", "Eastsnake25", "collartv", "nanase-maru525", "jeukpo", "", "cobra2024", 
                 "alancml", "mingpig930_2", "godzilla_2025", "yaubotai2", "3849262800563", "9013975129715"]
                .includes(channel.id);
     }
@@ -310,7 +395,7 @@
             checkbox.value = channel.id;
             checkbox.dataset.platform = channel.platform;
             label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(`${channel.name} (${channel.platform})`));
+            label.appendChild(document.createTextNode(`${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : "ⓞ"}${channel.name}` ));
             label.classList.add("not-live");
             label.id = `status-${channel.id}`;
             container.appendChild(label);
@@ -335,6 +420,22 @@
     // 清空所有 iframe，并恢复单一视频模式
     container.innerHTML = `<iframe id="MyFrame" class="video1" src="${url}" frameborder="0" allowfullscreen></iframe>`;
 }
+
+
+function loadsklive() {
+  // 動態插入 JS
+  var script = document.createElement('script');
+  script.src = "https://live.sk-knower.com/lib/chat_loader.js?" + Math.random();
+  script.async = true; // 異步加載提升性能
+  document.head.appendChild(script);
+
+  // 動態插入 CSS
+  var css = document.createElement('link');
+  css.rel = 'stylesheet';
+  css.href = "https://live.sk-knower.com/lib/chat.css?" + Math.random();
+  document.head.appendChild(css);
+}
+
 
 
     async function fetchStatus(channel) {
@@ -388,6 +489,13 @@
         channels.forEach(channel => fetchStatus(channel));
     }
 
+    function cleardata() {
+       const inputchannelname = document.getElementById("channel-name");
+       inputchannelname.value = ``;
+       const inputchannelid = document.getElementById("channel-id");
+       inputchannelid.value = ``;
+    }
+
     function clickyClick() {
         const name = document.getElementById("channel-name").value;
             const id = document.getElementById("channel-id").value;
@@ -403,6 +511,7 @@
 
         saveChannelsToStorage();
         generateButtons();
+		cleardata();
     }
 
     function editClick() {
@@ -417,6 +526,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
         loadChannelsFromStorage();
         await loadChannelsFromUrl();
+		loadsklive();
         setInterval(fetchAllStatuses, 480000);
     });
 </script>
