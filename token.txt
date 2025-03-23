@@ -1,0 +1,2 @@
+const TOKEN = "hxk20vq9dxhzpvtly3um3e2hvxtjxl"; // 你的 Twitch OAuth Token
+const CLIENT_ID = "gp762nuuoqcoxypju8c569th9wz7q5"; // 你的 Twitch Client ID
