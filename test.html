@@ -269,7 +269,7 @@
 
         async function loadTwitchCredentials() {
             try {
-                const response = await fetch('https://chicktv.github.io/tv/token.txt');
+                const response = await fetch('https://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://chicktv.github.io/tv/token.txt'));
                 const data = await response.text();
                 const lines = data.split('\n').map(line => line.trim());
                 if (lines.length >= 2) {
@@ -283,14 +283,12 @@
 
         async function loadChannelsFromUrl() {
             try {
-                const apiResponse = await fetch('https://chicktv.byethost22.com/py.php?url=' + encodeURIComponent('https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918'));
-                 mode: 'no-cors'
-				const apiData = await apiResponse.json();
+                const apiResponse = await fetch('https://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918'));
+                const apiData = await apiResponse.json();
                 const apiChannels = apiData.channels
                     .filter(channel => 
                         ((channel.platform === "twitch" || channel.platform === "okru") && channel.displayname === "W") ||
-                        (channel.platform === "vl" && channel.displayname === "西")||
-						(channel.platform === "vl" && channel.displayname === "哥")
+                        (channel.platform === "vl" && channel.displayname === "西")
                     )
                     .map(channel => {
                         let platform = channel.platform;
@@ -303,7 +301,7 @@
                         };
                     });
 
-                const txtResponse = await fetch('https://chicktv.github.io/tv/channels.txt');
+                const txtResponse = await fetch('https://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://chicktv.github.io/tv/channels.txt'));
                 const txtData = await txtResponse.text();
                 const channelLines = txtData.split('\n');
                 const txtChannels = channelLines.map(line => {
@@ -441,107 +439,88 @@
             container.innerHTML = `<iframe id="MyFrame" class="video1" src="${url}" frameborder="0" allowfullscreen></iframe>`;
         }
 
-    async function fetchStatus(channel) {
-    const btn = document.getElementById(`btn-${channel.id}`);
-    const label = document.getElementById(`status-${channel.id}`);
-    let url = getPlatformUrl(channel);
+        async function fetchStatus(channel) {
+            const btn = document.getElementById(`btn-${channel.id}`);
+            const label = document.getElementById(`status-${channel.id}`);
+            let url = getPlatformUrl(channel);
 
-    if (channel.platform === "ok") {
-        try {
-            const response = await fetch(url);
-            const html = await response.text();
-            
-
-            let isLive = false;
-
-            // 提取 data-options 屬性
-            const optionsMatch = html.match(/data-options="([^"]*flashvars[^"]*)"/);
-            if (optionsMatch && optionsMatch[1]) {
-                
-
-                // 清理 HTML 實體並解析為 JSON
-                const optionsStr = optionsMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-                let options;
+            if (channel.platform === "ok") {
                 try {
-                    options = JSON.parse(optionsStr);
-                    
-                } catch (parseError) {
-                    console.error(`Failed to parse data-options for ${channel.id}:`, parseError);
-                }
+                    const response = await fetch(url);
+                    const html = await response.text();
 
-                if (options && options.flashvars) {
-                    const flashvars = options.flashvars;
-                    
+                    let isLive = false;
 
-                    // 提取 metadata
-                    const metadataMatch = flashvars.metadata.match(/^\{.*\}$/);
-                    if (metadataMatch) {
-                        const metadataStr = metadataMatch[0];
-                       
+                    const optionsMatch = html.match(/data-options="([^"]*flashvars[^"]*)"/);
+                    if (optionsMatch && optionsMatch[1]) {
+                        const optionsStr = optionsMatch[1].replace(/"/g, '"').replace(/&/g, '&');
+                        let options;
                         try {
-                            const metadata = JSON.parse(metadataStr);
-                            
-                            isLive = metadata.movie && metadata.movie.isLive === true;
-                            console.log(`isLive from metadata for ${channel.id}:`, isLive);
+                            options = JSON.parse(optionsStr);
                         } catch (parseError) {
-                            console.error(`JSON parse error for metadata in ${channel.id}:`, parseError);
-                            isLive = metadataStr.includes('"isLive":true');
-                            
+                            // 靜默處理解析錯誤
+                        }
+
+                        if (options && options.flashvars) {
+                            const flashvars = options.flashvars;
+                            const metadataMatch = flashvars.metadata.match(/^\{.*\}$/);
+                            if (metadataMatch) {
+                                const metadataStr = metadataMatch[0];
+                                try {
+                                    const metadata = JSON.parse(metadataStr);
+                                    isLive = metadata.movie && metadata.movie.isLive === true;
+                                } catch (parseError) {
+                                    isLive = metadataStr.includes('"isLive":true');
+                                }
+                            } else {
+                                isLive = flashvars.metadata.includes('"isLive":true');
+                            }
                         }
                     } else {
-                        isLive = flashvars.metadata.includes('"isLive":true');
-                        
+                        isLive = html.includes('"isLive":true');
                     }
+
+                    if (isLive) {
+                        if (btn) btn.classList.add("live"), btn.classList.remove("not-live");
+                        if (label) label.classList.add("live"), label.classList.remove("not-live");
+                    } else {
+                        if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
+                        if (label) label.classList.add("not-live"), label.classList.remove("live");
+                    }
+                } catch (error) {
+                    if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
+                    if (label) label.classList.add("not-live"), label.classList.remove("live");
                 }
-            } else {
-                // 後備檢查整個 HTML
-                isLive = html.includes('"isLive":true');
-                console.log(`Direct HTML isLive check for ${channel.id}:`, isLive);
+                return;
             }
 
-            if (isLive) {
-                if (btn) btn.classList.add("live"), btn.classList.remove("not-live");
-                if (label) label.classList.add("live"), label.classList.remove("not-live");
-            } else {
+            try {
+                const headers = channel.platform === "twitch" ? {
+                    "Authorization": `Bearer ${TWITCH_TOKEN}`,
+                    "Client-Id": TWITCH_CLIENT_ID
+                } : {};
+                const response = await fetch(url, { headers });
+                const data = await response.json();
+                let isLive = false;
+
+                if (channel.platform === "kick") {
+                    isLive = data.livestream && data.livestream.is_live;
+                } else if (channel.platform === "twitch") {
+                    isLive = data.data && data.data.length > 0;
+                }
+
+                if (isLive) {
+                    if (btn) btn.classList.add("live"), btn.classList.remove("not-live");
+                    if (label) label.classList.add("live"), label.classList.remove("not-live");
+                } else {
+                    if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
+                    if (label) label.classList.add("not-live"), label.classList.remove("live");
+                }
+            } catch (error) {
                 if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
                 if (label) label.classList.add("not-live"), label.classList.remove("live");
             }
-        } catch (error) {
-            console.error(`Error fetching status for ${channel.name}:`, error);
-            if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
-            if (label) label.classList.add("not-live"), label.classList.remove("live");
         }
-        return;
-    }
-
-    try {
-        const headers = channel.platform === "twitch" ? {
-            "Authorization": `Bearer ${TWITCH_TOKEN}`,
-            "Client-Id": TWITCH_CLIENT_ID
-        } : {};
-        const response = await fetch(url, { headers });
-        const data = await response.json();
-        let isLive = false;
-
-        if (channel.platform === "kick") {
-            isLive = data.livestream && data.livestream.is_live;
-        } else if (channel.platform === "twitch") {
-            isLive = data.data && data.data.length > 0;
-        }
-
-        if (isLive) {
-            if (btn) btn.classList.add("live"), btn.classList.remove("not-live");
-            if (label) label.classList.add("live"), label.classList.remove("not-live");
-        } else {
-            if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
-            if (label) label.classList.add("not-live"), label.classList.remove("live");
-        }
-    } catch (error) {
-        console.error(`Error fetching status for ${channel.name}:`, error);
-        if (btn) btn.classList.add("not-live"), btn.classList.remove("live");
-        if (label) label.classList.add("not-live"), label.classList.remove("live");
-    }
-}
 
         function getPlatformUrl(channel) {
             if (channel.platform === "kick") {
@@ -549,7 +528,7 @@
             } else if (channel.platform === "twitch") {
                 return `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
             } else if (channel.platform === "ok") {
-                return `https://chicktv.byethost22.com/py.php?url=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+                return `https://chicktv.byethost22.com/p.php?url=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
             } else {
                 return "";
             }
