@@ -283,7 +283,7 @@
 
         async function loadChannelsFromUrl() {
             try {
-                const apiResponse = await fetch('https://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918'));
+                const apiResponse = await fetch('https://chicktv.byethost22.com/py.php?url=' + encodeURIComponent('https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918'));
                  mode: 'no-cors'
 				const apiData = await apiResponse.json();
                 const apiChannels = apiData.channels
