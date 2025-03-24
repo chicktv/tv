@@ -269,7 +269,7 @@
 
         async function loadTwitchCredentials() {
             try {
-                const response = await fetch('http://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://chicktv.github.io/tv/token.txt'));
+                const response = await fetch('https://chicktv.github.io/tv/token.txt');
                 const data = await response.text();
                 const lines = data.split('\n').map(line => line.trim());
                 if (lines.length >= 2) {
@@ -283,8 +283,9 @@
 
         async function loadChannelsFromUrl() {
             try {
-                const apiResponse = await fetch('http://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918'));
-                const apiData = await apiResponse.json();
+                const apiResponse = await fetch('https://chicktv.byethost22.com/p.php?url=' + encodeURIComponent('https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918'));
+                 mode: 'no-cors'
+				const apiData = await apiResponse.json();
                 const apiChannels = apiData.channels
                     .filter(channel => 
                         ((channel.platform === "twitch" || channel.platform === "okru") && channel.displayname === "W") ||
@@ -548,7 +549,7 @@
             } else if (channel.platform === "twitch") {
                 return `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
             } else if (channel.platform === "ok") {
-                return `http://chicktv.byethost22.com/p.php?url=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+                return `https://chicktv.byethost22.com/py.php?url=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
             } else {
                 return "";
             }
