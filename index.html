@@ -458,7 +458,8 @@
                 if (channel.platform === "kick") {
                     isLive = data.livestream && data.livestream.is_live;
                 } else if (channel.platform === "twitch") {
-                    isLive = data.data && data.data.length > 0;
+                    isLive = data.data && data.data.length > 0 || 
+                          (data.pagination && data.pagination.cursor);
                 }
 
                 if (isLive) {
