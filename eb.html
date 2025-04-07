@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebook Reader</title>
+    <script src="https://unpkg.com/opencc-js@1.0.5/dist/umd/opencc-js.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f0f2f5;
+            transition: background-color 0.3s ease;
+        }
+        #reader-container {
+            max-width: 1200px;
+            margin: 2vh auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: row;
+            height: 96vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 25%;
+            max-width: 250px;
+            background: #fafafa;
+            padding: 2vh 1vw;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        #sidebar h3 {
+            margin: 0 0 1.5vh;
+            font-size: clamp(16px, 2vw, 18px);
+            color: #333;
+        }
+        #toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #toc-list li {
+            padding: 1vh 1vw;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            font-size: clamp(14px, 1.8vw, 16px);
+        }
+        #toc-list li:hover {
+            background-color: #e8ecef;
+        }
+        #toc-list .current-chapter {
+            color: #0056b3;
+            font-weight: bold;
+        }
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #controls {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1vh;
+            justify-content: center;
+            padding: 1vh;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            border-radius: 10px 10px 0 0;
+        }
+        #content {
+            flex: 1;
+            padding: 2vh 2vw;
+            overflow-y: auto;
+            line-height: 1.8;
+            font-size: clamp(14px, 2.5vw, 16px);
+            color: #333;
+            transition: color 0.3s ease;
+        }
+        button {
+            padding: 1vh 2vw;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 0.5vw;
+            font-size: clamp(12px, 1.5vw, 14px);
+            min-width: 60px;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        select {
+            padding: 1vh 1vw;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            cursor: pointer;
+            font-size: clamp(12px, 1.5vw, 14px);
+            min-width: 60px;
+        }
+        #file-upload {
+            padding: 1vh;
+            font-size: clamp(12px, 1.5vw, 14px);
+        }
+        .content-line {
+            display: block;
+            cursor: pointer;
+            padding: 0.5vh 0;
+        }
+        .content-line:hover {
+            background-color: #f0f0f0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            transition: background-color 0.3s ease;
+        }
+        .dark-theme {
+            background-color: #2c2f33;
+            color: #e0e0e0;
+        }
+        .dark-theme #reader-container {
+            background: #23272a;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .dark-theme #sidebar {
+            background: #1e2124;
+            border-right: 1px solid #3a3f44;
+        }
+        .dark-theme #sidebar h3 {
+            color: #e0e0e0;
+        }
+        .dark-theme #toc-list li:hover {
+            background-color: #3a3f44;
+        }
+        .dark-theme #toc-list .current-chapter {
+            color: #66b0ff;
+        }
+        .dark-theme #controls {
+            background: #1e2124;
+            border-bottom: 1px solid #3a3f44;
+        }
+        .dark-theme #content {
+            color: #e0e0e0;
+        }
+        .dark-theme .content-line:hover {
+            background-color: #3a3f44;
+        }
+        .dark-theme .highlight {
+            background-color: #ffd700;
+        }
+        .dark-theme select {
+            background: #3a3f44;
+            color: #e0e0e0;
+            border: 1px solid #555;
+        }
+
+        /* 移動端樣式 */
+        @media (max-width: 768px) {
+            #reader-container {
+                flex-direction: column;
+                height: 100vh;
+                margin: 0;
+                border-radius: 0;
+            }
+            #sidebar {
+                width: 100%;
+                max-width: none;
+                max-height: 30vh;
+                padding: 1vh 2vw;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                overflow-y: auto;
+                display: none;
+            }
+            #sidebar.active {
+                display: block;
+            }
+            #main-content {
+                height: auto;
+                flex: 1;
+            }
+            #controls {
+                padding: 1vh 1vw;
+                position: relative;
+            }
+            #content {
+                padding: 2vh 3vw;
+            }
+            button, select, #file-upload {
+                min-width: 50px;
+                padding: 1.5vh 2vw;
+                font-size: clamp(12px, 3vw, 14px);
+            }
+        }
+
+        /* 側邊欄切換按鈕（僅移動端顯示） */
+        #toggle-sidebar {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            #toggle-sidebar {
+                display: flex;
+                position: absolute;
+                left: 1vw;
+                top: 1vh;
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme"> <!-- 默認添加 dark-theme 類 -->
+    <div id="reader-container">
+        <div id="sidebar">
+            <h3>目錄</h3>
+            <ul id="toc-list"></ul>
+        </div>
+        <div id="main-content">
+            <div id="controls">
+                <button id="toggle-sidebar" onclick="toggleSidebar()">☰ 目錄</button>
+                <input type="file" id="file-upload" accept=".txt" onchange="loadFile(event)">
+                <button onclick="previousChapter()">◄ 上一章</button>
+                <button onclick="nextChapter()">下一章 ►</button>
+                <button id="read-btn" onclick="toggleReadAloud()">▶ 朗讀</button>
+                <button id="pause-btn" onclick="togglePause()" disabled>⏸ 暫停</button>
+                <select id="font-size" onchange="changeFontSize()">
+                    <option value="14">14px</option>
+                    <option value="16" selected>16px</option>
+                    <option value="18">18px</option>
+                    <option value="20">20px</option>
+                    <option value="24">24px</option>
+                </select>
+                <select id="voice-speed" onchange="updateSpeechSettings()">
+                    <option value="0.5">0.5x</option>
+                    <option value="1.25" selected>1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+                <select id="voice-select" onchange="updateSpeechSettings()">
+                    <option value="">載入語音中...</option>
+                </select>
+                <button onclick="populateVoiceList()">↻ 刷新語音</button>
+                <button onclick="toggleTheme()">☀ 主題</button> <!-- 改為太陽符號，表示切換到亮色 -->
+            </div>
+            <div id="content">
+                <p>請上傳一個TXT文件開始閱讀</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const synth = window.speechSynthesis;
+        let currentChapter = 0;
+        let originalContent = '';
+        let content = '';
+        let isDarkTheme = true; // 默認設為 true，表示暗黑主題
+        let chapters = [];
+        let currentLanguage = 't2s';
+        let isReading = false;
+        let isPaused = false;
+        let selectedVoice = null;
+        let speechRate = 1.5;
+        let converter = null;
+        let startLineIndex = 0;
+        let currentLineIndex = 0;
+
+        window.addEventListener('load', () => {
+            if (typeof OpenCC === 'undefined') {
+                converter = null;
+            } else {
+                converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+            }
+            initVoices();
+        });
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function populateVoiceList() {
+            const voiceSelect = document.getElementById('voice-select');
+            const voices = synth.getVoices();
+
+            voiceSelect.innerHTML = '';
+            const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('zh-TW')|| voice.lang.includes('zh-HK'));
+
+            if (chineseVoices.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = '無中文語音';
+                option.value = '';
+                voiceSelect.appendChild(option);
+                alert('未檢測到中文語音包，請檢查系統語音設置');
+                return;
+            }
+
+            chineseVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.name;
+                voiceSelect.appendChild(option);
+            });
+
+            if (chineseVoices.length > 0) {
+                const yunxiVoice = chineseVoices.find(voice => voice.name.toLowerCase().includes('yunxi'));
+                selectedVoice = yunxiVoice || chineseVoices[0];
+                voiceSelect.value = selectedVoice.name;
+            }
+        }
+
+        function initVoices() {
+            const voices = synth.getVoices();
+            if (voices.length > 0) {
+                populateVoiceList();
+            } else {
+                synth.onvoiceschanged = () => {
+                    populateVoiceList();
+                    synth.onvoiceschanged = null;
+                };
+                setTimeout(() => {
+                    if (synth.getVoices().length === 0) {
+                        setTimeout(populateVoiceList, 2000);
+                    }
+                }, 1000);
+            }
+        }
+
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalContent = e.target.result;
+                    updateContent();
+                    splitIntoChapters();
+                    currentChapter = 0;
+                    showChapter();
+                };
+                reader.onerror = function() {
+                    alert('文件讀取失敗，請確保文件為 UTF-8 編碼');
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        }
+
+        function updateContent() {
+            if (converter && currentLanguage === 's2t') {
+                content = converter(originalContent);
+            } else {
+                content = originalContent;
+            }
+        }
+
+        function splitIntoChapters() {
+            const lines = content.split('\n');
+            chapters = [];
+            let currentChapterContent = [];
+            let chapterTitle = '';
+            const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
+
+            for (let i = 0; i < lines.length; i++) {
+                let cleanedLine = lines[i].replace(/[\s　]+/g, '');
+                if (cleanedLine === '') {
+                    continue;
+                }
+
+                if (chapterRegex.test(cleanedLine)) {
+                    if (currentChapterContent.length > 0 && chapterTitle) {
+                        chapters.push({
+                            title: chapterTitle,
+                            content: currentChapterContent.join('\n')
+                        });
+                    }
+                    chapterTitle = lines[i];
+                    currentChapterContent = [];
+                } else {
+                    currentChapterContent.push(lines[i]);
+                }
+            }
+
+            if (currentChapterContent.length > 0 && chapterTitle) {
+                chapters.push({
+                    title: chapterTitle,
+                    content: currentChapterContent.join('\n')
+                });
+            }
+
+            generateTOC();
+        }
+
+        function generateTOC() {
+            const tocList = document.getElementById('toc-list');
+            tocList.innerHTML = '';
+            chapters.forEach((chapter, index) => {
+                const li = document.createElement('li');
+                li.textContent = chapter.title;
+                li.onclick = () => {
+                    jumpToChapter(index);
+                    if (window.innerWidth <= 768) toggleSidebar();
+                };
+                if (index === currentChapter) {
+                    li.classList.add('current-chapter');
+                }
+                tocList.appendChild(li);
+            });
+        }
+
+        function scrollToTop() {
+            const contentDiv = document.getElementById('content');
+            contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function jumpToChapter(index) {
+            currentChapter = index;
+            showChapter();
+            scrollToTop();
+            if (isReading) {
+                stopReading();
+                startReading();
+            }
+        }
+
+        function showChapter() {
+            if (currentChapter < 0) currentChapter = 0;
+            if (currentChapter >= chapters.length) currentChapter = chapters.length - 1;
+
+            const contentDiv = document.getElementById('content');
+            if (!chapters[currentChapter]) {
+                contentDiv.innerHTML = '無內容';
+                return;
+            }
+
+            const lines = chapters[currentChapter].content.split('\n');
+            contentDiv.innerHTML = '';
+            lines.forEach((line, index) => {
+                const span = document.createElement('span');
+                span.className = 'content-line';
+                span.id = `line-${index}`;
+                span.textContent = line || ' ';
+                span.onclick = () => startReadingFromLine(index);
+                contentDiv.appendChild(span);
+                contentDiv.appendChild(document.createElement('br'));
+            });
+
+            generateTOC();
+        }
+
+        function startReadingFromLine(lineIndex) {
+            if (!selectedVoice) {
+                alert('請先選擇一個語音或等待語音載入');
+                return;
+            }
+
+            startLineIndex = lineIndex;
+            if (isReading) {
+                stopReading();
+            }
+            startReading();
+            document.getElementById('read-btn').textContent = '■ 停止';
+            document.getElementById('pause-btn').disabled = false;
+        }
+
+        function previousChapter() {
+            currentChapter--;
+            showChapter();
+            scrollToTop();
+            if (isReading) {
+                stopReading();
+                startReading();
+            }
+        }
+
+        function nextChapter() {
+            const nextChapterIndex = currentChapter + 1;
+            if (nextChapterIndex < chapters.length) {
+                currentChapter = nextChapterIndex;
+                showChapter();
+                scrollToTop();
+                if (isReading) {
+                    stopReading();
+                    startReading();
+                }
+            }
+        }
+
+        function toggleReadAloud() {
+            if (!synth) {
+                alert('您的瀏覽器不支持語音合成功能');
+                return;
+            }
+            if (isReading) {
+                stopReading();
+                document.getElementById('read-btn').textContent = '▶ 朗讀';
+                document.getElementById('pause-btn').disabled = true;
+            } else {
+                if (!selectedVoice) {
+                    alert('請先選擇一個語音或等待語音載入');
+                    return;
+                }
+                startLineIndex = 0;
+                startReading();
+                document.getElementById('read-btn').textContent = '■ 停止';
+                document.getElementById('pause-btn').disabled = false;
+            }
+        }
+
+        function togglePause() {
+            if (!isReading) return;
+            if (isPaused) {
+                synth.resume();
+                isPaused = false;
+                document.getElementById('pause-btn').textContent = '⏸ 暫停';
+            } else {
+                synth.pause();
+                isPaused = true;
+                document.getElementById('pause-btn').textContent = '▶ 恢復';
+            }
+        }
+
+        function updateSpeechSettings() {
+            speechRate = parseFloat(document.getElementById('voice-speed').value);
+            const voiceName = document.getElementById('voice-select').value;
+            const voices = synth.getVoices();
+            selectedVoice = voices.find(voice => voice.name === voiceName) || voices[0];
+            if (isReading) {
+                stopReading();
+                startReading();
+            }
+        }
+
+        function startReading() {
+            if (chapters.length === 0 || !selectedVoice) return;
+            if (isReading) stopReading();
+            isReading = true;
+            isPaused = false;
+
+            const lines = chapters[currentChapter].content.split('\n');
+            let textToRead = lines.slice(startLineIndex).join('\n');
+            
+            const lineSentenceCounts = lines.slice(startLineIndex).map(line => {
+                return line.split(/[.。!！?？]/).filter(s => s.trim()).length;
+            });
+
+            let currentLineIndex = startLineIndex;
+            let cumulativeSentences = 0;
+
+            function highlightCurrentLine(sentenceIndex) {
+                const previousHighlight = document.querySelector('.highlight');
+                if (previousHighlight) {
+                    previousHighlight.classList.remove('highlight');
+                }
+
+                let sentencesSoFar = 0;
+                for (let i = 0; i < lineSentenceCounts.length; i++) {
+                    sentencesSoFar += lineSentenceCounts[i];
+                    if (sentenceIndex <= sentencesSoFar) {
+                        currentLineIndex = startLineIndex + i;
+                        break;
+                    }
+                }
+
+                const currentLine = document.getElementById(`line-${currentLineIndex}`);
+                if (currentLine) {
+                    currentLine.classList.add('highlight');
+                    currentLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
+            utterance.voice = selectedVoice;
+            utterance.rate = speechRate;
+
+            utterance.onboundary = (event) => {
+                if (event.name === 'sentence') {
+                    cumulativeSentences++;
+                    highlightCurrentLine(cumulativeSentences);
+                }
+            };
+
+            utterance.onend = () => {
+                if (currentChapter < chapters.length - 1) {
+                    const nextChapterIndex = currentChapter + 1;
+                    currentChapter = nextChapterIndex;
+                    showChapter();
+                    scrollToTop();
+                    startLineIndex = 0;
+                    startReading();
+                } else {
+                    stopReading();
+                    document.getElementById('read-btn').textContent = '▶ 朗讀';
+                    document.getElementById('pause-btn').disabled = true;
+                    const lastHighlight = document.querySelector('.highlight');
+                    if (lastHighlight) {
+                        lastHighlight.classList.remove('highlight');
+                    }
+                }
+            };
+
+            synth.speak(utterance);
+        }
+
+        function stopReading() {
+            if (synth.speaking || synth.paused) synth.cancel();
+            isReading = false;
+            isPaused = false;
+            document.getElementById('pause-btn').textContent = '⏸ 暫停';
+            const lastHighlight = document.querySelector('.highlight');
+            if (lastHighlight) {
+                lastHighlight.classList.remove('highlight');
+            }
+        }
+
+        function changeFontSize() {
+            const size = document.getElementById('font-size').value;
+            document.getElementById('content').style.fontSize = size + 'px';
+        }
+
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            document.body.classList.toggle('dark-theme');
+            const themeButton = document.querySelector('#controls button:last-child');
+            themeButton.textContent = isDarkTheme ? '☀ 主題' : '🌙 主題'; // 動態切換圖標
+        }
+    </script>
+</body>
+</html>
