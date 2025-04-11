@@ -3,643 +3,766 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ebook Reader</title>
+    <title>ebook</title>
     <script src="https://unpkg.com/opencc-js@1.0.5/dist/umd/opencc-js.js"></script>
     <style>
-        html, body {
+        :root {
+            --primary-color: #63b3ed;
+            --hover-color: #4299e1;
+            --bg-light: #2d3748;
+            --text-dark: #e2e8f0;
+            --border-color: #4a5568;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        body {
             height: 100vh;
-            overflow: hidden;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #f0f2f5;
-            transition: background-color 0.3s ease;
-        }
-        #reader-container {
-            max-width: 1200px;
-            margin: 2vh auto;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             display: flex;
-            flex-direction: row;
-            height: 96vh;
-            overflow: hidden;
+            flex-direction: column;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a202c;
+            color: var(--text-dark);
         }
-        #sidebar {
-            width: 25%;
-            max-width: 250px;
-            background: #fafafa;
-            padding: 2vh 1vw;
-            border-right: 1px solid #e0e0e0;
-            overflow-y: auto;
-            transition: width 0.3s ease, background-color 0.3s ease;
-        }
-        #sidebar h3 {
-            margin: 0 0 1.5vh;
-            font-size: clamp(16px, 2vw, 18px);
-            color: #333;
-        }
-        #toc-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        #toc-list li {
-            padding: 1vh 1vw;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-            font-size: clamp(14px, 1.8vw, 16px);
-        }
-        #toc-list li:hover {
-            background-color: #e8ecef;
-        }
-        #toc-list .current-chapter {
-            color: #0056b3;
-            font-weight: bold;
-        }
-        #main-content {
+
+        #main-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+
         #controls {
+            padding: 12px 20px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
             position: sticky;
             top: 0;
             z-index: 10;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1vh;
-            justify-content: center;
-            padding: 1vh;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e0e0e0;
-            border-radius: 10px 10px 0 0;
         }
+
+        #content-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-light);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            transition: transform var(--transition-speed) ease;
+            display: flex;
+            flex-direction: column;
+        }
+
         #content {
             flex: 1;
-            padding: 2vh 2vw;
+            padding: 30px;
             overflow-y: auto;
             line-height: 1.8;
-            font-size: clamp(14px, 2.5vw, 16px);
-            color: #333;
-            transition: color 0.3s ease;
-        }
-        button {
-            padding: 1vh 2vw;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            gap: 0.5vw;
-            font-size: clamp(12px, 1.5vw, 14px);
-            min-width: 60px;
-        }
-        button:hover {
-            background-color: #0056b3;
-            transform: translateY(-1px);
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        select {
-            padding: 1vh 1vw;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: white;
-            cursor: pointer;
-            font-size: clamp(12px, 1.5vw, 14px);
-            min-width: 60px;
-        }
-        #file-upload {
-            padding: 1vh;
-            font-size: clamp(12px, 1.5vw, 14px);
-        }
-        .content-line {
-            display: block;
-            cursor: pointer;
-            padding: 0.5vh 0;
-        }
-        .content-line:hover {
-            background-color: #f0f0f0;
-        }
-        .highlight {
-            background-color: #ffeb3b;
-            transition: background-color 0.3s ease;
-        }
-        .dark-theme {
-            background-color: #2c2f33;
-            color: #e0e0e0;
-        }
-        .dark-theme #reader-container {
-            background: #23272a;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .dark-theme #sidebar {
-            background: #1e2124;
-            border-right: 1px solid #3a3f44;
-        }
-        .dark-theme #sidebar h3 {
-            color: #e0e0e0;
-        }
-        .dark-theme #toc-list li:hover {
-            background-color: #3a3f44;
-        }
-        .dark-theme #toc-list .current-chapter {
-            color: #66b0ff;
-        }
-        .dark-theme #controls {
-            background: #1e2124;
-            border-bottom: 1px solid #3a3f44;
-        }
-        .dark-theme #content {
-            color: #e0e0e0;
-        }
-        .dark-theme .content-line:hover {
-            background-color: #3a3f44;
-        }
-        .dark-theme .highlight {
-            background-color: #ffd700;
-        }
-        .dark-theme select {
-            background: #3a3f44;
-            color: #e0e0e0;
-            border: 1px solid #555;
+            font-size: 16px;
+            position: relative;
+            background: #1a202c;
         }
 
-        /* 移動端樣式 */
+        #sidebar::-webkit-scrollbar,
+        #content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #sidebar::-webkit-scrollbar-track,
+        #content::-webkit-scrollbar-track {
+            background: var(--bg-light);
+        }
+
+        #sidebar::-webkit-scrollbar-thumb,
+        #content::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb:hover,
+        #content::-webkit-scrollbar-thumb:hover {
+            background: var(--hover-color);
+        }
+
         @media (max-width: 768px) {
-            #reader-container {
-                flex-direction: column;
-                height: 100vh;
-                margin: 0;
-                border-radius: 0;
-            }
             #sidebar {
-                width: 100%;
-                max-width: none;
-                max-height: 30vh;
-                padding: 1vh 2vw;
-                border-right: none;
-                border-bottom: 1px solid #e0e0e0;
-                overflow-y: auto;
-                display: none;
+                position: fixed;
+                top: 0;
+                left: -280px;
+                bottom: 0;
+                z-index: 100;
+                box-shadow: 4px 0 12px rgba(0,0,0,0.1);
             }
+
             #sidebar.active {
-                display: block;
+                transform: translateX(280px);
             }
-            #main-content {
-                height: auto;
-                flex: 1;
-            }
-            #controls {
-                padding: 1vh 1vw;
-                position: relative;
-            }
+
             #content {
-                padding: 2vh 3vw;
+                padding: 20px;
             }
-            button, select, #file-upload {
-                min-width: 50px;
-                padding: 1.5vh 2vw;
-                font-size: clamp(12px, 3vw, 14px);
+
+            #toggle-sidebar {
+                display: block !important;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 101;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }
         }
 
-        /* 側邊欄切換按鈕（僅移動端顯示） */
-        #toggle-sidebar {
-            display: none;
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+            color: rgba(255,255,255,0.95);
+            border: 1px solid rgba(99,179,237,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', system-ui;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 
+                0 4px 16px rgba(99,179,237,0.2),
+                0 0 0 1px rgba(255,255,255,0.1) inset,
+                0 1px 0 rgba(255,255,255,0.1) inset;
         }
-        @media (max-width: 768px) {
-            #toggle-sidebar {
-                display: flex;
-                position: absolute;
-                left: 1vw;
-                top: 1vh;
-            }
+
+        button:hover {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 24px rgba(99,179,237,0.3),
+                0 0 12px rgba(99,179,237,0.2),
+                0 0 0 1px rgba(255,255,255,0.15) inset;
+        }
+
+        button:active {
+            transform: translateY(1px);
+            filter: brightness(0.95);
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 25%,
+                rgba(255,255,255,0.1) 50%,
+                transparent 75%
+            );
+            animation: buttonGlow 6s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes buttonGlow {
+            0% { transform: translate(0,0) rotate(0deg); }
+            100% { transform: translate(-50%,-50%) rotate(360deg); }
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+
+        button .icon {
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+        }
+
+        button.loading {
+            pointer-events: none;
+            position: relative;
+            color: transparent;
+        }
+
+        button.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        #toc-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+
+        .toc-item {
+            padding: 10px;
+            margin: 4px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+        }
+
+        .toc-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .current-chapter {
+            background: rgba(74,144,226,0.1);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .content-line {
+            cursor: pointer;
+        }
+
+        .content-line:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .light-theme {
+            --primary-color: #4a90e2;
+            --hover-color: #357abd;
+            --bg-light: #f8f9fa;
+            --text-dark: #2d3748;
+            --border-color: #e0e0e0;
+        }
+
+        .light-theme #sidebar {
+            background: #f8f9fa;
+        }
+
+        .light-theme #content {
+            background: #f8f9fa;
+        }
+
+        .light-theme .toc-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .light-theme .content-line:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
     </style>
 </head>
-<body class="dark-theme"> <!-- 默認添加 dark-theme 類 -->
-    <div id="reader-container">
-        <div id="sidebar">
-            <h3>目錄</h3>
-            <ul id="toc-list"></ul>
+<body>
+    <div id="main-container">
+        <div id="controls">
+            <button id="toggle-sidebar">☰ 目錄</button>
+            <input type="file" id="file-upload" accept=".txt">
+            <button id="prev-chapter">◄ 上一章</button>
+            <button id="next-chapter">下一章 ►</button>
+            <button id="read-btn">▶ 朗讀</button>
+            <button id="pause-btn" disabled>⏸ 暫停</button>
+            <select id="voice-speed">
+                <option value="0.5">0.5x</option>
+                <option value="1.0">1.0x</option>
+                <option value="1.5" selected>1.5x</option>
+                <option value="1.7">1.7x</option>
+                <option value="2.0">2.0x</option>
+            </select>
+            <select id="voice-select"></select>
+            <button id="toggle-theme">🌙 主題</button>
         </div>
-        <div id="main-content">
-            <div id="controls">
-                <button id="toggle-sidebar" onclick="toggleSidebar()">☰ 目錄</button>
-                <input type="file" id="file-upload" accept=".txt" onchange="loadFile(event)">
-                <button onclick="previousChapter()">◄ 上一章</button>
-                <button onclick="nextChapter()">下一章 ►</button>
-                <button id="read-btn" onclick="toggleReadAloud()">▶ 朗讀</button>
-                <button id="pause-btn" onclick="togglePause()" disabled>⏸ 暫停</button>
-                <select id="font-size" onchange="changeFontSize()">
-                    <option value="14">14px</option>
-                    <option value="16" selected>16px</option>
-                    <option value="18">18px</option>
-                    <option value="20">20px</option>
-                    <option value="24">24px</option>
-                </select>
-                <select id="voice-speed" onchange="updateSpeechSettings()">
-                    <option value="0.5">0.5x</option>
-                    <option value="1.25" selected>1.25x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                </select>
-                <select id="voice-select" onchange="updateSpeechSettings()">
-                    <option value="">載入語音中...</option>
-                </select>
-                <button onclick="populateVoiceList()">↻ 刷新語音</button>
-                <button onclick="toggleTheme()">☀ 主題</button> <!-- 改為太陽符號，表示切換到亮色 -->
+
+        <div id="content-container">
+            <div id="sidebar">
+                <h3>📖 目錄</h3>
+                <ul id="toc-list"></ul>
             </div>
+
             <div id="content">
-                <p>請上傳一個TXT文件開始閱讀</p>
+                <p>請上傳TXT文件開始閱讀</p>
             </div>
         </div>
     </div>
 
-    <script>
-        const synth = window.speechSynthesis;
-        let currentChapter = 0;
-        let originalContent = '';
-        let content = '';
-        let isDarkTheme = true; // 默認設為 true，表示暗黑主題
-        let chapters = [];
-        let currentLanguage = 't2s';
-        let isReading = false;
-        let isPaused = false;
-        let selectedVoice = null;
-        let speechRate = 1.5;
-        let converter = null;
-        let startLineIndex = 0;
-        let currentLineIndex = 0;
+    <div class="loading-spinner" style="display: none;"></div>
 
-        window.addEventListener('load', () => {
-            if (typeof OpenCC === 'undefined') {
-                converter = null;
-            } else {
-                converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+<script>
+    const synth = window.speechSynthesis;
+    let currentChapter = 0;
+    let originalContent = '';
+    let content = '';
+    let isDarkTheme = true;
+    let chapters = [];
+    let currentLanguage = 't2s';
+    let isReading = false;
+    let isPaused = false;
+    let selectedVoice = null;
+    let speechRate = 1.5;
+    let converter = null;
+    let startLineIndex = 0;
+    let currentFileName = '';
+    let currentUtterance = null; // 保存当前的朗读实例
+    let currentText = ''; // 保存当前朗读的文本
+    let currentCharIndex = 0; // 保存当前朗读的字符位置
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof OpenCC === 'undefined') {
+            converter = null;
+        } else {
+            converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+        }
+        initVoices();
+        loadProgress();
+        const initUtterance = new SpeechSynthesisUtterance('');
+        synth.speak(initUtterance);
+        synth.cancel();
+
+        document.getElementById('toggle-sidebar').addEventListener('click', toggleSidebar);
+        document.getElementById('file-upload').addEventListener('change', loadFile);
+        document.getElementById('prev-chapter').addEventListener('click', previousChapter);
+        document.getElementById('next-chapter').addEventListener('click', nextChapter);
+        document.getElementById('read-btn').addEventListener('click', toggleReadAloud);
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        document.getElementById('voice-speed').addEventListener('change', updateSpeechSettings);
+        document.getElementById('voice-select').addEventListener('change', updateSpeechSettings);
+        document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
+    });
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('active');
+    }
+
+    function saveProgress() {
+        if (currentFileName) {
+            const progress = {
+                chapter: currentChapter,
+                line: startLineIndex,
+                fileName: currentFileName
+            };
+            localStorage.setItem('readingProgress', JSON.stringify(progress));
+        }
+    }
+
+    function loadProgress() {
+        const savedProgress = localStorage.getItem('readingProgress');
+        if (savedProgress) {
+            const progress = JSON.parse(savedProgress);
+            if (progress.fileName === currentFileName && chapters.length > 0) {
+                currentChapter = progress.chapter;
+                startLineIndex = progress.line;
+                showChapter();
             }
-            initVoices();
+        }
+    }
+
+    function scrollToCurrentChapter() {
+        const tocList = document.getElementById('toc-list');
+        const currentChapterElement = tocList.querySelector(`li:nth-child(${currentChapter + 1})`);
+        if (currentChapterElement) {
+            currentChapterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function populateVoiceList() {
+        const voiceSelect = document.getElementById('voice-select');
+        const voices = synth.getVoices();
+
+        voiceSelect.innerHTML = '';
+        const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('zh-TW'));
+
+        if (chineseVoices.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = '無中文語音';
+            option.value = '';
+            voiceSelect.appendChild(option);
+            alert('未檢測到中文語音包，請檢查系統語音設置');
+            return;
+        }
+
+        chineseVoices.forEach(voice => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.value = voice.name;
+            voiceSelect.appendChild(option);
         });
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
+        if (chineseVoices.length > 0) {
+            const yunxiVoice = chineseVoices.find(voice => voice.name.toLowerCase().includes('yunxi'));
+            selectedVoice = yunxiVoice || chineseVoices[0];
+            voiceSelect.value = selectedVoice.name;
         }
+    }
 
-        function populateVoiceList() {
-            const voiceSelect = document.getElementById('voice-select');
-            const voices = synth.getVoices();
-
-            voiceSelect.innerHTML = '';
-            const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('zh-TW')|| voice.lang.includes('zh-HK'));
-
-            if (chineseVoices.length === 0) {
-                const option = document.createElement('option');
-                option.textContent = '無中文語音';
-                option.value = '';
-                voiceSelect.appendChild(option);
-                alert('未檢測到中文語音包，請檢查系統語音設置');
-                return;
-            }
-
-            chineseVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.textContent = `${voice.name} (${voice.lang})`;
-                option.value = voice.name;
-                voiceSelect.appendChild(option);
-            });
-
-            if (chineseVoices.length > 0) {
-                const yunxiVoice = chineseVoices.find(voice => voice.name.toLowerCase().includes('yunxi'));
-                selectedVoice = yunxiVoice || chineseVoices[0];
-                voiceSelect.value = selectedVoice.name;
-            }
-        }
-
-        function initVoices() {
-            const voices = synth.getVoices();
-            if (voices.length > 0) {
+    function initVoices() {
+        const voices = synth.getVoices();
+        if (voices.length > 0) {
+            populateVoiceList();
+        } else {
+            synth.onvoiceschanged = () => {
                 populateVoiceList();
+                synth.onvoiceschanged = null;
+            };
+            setTimeout(() => {
+                if (synth.getVoices().length === 0) {
+                    setTimeout(populateVoiceList, 2000);
+                }
+            }, 1000);
+        }
+    }
+
+    function loadFile(event) {
+        const file = event.target.files[0];
+        if (file) {
+            currentFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalContent = e.target.result;
+                updateContent();
+                splitIntoChapters();
+                loadProgress();
+            };
+            reader.onerror = function() {
+                alert('文件讀取失敗，請確保文件為 UTF-8 編碼');
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    }
+
+    function updateContent() {
+        if (converter && currentLanguage === 's2t') {
+            content = converter(originalContent);
+        } else {
+            content = originalContent;
+        }
+    }
+
+    function splitIntoChapters() {
+        const lines = content.split('\n');
+        chapters = [];
+        let currentChapterContent = [];
+        let chapterTitle = '';
+        const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
+
+        for (let i = 0; i < lines.length; i++) {
+            let cleanedLine = lines[i].replace(/[\s　]+/g, '');
+            if (cleanedLine === '') {
+                continue;
+            }
+
+            if (chapterRegex.test(cleanedLine)) {
+                if (currentChapterContent.length > 0 && chapterTitle) {
+                    chapters.push({
+                        title: chapterTitle,
+                        content: currentChapterContent.join('\n')
+                    });
+                }
+                chapterTitle = lines[i];
+                currentChapterContent = [];
             } else {
-                synth.onvoiceschanged = () => {
-                    populateVoiceList();
-                    synth.onvoiceschanged = null;
-                };
-                setTimeout(() => {
-                    if (synth.getVoices().length === 0) {
-                        setTimeout(populateVoiceList, 2000);
-                    }
-                }, 1000);
+                currentChapterContent.push(lines[i]);
             }
         }
 
-        function loadFile(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    originalContent = e.target.result;
-                    updateContent();
-                    splitIntoChapters();
-                    currentChapter = 0;
-                    showChapter();
-                };
-                reader.onerror = function() {
-                    alert('文件讀取失敗，請確保文件為 UTF-8 編碼');
-                };
-                reader.readAsText(file, 'UTF-8');
-            }
-        }
-
-        function updateContent() {
-            if (converter && currentLanguage === 's2t') {
-                content = converter(originalContent);
-            } else {
-                content = originalContent;
-            }
-        }
-
-        function splitIntoChapters() {
-            const lines = content.split('\n');
-            chapters = [];
-            let currentChapterContent = [];
-            let chapterTitle = '';
-            const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
-
-            for (let i = 0; i < lines.length; i++) {
-                let cleanedLine = lines[i].replace(/[\s　]+/g, '');
-                if (cleanedLine === '') {
-                    continue;
-                }
-
-                if (chapterRegex.test(cleanedLine)) {
-                    if (currentChapterContent.length > 0 && chapterTitle) {
-                        chapters.push({
-                            title: chapterTitle,
-                            content: currentChapterContent.join('\n')
-                        });
-                    }
-                    chapterTitle = lines[i];
-                    currentChapterContent = [];
-                } else {
-                    currentChapterContent.push(lines[i]);
-                }
-            }
-
-            if (currentChapterContent.length > 0 && chapterTitle) {
-                chapters.push({
-                    title: chapterTitle,
-                    content: currentChapterContent.join('\n')
-                });
-            }
-
-            generateTOC();
-        }
-
-        function generateTOC() {
-            const tocList = document.getElementById('toc-list');
-            tocList.innerHTML = '';
-            chapters.forEach((chapter, index) => {
-                const li = document.createElement('li');
-                li.textContent = chapter.title;
-                li.onclick = () => {
-                    jumpToChapter(index);
-                    if (window.innerWidth <= 768) toggleSidebar();
-                };
-                if (index === currentChapter) {
-                    li.classList.add('current-chapter');
-                }
-                tocList.appendChild(li);
+        if (currentChapterContent.length > 0 && chapterTitle) {
+            chapters.push({
+                title: chapterTitle,
+                content: currentChapterContent.join('\n')
             });
         }
 
-        function scrollToTop() {
-            const contentDiv = document.getElementById('content');
-            contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+        generateTOC();
+        scrollToCurrentChapter();
+    }
+
+    function generateTOC() {
+        const tocList = document.getElementById('toc-list');
+        tocList.innerHTML = '';
+        chapters.forEach((chapter, index) => {
+            const li = document.createElement('li');
+            li.textContent = chapter.title;
+            li.onclick = () => {
+                jumpToChapter(index);
+                if (window.innerWidth <= 768) toggleSidebar();
+            };
+            if (index === currentChapter) {
+                li.classList.add('current-chapter');
+            }
+            tocList.appendChild(li);
+        });
+        scrollToCurrentChapter();
+    }
+
+    function scrollToTop() {
+        const contentDiv = document.getElementById('content');
+        contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function jumpToChapter(index) {
+        currentChapter = index;
+        startLineIndex = 0;
+        currentCharIndex = 0;
+        showChapter();
+        scrollToTop();
+        saveProgress();
+        if (isReading) {
+            stopReading();
+            startReading();
+        }
+        scrollToCurrentChapter();
+    }
+
+    function showChapter() {
+        if (currentChapter < 0) currentChapter = 0;
+        if (currentChapter >= chapters.length) currentChapter = chapters.length - 1;
+
+        const contentDiv = document.getElementById('content');
+        if (!chapters[currentChapter]) {
+            contentDiv.innerHTML = '無內容';
+            return;
         }
 
-        function jumpToChapter(index) {
-            currentChapter = index;
+        const lines = chapters[currentChapter].content.split('\n');
+        contentDiv.innerHTML = '';
+        lines.forEach((line, lineIndex) => {
+            const p = document.createElement('p');
+            p.className = 'content-line';
+            p.textContent = line;
+            p.onclick = () => startReadingFromLine(lineIndex);
+            contentDiv.appendChild(p);
+        });
+        generateTOC();
+        scrollToCurrentChapter();
+    }
+
+    function startReadingFromLine(lineIndex) {
+        if (!selectedVoice) {
+            alert('請先選擇一個語音或等待語音載入');
+            return;
+        }
+
+        startLineIndex = lineIndex;
+        currentCharIndex = 0;
+        if (isReading) {
+            stopReading();
+        }
+        startReading();
+        saveProgress();
+        document.getElementById('read-btn').textContent = '■ 停止';
+        document.getElementById('pause-btn').disabled = false;
+    }
+
+    function previousChapter() {
+        currentChapter--;
+        startLineIndex = 0;
+        currentCharIndex = 0;
+        showChapter();
+        scrollToTop();
+        saveProgress();
+        if (isReading) {
+            stopReading();
+            startReading();
+        }
+        scrollToCurrentChapter();
+    }
+
+    function nextChapter() {
+        const nextChapterIndex = currentChapter + 1;
+        if (nextChapterIndex < chapters.length) {
+            currentChapter = nextChapterIndex;
+            startLineIndex = 0;
+            currentCharIndex = 0;
             showChapter();
             scrollToTop();
+            saveProgress();
             if (isReading) {
                 stopReading();
                 startReading();
             }
+            scrollToCurrentChapter();
         }
+    }
 
-        function showChapter() {
-            if (currentChapter < 0) currentChapter = 0;
-            if (currentChapter >= chapters.length) currentChapter = chapters.length - 1;
-
-            const contentDiv = document.getElementById('content');
-            if (!chapters[currentChapter]) {
-                contentDiv.innerHTML = '無內容';
-                return;
-            }
-
-            const lines = chapters[currentChapter].content.split('\n');
-            contentDiv.innerHTML = '';
-            lines.forEach((line, index) => {
-                const span = document.createElement('span');
-                span.className = 'content-line';
-                span.id = `line-${index}`;
-                span.textContent = line || ' ';
-                span.onclick = () => startReadingFromLine(index);
-                contentDiv.appendChild(span);
-                contentDiv.appendChild(document.createElement('br'));
-            });
-
-            generateTOC();
+    function toggleReadAloud() {
+        if (!synth) {
+            alert('您的瀏覽器不支持語音合成功能');
+            return;
         }
-
-        function startReadingFromLine(lineIndex) {
+        if (isReading) {
+            stopReading();
+            document.getElementById('read-btn').textContent = '▶ 朗讀';
+            document.getElementById('pause-btn').disabled = true;
+        } else {
             if (!selectedVoice) {
                 alert('請先選擇一個語音或等待語音載入');
                 return;
             }
-
-            startLineIndex = lineIndex;
-            if (isReading) {
-                stopReading();
-            }
             startReading();
+            saveProgress();
             document.getElementById('read-btn').textContent = '■ 停止';
             document.getElementById('pause-btn').disabled = false;
         }
+    }
 
-        function previousChapter() {
-            currentChapter--;
-            showChapter();
-            scrollToTop();
-            if (isReading) {
-                stopReading();
-                startReading();
+    function togglePause() {
+        if (!isReading || !currentUtterance) return;
+
+        if (isPaused) {
+            // 恢復朗讀從當前字符位置開始
+            synth.cancel(); // 清除當前語音隊列
+            const remainingText = currentText.substring(currentCharIndex);
+            if (remainingText) {
+                currentUtterance = new SpeechSynthesisUtterance(remainingText);
+                currentUtterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
+                currentUtterance.voice = selectedVoice;
+                currentUtterance.rate = speechRate;
+
+                currentUtterance.onboundary = (event) => {
+                    if (event.name === 'word' || event.name === 'sentence') {
+                        currentCharIndex += event.charIndex;
+                    }
+                };
+
+                currentUtterance.onend = () => {
+                    if (currentChapter < chapters.length - 1) {
+                        currentChapter++;
+                        startLineIndex = 0;
+                        currentCharIndex = 0;
+                        showChapter();
+                        scrollToTop();
+                        startReading();
+                        scrollToCurrentChapter();
+                    } else {
+                        stopReading();
+                        document.getElementById('read-btn').textContent = '▶ 朗讀';
+                        document.getElementById('pause-btn').disabled = true;
+                    }
+                };
+
+                synth.speak(currentUtterance);
+                isPaused = false;
+                document.getElementById('pause-btn').textContent = '⏸ 暫停';
             }
+        } else {
+            // 暫停朗讀
+            synth.pause();
+            isPaused = true;
+            document.getElementById('pause-btn').textContent = '▶ 恢復';
         }
+    }
 
-        function nextChapter() {
-            const nextChapterIndex = currentChapter + 1;
-            if (nextChapterIndex < chapters.length) {
-                currentChapter = nextChapterIndex;
+    function updateSpeechSettings() {
+        speechRate = parseFloat(document.getElementById('voice-speed').value);
+        const voiceName = document.getElementById('voice-select').value;
+        const voices = synth.getVoices();
+        selectedVoice = voices.find(voice => voice.name === voiceName) || voices[0];
+        if (isReading) {
+            stopReading();
+            startReading();
+        }
+    }
+
+    function startReading() {
+        if (chapters.length === 0 || !selectedVoice) return;
+        if (isReading) stopReading();
+        isReading = true;
+        isPaused = false;
+
+        const lines = chapters[currentChapter].content.split('\n');
+        if (startLineIndex >= lines.length) startLineIndex = 0;
+        currentText = lines.slice(startLineIndex).join('\n');
+        const textToRead = currentText.substring(currentCharIndex);
+
+        currentUtterance = new SpeechSynthesisUtterance(textToRead);
+        currentUtterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
+        currentUtterance.voice = selectedVoice;
+        currentUtterance.rate = speechRate;
+
+        currentUtterance.onboundary = (event) => {
+            if (event.name === 'word' || event.name === 'sentence') {
+                currentCharIndex = (currentText.length - textToRead.length) + event.charIndex;
+            }
+        };
+
+        currentUtterance.onend = () => {
+            if (currentChapter < chapters.length - 1) {
+                currentChapter++;
+                startLineIndex = 0;
+                currentCharIndex = 0;
                 showChapter();
                 scrollToTop();
-                if (isReading) {
-                    stopReading();
-                    startReading();
-                }
-            }
-        }
-
-        function toggleReadAloud() {
-            if (!synth) {
-                alert('您的瀏覽器不支持語音合成功能');
-                return;
-            }
-            if (isReading) {
+                startReading();
+                scrollToCurrentChapter();
+            } else {
                 stopReading();
                 document.getElementById('read-btn').textContent = '▶ 朗讀';
                 document.getElementById('pause-btn').disabled = true;
-            } else {
-                if (!selectedVoice) {
-                    alert('請先選擇一個語音或等待語音載入');
-                    return;
-                }
-                startLineIndex = 0;
-                startReading();
-                document.getElementById('read-btn').textContent = '■ 停止';
-                document.getElementById('pause-btn').disabled = false;
             }
-        }
+        };
 
-        function togglePause() {
-            if (!isReading) return;
-            if (isPaused) {
-                synth.resume();
-                isPaused = false;
-                document.getElementById('pause-btn').textContent = '⏸ 暫停';
-            } else {
-                synth.pause();
-                isPaused = true;
-                document.getElementById('pause-btn').textContent = '▶ 恢復';
-            }
-        }
+        synth.speak(currentUtterance);
+    }
 
-        function updateSpeechSettings() {
-            speechRate = parseFloat(document.getElementById('voice-speed').value);
-            const voiceName = document.getElementById('voice-select').value;
-            const voices = synth.getVoices();
-            selectedVoice = voices.find(voice => voice.name === voiceName) || voices[0];
-            if (isReading) {
-                stopReading();
-                startReading();
-            }
-        }
+    function stopReading() {
+        if (synth.speaking || synth.paused) synth.cancel();
+        isReading = false;
+        isPaused = false;
+        currentUtterance = null;
+        currentText = '';
+        currentCharIndex = 0;
+        document.getElementById('pause-btn').textContent = '⏸ 暫停';
+        saveProgress();
+    }
 
-        function startReading() {
-            if (chapters.length === 0 || !selectedVoice) return;
-            if (isReading) stopReading();
-            isReading = true;
-            isPaused = false;
-
-            const lines = chapters[currentChapter].content.split('\n');
-            let textToRead = lines.slice(startLineIndex).join('\n');
-            
-            const lineSentenceCounts = lines.slice(startLineIndex).map(line => {
-                return line.split(/[.。!！?？]/).filter(s => s.trim()).length;
-            });
-
-            let currentLineIndex = startLineIndex;
-            let cumulativeSentences = 0;
-
-            function highlightCurrentLine(sentenceIndex) {
-                const previousHighlight = document.querySelector('.highlight');
-                if (previousHighlight) {
-                    previousHighlight.classList.remove('highlight');
-                }
-
-                let sentencesSoFar = 0;
-                for (let i = 0; i < lineSentenceCounts.length; i++) {
-                    sentencesSoFar += lineSentenceCounts[i];
-                    if (sentenceIndex <= sentencesSoFar) {
-                        currentLineIndex = startLineIndex + i;
-                        break;
-                    }
-                }
-
-                const currentLine = document.getElementById(`line-${currentLineIndex}`);
-                if (currentLine) {
-                    currentLine.classList.add('highlight');
-                    currentLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-
-            const utterance = new SpeechSynthesisUtterance(textToRead);
-            utterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
-            utterance.voice = selectedVoice;
-            utterance.rate = speechRate;
-
-            utterance.onboundary = (event) => {
-                if (event.name === 'sentence') {
-                    cumulativeSentences++;
-                    highlightCurrentLine(cumulativeSentences);
-                }
-            };
-
-            utterance.onend = () => {
-                if (currentChapter < chapters.length - 1) {
-                    const nextChapterIndex = currentChapter + 1;
-                    currentChapter = nextChapterIndex;
-                    showChapter();
-                    scrollToTop();
-                    startLineIndex = 0;
-                    startReading();
-                } else {
-                    stopReading();
-                    document.getElementById('read-btn').textContent = '▶ 朗讀';
-                    document.getElementById('pause-btn').disabled = true;
-                    const lastHighlight = document.querySelector('.highlight');
-                    if (lastHighlight) {
-                        lastHighlight.classList.remove('highlight');
-                    }
-                }
-            };
-
-            synth.speak(utterance);
-        }
-
-        function stopReading() {
-            if (synth.speaking || synth.paused) synth.cancel();
-            isReading = false;
-            isPaused = false;
-            document.getElementById('pause-btn').textContent = '⏸ 暫停';
-            const lastHighlight = document.querySelector('.highlight');
-            if (lastHighlight) {
-                lastHighlight.classList.remove('highlight');
-            }
-        }
-
-        function changeFontSize() {
-            const size = document.getElementById('font-size').value;
-            document.getElementById('content').style.fontSize = size + 'px';
-        }
-
-        function toggleTheme() {
-            isDarkTheme = !isDarkTheme;
-            document.body.classList.toggle('dark-theme');
-            const themeButton = document.querySelector('#controls button:last-child');
-            themeButton.textContent = isDarkTheme ? '☀ 主題' : '🌙 主題'; // 動態切換圖標
-        }
-    </script>
+    function toggleTheme() {
+        isDarkTheme = !isDarkTheme;
+        document.body.classList.toggle('dark-theme');
+        const themeButton = document.getElementById('toggle-theme');
+        themeButton.textContent = isDarkTheme ? '☀ 主題' : '🌙 主題';
+    }
+</script>
 </body>
 </html>
