@@ -328,221 +328,287 @@
     </div>
 
     <div class="loading-spinner" style="display: none;"></div>
-
 <script>
-    const synth = window.speechSynthesis;
-    let currentChapter = 0;
-    let originalContent = '';
-    let content = '';
-    let isDarkTheme = true;
-    let chapters = [];
-    let currentLanguage = 't2s';
-    let isReading = false;
-    let isPaused = false;
-    let selectedVoice = null;
-    let speechRate = 1.5;
-    let converter = null;
-    let startLineIndex = 0;
-    let currentFileName = '';
-    let currentUtterance = null; // 保存当前的朗读实例
-    let currentText = ''; // 保存当前朗读的文本
-    let currentCharIndex = 0; // 保存当前朗读的字符位置
+const synth = window.speechSynthesis;
+let currentChapter = 0;
+let originalContent = '';
+let content = '';
+let isDarkTheme = true;
+let chapters = [];
+let currentLanguage = 't2s';
+let isReading = false;
+let isPaused = false;
+let selectedVoice = null;
+let speechRate = 1.5;
+let converter = null;
+let startLineIndex = 0;
+let currentFileName = '';
+let currentUtterance = null; // 保存当前的朗读实例
+let currentText = ''; // 保存当前朗读的文本
+let currentCharIndex = 0; // 保存当前朗读的字符位置
 
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof OpenCC === 'undefined') {
-            converter = null;
-        } else {
-            converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof OpenCC === 'undefined') {
+        converter = null;
+    } else {
+        converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+    }
+    initVoices();
+    loadProgress();
+    const initUtterance = new SpeechSynthesisUtterance('');
+    synth.speak(initUtterance);
+    synth.cancel();
+
+    document.getElementById('toggle-sidebar').addEventListener('click', toggleSidebar);
+    document.getElementById('file-upload').addEventListener('change', loadFile);
+    document.getElementById('prev-chapter').addEventListener('click', previousChapter);
+    document.getElementById('next-chapter').addEventListener('click', nextChapter);
+    document.getElementById('read-btn').addEventListener('click', toggleReadAloud);
+    document.getElementById('pause-btn').addEventListener('click', togglePause);
+    document.getElementById('voice-speed').addEventListener('change', updateSpeechSettings);
+    document.getElementById('voice-select').addEventListener('change', updateSpeechSettings);
+    document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
+});
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
+}
+
+function saveProgress() {
+    if (currentFileName) {
+        const progress = {
+            chapter: currentChapter,
+            line: startLineIndex,
+            fileName: currentFileName
+        };
+        localStorage.setItem('readingProgress', JSON.stringify(progress));
+    }
+}
+
+function loadProgress() {
+    const savedProgress = localStorage.getItem('readingProgress');
+    if (savedProgress) {
+        const progress = JSON.parse(savedProgress);
+        if (progress.fileName === currentFileName && chapters.length > 0) {
+            currentChapter = progress.chapter;
+            startLineIndex = progress.line;
+            showChapter();
         }
-        initVoices();
-        loadProgress();
-        const initUtterance = new SpeechSynthesisUtterance('');
-        synth.speak(initUtterance);
-        synth.cancel();
+    }
+}
 
-        document.getElementById('toggle-sidebar').addEventListener('click', toggleSidebar);
-        document.getElementById('file-upload').addEventListener('change', loadFile);
-        document.getElementById('prev-chapter').addEventListener('click', previousChapter);
-        document.getElementById('next-chapter').addEventListener('click', nextChapter);
-        document.getElementById('read-btn').addEventListener('click', toggleReadAloud);
-        document.getElementById('pause-btn').addEventListener('click', togglePause);
-        document.getElementById('voice-speed').addEventListener('change', updateSpeechSettings);
-        document.getElementById('voice-select').addEventListener('change', updateSpeechSettings);
-        document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
+function scrollToCurrentChapter() {
+    const tocList = document.getElementById('toc-list');
+    const currentChapterElement = tocList.querySelector(`li:nth-child(${currentChapter + 1})`);
+    if (currentChapterElement) {
+        currentChapterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function populateVoiceList() {
+    const voiceSelect = document.getElementById('voice-select');
+    const voices = synth.getVoices();
+
+    voiceSelect.innerHTML = '';
+    if (voices.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = '無可用語音';
+        option.value = '';
+        voiceSelect.appendChild(option);
+        alert('未檢測到語音包，請檢查系統語音設置');
+        return;
+    }
+
+    voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.name;
+        voiceSelect.appendChild(option);
     });
 
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('active');
+    if (voices.length > 0) {
+        selectedVoice = voices[0]; // 默認選擇第一個語音
+        voiceSelect.value = selectedVoice.name;
     }
+}
 
-    function saveProgress() {
-        if (currentFileName) {
-            const progress = {
-                chapter: currentChapter,
-                line: startLineIndex,
-                fileName: currentFileName
-            };
-            localStorage.setItem('readingProgress', JSON.stringify(progress));
-        }
-    }
-
-    function loadProgress() {
-        const savedProgress = localStorage.getItem('readingProgress');
-        if (savedProgress) {
-            const progress = JSON.parse(savedProgress);
-            if (progress.fileName === currentFileName && chapters.length > 0) {
-                currentChapter = progress.chapter;
-                startLineIndex = progress.line;
-                showChapter();
-            }
-        }
-    }
-
-    function scrollToCurrentChapter() {
-        const tocList = document.getElementById('toc-list');
-        const currentChapterElement = tocList.querySelector(`li:nth-child(${currentChapter + 1})`);
-        if (currentChapterElement) {
-            currentChapterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    function populateVoiceList() {
-        const voiceSelect = document.getElementById('voice-select');
-        const voices = synth.getVoices();
-
-        voiceSelect.innerHTML = '';
-        const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('zh-TW')|| voice.lang.includes('zh-Hans')|| voice.lang.includes('zh-Hant'));
-
-        if (chineseVoices.length === 0) {
-            const option = document.createElement('option');
-            option.textContent = '無中文語音';
-            option.value = '';
-            voiceSelect.appendChild(option);
-            alert('未檢測到中文語音包，請檢查系統語音設置');
-            return;
-        }
-
-        chineseVoices.forEach(voice => {
-            const option = document.createElement('option');
-            option.textContent = `${voice.name} (${voice.lang})`;
-            option.value = voice.name;
-            voiceSelect.appendChild(option);
-        });
-
-        if (chineseVoices.length > 0) {
-            const yunxiVoice = chineseVoices.find(voice => voice.name.toLowerCase().includes('yunxi'));
-            selectedVoice = yunxiVoice || chineseVoices[0];
-            voiceSelect.value = selectedVoice.name;
-        }
-    }
-
-    function initVoices() {
-        const voices = synth.getVoices();
-        if (voices.length > 0) {
+function initVoices() {
+    const voices = synth.getVoices();
+    if (voices.length > 0) {
+        populateVoiceList();
+    } else {
+        synth.onvoiceschanged = () => {
             populateVoiceList();
+            synth.onvoiceschanged = null;
+        };
+        setTimeout(() => {
+            if (synth.getVoices().length === 0) {
+                setTimeout(populateVoiceList, 2000);
+            }
+        }, 1000);
+    }
+}
+
+function loadFile(event) {
+    const file = event.target.files[0];
+    if (file) {
+        currentFileName = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            originalContent = e.target.result;
+            updateContent();
+            splitIntoChapters();
+            loadProgress();
+        };
+        reader.onerror = function() {
+            alert('文件讀取失敗，請確保文件為 UTF-8 編碼');
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+}
+
+function updateContent() {
+    if (converter && currentLanguage === 's2t') {
+        content = converter(originalContent);
+    } else {
+        content = originalContent;
+    }
+}
+
+function splitIntoChapters() {
+    const lines = content.split('\n');
+    chapters = [];
+    let currentChapterContent = [];
+    let chapterTitle = '';
+    const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
+
+    for (let i = 0; i < lines.length; i++) {
+        let cleanedLine = lines[i].replace(/[\s　]+/g, '');
+        if (cleanedLine === '') {
+            continue;
+        }
+
+        if (chapterRegex.test(cleanedLine)) {
+            if (currentChapterContent.length > 0 && chapterTitle) {
+                chapters.push({
+                    title: chapterTitle,
+                    content: currentChapterContent.join('\n')
+                });
+            }
+            chapterTitle = lines[i];
+            currentChapterContent = [];
         } else {
-            synth.onvoiceschanged = () => {
-                populateVoiceList();
-                synth.onvoiceschanged = null;
-            };
-            setTimeout(() => {
-                if (synth.getVoices().length === 0) {
-                    setTimeout(populateVoiceList, 2000);
-                }
-            }, 1000);
+            currentChapterContent.push(lines[i]);
         }
     }
 
-    function loadFile(event) {
-        const file = event.target.files[0];
-        if (file) {
-            currentFileName = file.name;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                originalContent = e.target.result;
-                updateContent();
-                splitIntoChapters();
-                loadProgress();
-            };
-            reader.onerror = function() {
-                alert('文件讀取失敗，請確保文件為 UTF-8 編碼');
-            };
-            reader.readAsText(file, 'UTF-8');
-        }
-    }
-
-    function updateContent() {
-        if (converter && currentLanguage === 's2t') {
-            content = converter(originalContent);
-        } else {
-            content = originalContent;
-        }
-    }
-
-    function splitIntoChapters() {
-        const lines = content.split('\n');
-        chapters = [];
-        let currentChapterContent = [];
-        let chapterTitle = '';
-        const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
-
-        for (let i = 0; i < lines.length; i++) {
-            let cleanedLine = lines[i].replace(/[\s　]+/g, '');
-            if (cleanedLine === '') {
-                continue;
-            }
-
-            if (chapterRegex.test(cleanedLine)) {
-                if (currentChapterContent.length > 0 && chapterTitle) {
-                    chapters.push({
-                        title: chapterTitle,
-                        content: currentChapterContent.join('\n')
-                    });
-                }
-                chapterTitle = lines[i];
-                currentChapterContent = [];
-            } else {
-                currentChapterContent.push(lines[i]);
-            }
-        }
-
-        if (currentChapterContent.length > 0 && chapterTitle) {
-            chapters.push({
-                title: chapterTitle,
-                content: currentChapterContent.join('\n')
-            });
-        }
-
-        generateTOC();
-        scrollToCurrentChapter();
-    }
-
-    function generateTOC() {
-        const tocList = document.getElementById('toc-list');
-        tocList.innerHTML = '';
-        chapters.forEach((chapter, index) => {
-            const li = document.createElement('li');
-            li.textContent = chapter.title;
-            li.onclick = () => {
-                jumpToChapter(index);
-                if (window.innerWidth <= 768) toggleSidebar();
-            };
-            if (index === currentChapter) {
-                li.classList.add('current-chapter');
-            }
-            tocList.appendChild(li);
+    if (currentChapterContent.length > 0 && chapterTitle) {
+        chapters.push({
+            title: chapterTitle,
+            content: currentChapterContent.join('\n')
         });
-        scrollToCurrentChapter();
     }
 
-    function scrollToTop() {
-        const contentDiv = document.getElementById('content');
-        contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+    generateTOC();
+    scrollToCurrentChapter();
+}
+
+function generateTOC() {
+    const tocList = document.getElementById('toc-list');
+    tocList.innerHTML = '';
+    chapters.forEach((chapter, index) => {
+        const li = document.createElement('li');
+        li.textContent = chapter.title;
+        li.onclick = () => {
+            jumpToChapter(index);
+            if (window.innerWidth <= 768) toggleSidebar();
+        };
+        if (index === currentChapter) {
+            li.classList.add('current-chapter');
+        }
+        tocList.appendChild(li);
+    });
+    scrollToCurrentChapter();
+}
+
+function scrollToTop() {
+    const contentDiv = document.getElementById('content');
+    contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function jumpToChapter(index) {
+    currentChapter = index;
+    startLineIndex = 0;
+    currentCharIndex = 0;
+    showChapter();
+    scrollToTop();
+    saveProgress();
+    if (isReading) {
+        stopReading();
+        startReading();
+    }
+    scrollToCurrentChapter();
+}
+
+function showChapter() {
+    if (currentChapter < 0) currentChapter = 0;
+    if (currentChapter >= chapters.length) currentChapter = chapters.length - 1;
+
+    const contentDiv = document.getElementById('content');
+    if (!chapters[currentChapter]) {
+        contentDiv.innerHTML = '無內容';
+        return;
     }
 
-    function jumpToChapter(index) {
-        currentChapter = index;
+    const lines = chapters[currentChapter].content.split('\n');
+    contentDiv.innerHTML = '';
+    lines.forEach((line, lineIndex) => {
+        const p = document.createElement('p');
+        p.className = 'content-line';
+        p.textContent = line;
+        p.onclick = () => startReadingFromLine(lineIndex);
+        contentDiv.appendChild(p);
+    });
+    generateTOC();
+    scrollToCurrentChapter();
+}
+
+function startReadingFromLine(lineIndex) {
+    if (!selectedVoice) {
+        alert('請先選擇一個語音或等待語音載入');
+        return;
+    }
+
+    startLineIndex = lineIndex;
+    currentCharIndex = 0;
+    if (isReading) {
+        stopReading();
+    }
+    startReading();
+    saveProgress();
+    document.getElementById('read-btn').textContent = '■ 停止';
+    document.getElementById('pause-btn').disabled = false;
+}
+
+function previousChapter() {
+    currentChapter--;
+    startLineIndex = 0;
+    currentCharIndex = 0;
+    showChapter();
+    scrollToTop();
+    saveProgress();
+    if (isReading) {
+        stopReading();
+        startReading();
+    }
+    scrollToCurrentChapter();
+}
+
+function nextChapter() {
+    const nextChapterIndex = currentChapter + 1;
+    if (nextChapterIndex < chapters.length) {
+        currentChapter = nextChapterIndex;
         startLineIndex = 0;
         currentCharIndex = 0;
         showChapter();
@@ -554,215 +620,145 @@
         }
         scrollToCurrentChapter();
     }
+}
 
-    function showChapter() {
-        if (currentChapter < 0) currentChapter = 0;
-        if (currentChapter >= chapters.length) currentChapter = chapters.length - 1;
-
-        const contentDiv = document.getElementById('content');
-        if (!chapters[currentChapter]) {
-            contentDiv.innerHTML = '無內容';
-            return;
-        }
-
-        const lines = chapters[currentChapter].content.split('\n');
-        contentDiv.innerHTML = '';
-        lines.forEach((line, lineIndex) => {
-            const p = document.createElement('p');
-            p.className = 'content-line';
-            p.textContent = line;
-            p.onclick = () => startReadingFromLine(lineIndex);
-            contentDiv.appendChild(p);
-        });
-        generateTOC();
-        scrollToCurrentChapter();
+function toggleReadAloud() {
+    if (!synth) {
+        alert('您的瀏覽器不支持語音合成功能');
+        return;
     }
-
-    function startReadingFromLine(lineIndex) {
+    if (isReading) {
+        stopReading();
+        document.getElementById('read-btn').textContent = '▶ 朗讀';
+        document.getElementById('pause-btn').disabled = true;
+    } else {
         if (!selectedVoice) {
             alert('請先選擇一個語音或等待語音載入');
             return;
-        }
-
-        startLineIndex = lineIndex;
-        currentCharIndex = 0;
-        if (isReading) {
-            stopReading();
         }
         startReading();
         saveProgress();
         document.getElementById('read-btn').textContent = '■ 停止';
         document.getElementById('pause-btn').disabled = false;
     }
+}
 
-    function previousChapter() {
-        currentChapter--;
-        startLineIndex = 0;
-        currentCharIndex = 0;
-        showChapter();
-        scrollToTop();
-        saveProgress();
-        if (isReading) {
-            stopReading();
-            startReading();
+function togglePause() {
+    if (!isReading || !currentUtterance) return;
+
+    if (isPaused) {
+        // 恢復朗讀從當前字符位置開始
+        synth.cancel(); // 清除當前語音隊列
+        const remainingText = currentText.substring(currentCharIndex);
+        if (remainingText) {
+            currentUtterance = new SpeechSynthesisUtterance(remainingText);
+            currentUtterance.lang = selectedVoice.lang; // 使用所選語音的語言
+            currentUtterance.voice = selectedVoice;
+            currentUtterance.rate = speechRate;
+
+            currentUtterance.onboundary = (event) => {
+                if (event.name === 'word' || event.name === 'sentence') {
+                    currentCharIndex += event.charIndex;
+                }
+            };
+
+            currentUtterance.onend = () => {
+                if (currentChapter < chapters.length - 1) {
+                    currentChapter++;
+                    startLineIndex = 0;
+                    currentCharIndex = 0;
+                    showChapter();
+                    scrollToTop();
+                    startReading();
+                    scrollToCurrentChapter();
+                } else {
+                    stopReading();
+                    document.getElementById('read-btn').textContent = '▶ 朗讀';
+                    document.getElementById('pause-btn').disabled = true;
+                }
+            };
+
+            synth.speak(currentUtterance);
+            isPaused = false;
+            document.getElementById('pause-btn').textContent = '⏸ 暫停';
         }
-        scrollToCurrentChapter();
+    } else {
+        // 暫停朗讀
+        synth.pause();
+        isPaused = true;
+        document.getElementById('pause-btn').textContent = '▶ 恢復';
     }
+}
 
-    function nextChapter() {
-        const nextChapterIndex = currentChapter + 1;
-        if (nextChapterIndex < chapters.length) {
-            currentChapter = nextChapterIndex;
+function updateSpeechSettings() {
+    speechRate = parseFloat(document.getElementById('voice-speed').value);
+    const voiceName = document.getElementById('voice-select').value;
+    const voices = synth.getVoices();
+    selectedVoice = voices.find(voice => voice.name === voiceName) || voices[0];
+    if (isReading) {
+        stopReading();
+        startReading();
+    }
+}
+
+function startReading() {
+    if (chapters.length === 0 || !selectedVoice) return;
+    if (isReading) stopReading();
+    isReading = true;
+    isPaused = false;
+
+    const lines = chapters[currentChapter].content.split('\n');
+    if (startLineIndex >= lines.length) startLineIndex = 0;
+    currentText = lines.slice(startLineIndex).join('\n');
+    const textToRead = currentText.substring(currentCharIndex);
+
+    currentUtterance = new SpeechSynthesisUtterance(textToRead);
+    currentUtterance.lang = selectedVoice.lang; // 使用所選語音的語言
+    currentUtterance.voice = selectedVoice;
+    currentUtterance.rate = speechRate;
+
+    currentUtterance.onboundary = (event) => {
+        if (event.name === 'word' || event.name === 'sentence') {
+            currentCharIndex = (currentText.length - textToRead.length) + event.charIndex;
+        }
+    };
+
+    currentUtterance.onend = () => {
+        if (currentChapter < chapters.length - 1) {
+            currentChapter++;
             startLineIndex = 0;
             currentCharIndex = 0;
             showChapter();
             scrollToTop();
-            saveProgress();
-            if (isReading) {
-                stopReading();
-                startReading();
-            }
+            startReading();
             scrollToCurrentChapter();
-        }
-    }
-
-    function toggleReadAloud() {
-        if (!synth) {
-            alert('您的瀏覽器不支持語音合成功能');
-            return;
-        }
-        if (isReading) {
+        } else {
             stopReading();
             document.getElementById('read-btn').textContent = '▶ 朗讀';
             document.getElementById('pause-btn').disabled = true;
-        } else {
-            if (!selectedVoice) {
-                alert('請先選擇一個語音或等待語音載入');
-                return;
-            }
-            startReading();
-            saveProgress();
-            document.getElementById('read-btn').textContent = '■ 停止';
-            document.getElementById('pause-btn').disabled = false;
         }
-    }
+    };
 
-    function togglePause() {
-        if (!isReading || !currentUtterance) return;
+    synth.speak(currentUtterance);
+}
 
-        if (isPaused) {
-            // 恢復朗讀從當前字符位置開始
-            synth.cancel(); // 清除當前語音隊列
-            const remainingText = currentText.substring(currentCharIndex);
-            if (remainingText) {
-                currentUtterance = new SpeechSynthesisUtterance(remainingText);
-                currentUtterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
-                currentUtterance.voice = selectedVoice;
-                currentUtterance.rate = speechRate;
+function stopReading() {
+    if (synth.speaking || synth.paused) synth.cancel();
+    isReading = false;
+    isPaused = false;
+    currentUtterance = null;
+    currentText = '';
+    currentCharIndex = 0;
+    document.getElementById('pause-btn').textContent = '⏸ 暫停';
+    saveProgress();
+}
 
-                currentUtterance.onboundary = (event) => {
-                    if (event.name === 'word' || event.name === 'sentence') {
-                        currentCharIndex += event.charIndex;
-                    }
-                };
-
-                currentUtterance.onend = () => {
-                    if (currentChapter < chapters.length - 1) {
-                        currentChapter++;
-                        startLineIndex = 0;
-                        currentCharIndex = 0;
-                        showChapter();
-                        scrollToTop();
-                        startReading();
-                        scrollToCurrentChapter();
-                    } else {
-                        stopReading();
-                        document.getElementById('read-btn').textContent = '▶ 朗讀';
-                        document.getElementById('pause-btn').disabled = true;
-                    }
-                };
-
-                synth.speak(currentUtterance);
-                isPaused = false;
-                document.getElementById('pause-btn').textContent = '⏸ 暫停';
-            }
-        } else {
-            // 暫停朗讀
-            synth.pause();
-            isPaused = true;
-            document.getElementById('pause-btn').textContent = '▶ 恢復';
-        }
-    }
-
-    function updateSpeechSettings() {
-        speechRate = parseFloat(document.getElementById('voice-speed').value);
-        const voiceName = document.getElementById('voice-select').value;
-        const voices = synth.getVoices();
-        selectedVoice = voices.find(voice => voice.name === voiceName) || voices[0];
-        if (isReading) {
-            stopReading();
-            startReading();
-        }
-    }
-
-    function startReading() {
-        if (chapters.length === 0 || !selectedVoice) return;
-        if (isReading) stopReading();
-        isReading = true;
-        isPaused = false;
-
-        const lines = chapters[currentChapter].content.split('\n');
-        if (startLineIndex >= lines.length) startLineIndex = 0;
-        currentText = lines.slice(startLineIndex).join('\n');
-        const textToRead = currentText.substring(currentCharIndex);
-
-        currentUtterance = new SpeechSynthesisUtterance(textToRead);
-        currentUtterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
-        currentUtterance.voice = selectedVoice;
-        currentUtterance.rate = speechRate;
-
-        currentUtterance.onboundary = (event) => {
-            if (event.name === 'word' || event.name === 'sentence') {
-                currentCharIndex = (currentText.length - textToRead.length) + event.charIndex;
-            }
-        };
-
-        currentUtterance.onend = () => {
-            if (currentChapter < chapters.length - 1) {
-                currentChapter++;
-                startLineIndex = 0;
-                currentCharIndex = 0;
-                showChapter();
-                scrollToTop();
-                startReading();
-                scrollToCurrentChapter();
-            } else {
-                stopReading();
-                document.getElementById('read-btn').textContent = '▶ 朗讀';
-                document.getElementById('pause-btn').disabled = true;
-            }
-        };
-
-        synth.speak(currentUtterance);
-    }
-
-    function stopReading() {
-        if (synth.speaking || synth.paused) synth.cancel();
-        isReading = false;
-        isPaused = false;
-        currentUtterance = null;
-        currentText = '';
-        currentCharIndex = 0;
-        document.getElementById('pause-btn').textContent = '⏸ 暫停';
-        saveProgress();
-    }
-
-    function toggleTheme() {
-        isDarkTheme = !isDarkTheme;
-        document.body.classList.toggle('dark-theme');
-        const themeButton = document.getElementById('toggle-theme');
-        themeButton.textContent = isDarkTheme ? '☀ 主題' : '🌙 主題';
-    }
-</script>
+function toggleTheme() {
+    isDarkTheme = !isDarkTheme;
+    document.body.classList.toggle('dark-theme');
+    const themeButton = document.getElementById('toggle-theme');
+    themeButton.textContent = isDarkTheme ? '☀ 主題' : '🌙 主題';
+}
+        </script>         
 </body>
 </html>
