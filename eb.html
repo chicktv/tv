@@ -442,9 +442,17 @@ function initVoices() {
             populateVoiceList();
             synth.onvoiceschanged = null;
         };
-        setTimeout(() => {
-            if (synth.getVoices().length === 0) {
-                setTimeout(populateVoiceList, 2000);
+        // 定時重試機制
+        let attempts = 0;
+        const maxAttempts = 5;
+        const interval = setInterval(() => {
+            const retryVoices = synth.getVoices();
+            if (retryVoices.length > 0) {
+                populateVoiceList();
+                clearInterval(interval);
+            } else if (++attempts >= maxAttempts) {
+                clearInterval(interval);
+                populateVoiceList(); // 最後一次嘗試仍顯示當前結果
             }
         }, 1000);
     }
