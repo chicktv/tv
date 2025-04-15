@@ -12,4 +12,4 @@ A,alancml,twitch
 友,yaubotai2,twitch
 友,yaubotai,kick
 QT,3849262800563,ok
-翼,9013975129715,ok
+翼,9770604043891,ok
