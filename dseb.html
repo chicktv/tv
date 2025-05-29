@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Android Edge 電子書閱讀器</title>
+    <title>Android Edge 电子书阅读器</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -186,6 +186,7 @@
             color: #37474f;
             text-align: justify;
             flex: 1;
+            padding: 10px;
         }
         
         .controls {
@@ -299,12 +300,19 @@
         
         .voice-settings {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 30px;
             padding: 10px 15px;
             margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .voice-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .voice-label {
@@ -319,7 +327,7 @@
             padding: 8px 15px;
             font-size: 0.9rem;
             color: #2c3e50;
-            width: 100%;
+            min-width: 150px;
         }
         
         .voice-info {
@@ -328,7 +336,64 @@
             background: rgba(255, 255, 255, 0.15);
             padding: 8px 12px;
             border-radius: 10px;
-            display: none;
+            text-align: center;
+        }
+        
+        .retry-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .voice-help {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .voice-help h3 {
+            color: #FFD54F;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .voice-steps {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+        
+        .voice-steps li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .activation-required {
+            border: 2px solid #FF9800;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+        }
+        
+        .activation-highlight {
+            background-color: rgba(255, 152, 0, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
         }
         
         @media (max-width: 768px) {
@@ -358,7 +423,7 @@
             
             .voice-settings {
                 flex-direction: column;
-                align-items: stretch;
+                align-items: center;
             }
         }
         
@@ -384,28 +449,57 @@
                 padding: 6px 10px;
                 font-size: 0.8rem;
             }
+            
+            .voice-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .voice-help {
+                font-size: 0.8rem;
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-book-reader"></i> Android Edge 電子書閱讀器</h1>
+            <h1><i class="fas fa-book-reader"></i> Android Edge 电子书阅读器</h1>
             <div class="upload-container" id="upload-area">
                 <i class="fas fa-cloud-upload-alt"></i>
-                <p>點擊上傳TXT電子書 (UTF-8編碼)</p>
+                <p>点击上传TXT电子书 (UTF-8编码)</p>
                 <input type="file" id="file-input" accept=".txt">
             </div>
             <div class="voice-settings">
-                <span class="voice-label"><i class="fas fa-microphone-alt"></i> 語音選擇:</span>
-                <select id="voice-select">
-                    <option value="loading">正在載入語音清單...</option>
-                </select>
+                <div class="voice-group">
+                    <span class="voice-label"><i class="fas fa-microphone-alt"></i> 语音选择:</span>
+                    <select id="voice-select">
+                        <option value="loading">正在加载语音列表...</option>
+                    </select>
+                </div>
+                <button class="retry-btn" id="retry-voices">
+                    <i class="fas fa-sync-alt"></i> 重试
+                </button>
             </div>
             <div class="voice-info" id="voice-info">
-                <i class="fas fa-info-circle"></i> 當前語音: <span id="current-voice">未選擇</span> | 
-                語言: <span id="voice-lang">-</span> | 
-                類型: <span id="voice-type">-</span>
+                <i class="fas fa-info-circle"></i> 当前语音: <span id="current-voice">未选择</span> | 
+                语言: <span id="voice-lang">-</span> | 
+                类型: <span id="voice-type">-</span>
+            </div>
+            <div class="voice-help" id="voice-help">
+                <h3><i class="fas fa-exclamation-triangle"></i> Android Edge 语音激活指南</h3>
+                <p>在Android版Edge浏览器中，需要手动激活语音功能：</p>
+                <ol class="voice-steps">
+                    <li>点击浏览器右上角的 <strong>•••</strong> 菜单按钮</li>
+                    <li>选择 <strong>"大声朗读"</strong> 选项</li>
+                    <li>让浏览器朗读几秒钟</li>
+                    <li>点击停止按钮结束朗读</li>
+                    <li>返回本应用，点击 <strong>"重试"</strong> 按钮加载语音</li>
+                </ol>
+                <div class="activation-highlight">
+                    <p><i class="fas fa-lightbulb"></i> 只需在首次使用时激活一次，后续使用无需重复此操作</p>
+                </div>
             </div>
         </header>
         
@@ -416,7 +510,7 @@
             
             <div class="toc-container" id="toc-container">
                 <div class="toc-header">
-                    <h2><i class="fas fa-bookmark"></i> 目錄</h2>
+                    <h2><i class="fas fa-bookmark"></i> 目录</h2>
                     <button class="close-toc" id="close-toc">
                         <i class="fas fa-times"></i>
                     </button>
@@ -427,17 +521,17 @@
             <div class="reader-container">
                 <div class="empty-state" id="empty-state">
                     <i class="fas fa-book-open"></i>
-                    <h3>歡迎使用電子書閱讀器</h3>
-                    <p>請上傳TXT格式的電子書開始閱讀</p>
-                    <p>支援目錄導航和語音朗讀功能</p>
+                    <h3>欢迎使用电子书阅读器</h3>
+                    <p>请上传TXT格式的电子书开始阅读</p>
+                    <p>支持目录导航和语音朗读功能</p>
                 </div>
                 
                 <div id="book-content" style="display: none;">
-                    <h2 class="book-title" id="book-title">電子書標題</h2>
-                    <h3 class="chapter-title" id="chapter-title">章節標題</h3>
+                    <h2 class="book-title" id="book-title">电子书标题</h2>
+                    <h3 class="chapter-title" id="chapter-title">章节标题</h3>
                     <div id="content"></div>
                     <div class="reading-indicator" id="reading-indicator">
-                        <i class="fas fa-volume-up"></i> 朗讀中...
+                        <i class="fas fa-volume-up"></i> 朗读中...
                     </div>
                 </div>
             </div>
@@ -448,10 +542,10 @@
                 <i class="fas fa-arrow-left"></i> 上一章
             </button>
             <button class="btn btn-secondary" id="read-aloud">
-                <i class="fas fa-volume-up"></i> 朗讀本章
+                <i class="fas fa-volume-up"></i> 朗读本章
             </button>
             <button class="btn btn-warning" id="stop-reading">
-                <i class="fas fa-stop"></i> 停止朗讀
+                <i class="fas fa-stop"></i> 停止朗读
             </button>
             <button class="btn btn-primary" id="next-chapter">
                 <i class="fas fa-arrow-right"></i> 下一章
@@ -460,7 +554,7 @@
     </div>
 
     <script>
-        // 全域變數
+        // 全局变量
         let bookContent = "";
         let chapters = [];
         let currentChapterIndex = 0;
@@ -468,6 +562,9 @@
         let utterance = null;
         let isReading = false;
         let voices = [];
+        let voiceRetryCount = 0;
+        const maxVoiceRetry = 3;
+        let activationRequired = true;
         
         // DOM元素
         const fileInput = document.getElementById('file-input');
@@ -491,8 +588,10 @@
         const currentVoiceSpan = document.getElementById('current-voice');
         const voiceLangSpan = document.getElementById('voice-lang');
         const voiceTypeSpan = document.getElementById('voice-type');
+        const retryBtn = document.getElementById('retry-voices');
+        const voiceHelp = document.getElementById('voice-help');
         
-        // 事件監聽器
+        // 事件监听器
         uploadArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', handleFileUpload);
         toggleToc.addEventListener('click', () => tocContainer.classList.toggle('active'));
@@ -502,38 +601,67 @@
         readAloudBtn.addEventListener('click', readCurrentChapter);
         stopReadingBtn.addEventListener('click', stopReading);
         voiceSelect.addEventListener('change', updateVoiceInfo);
+        retryBtn.addEventListener('click', initializeVoices);
         
-        // 初始化語音
+        // 初始化语音
         function initializeVoices() {
-            // 獲取所有可用的語音
+            // 获取所有可用的语音
             voices = speechSynthesis.getVoices();
             
-            // 清空語音選擇框
+            // 清空语音选择框
             voiceSelect.innerHTML = '';
             
-            // 如果沒有語音
+            // 如果没有语音
             if (voices.length === 0) {
+                voiceRetryCount++;
+                
+                if (voiceRetryCount <= maxVoiceRetry) {
+                    // 显示重试状态
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = `正在加载语音 (${voiceRetryCount}/${maxVoiceRetry})...`;
+                    voiceSelect.appendChild(option);
+                    
+                    // 延迟重试
+                    setTimeout(initializeVoices, 1500);
+                    return;
+                }
+                
+                // 达到最大重试次数
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = '未找到可用語音';
+                option.textContent = '无法加载语音';
                 voiceSelect.appendChild(option);
                 voiceSelect.disabled = true;
+                
+                // 显示帮助信息并高亮
+                voiceHelp.style.display = 'block';
+                voiceHelp.classList.add('activation-required');
+                
+                // 更新重试按钮文本
+                retryBtn.innerHTML = '<i class="fas fa-redo"></i> 激活后重试';
+                activationRequired = true;
+                
                 return;
             }
             
-            // 過濾中文語音
-            const chineseVoices = voices.filter(voice => voice.lang.startsWith('zh'));
+            // 过滤中文语音
+            const chineseVoices = voices.filter(voice => 
+                voice.lang.startsWith('zh') || 
+                voice.lang.startsWith('cmn') || 
+                voice.lang.startsWith('yue')
+            );
             
             if (chineseVoices.length === 0) {
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = '未找到中文語音';
+                option.textContent = '未找到中文语音';
                 voiceSelect.appendChild(option);
                 voiceSelect.disabled = true;
                 return;
             }
             
-            // 添加中文語音選項
+            // 添加中文语音选项
             chineseVoices.forEach(voice => {
                 const option = document.createElement('option');
                 option.value = voice.name;
@@ -541,26 +669,29 @@
                 voiceSelect.appendChild(option);
             });
             
-            // 嘗試選擇雲希語音
+            // 尝试选择云希语音
             const yunxiVoice = chineseVoices.find(voice => 
-                voice.name.includes('雲希') || 
+                voice.name.includes('云希') || 
                 voice.name.includes('Yunxi') ||
-                voice.name.includes('yunxi')
+                voice.name.includes('yunxi') ||
+                voice.name.includes('Xiaoxiao') // 常见备用语音
             );
             
             if (yunxiVoice) {
                 voiceSelect.value = yunxiVoice.name;
             } else {
-                // 選擇第一個中文語音
+                // 选择第一个中文语音
                 voiceSelect.value = chineseVoices[0].name;
             }
             
-            // 更新語音資訊
+            // 更新语音信息
             updateVoiceInfo();
             voiceInfo.style.display = 'block';
+            voiceHelp.style.display = 'none';
+            activationRequired = false;
         }
         
-        // 更新語音資訊
+        // 更新语音信息
         function updateVoiceInfo() {
             const selectedVoiceName = voiceSelect.value;
             const voice = voices.find(v => v.name === selectedVoiceName);
@@ -568,21 +699,21 @@
             if (voice) {
                 currentVoiceSpan.textContent = voice.name;
                 voiceLangSpan.textContent = voice.lang;
-                voiceTypeSpan.textContent = voice.localService ? '本地' : '雲端';
+                voiceTypeSpan.textContent = voice.localService ? '本地' : '云端';
             }
         }
         
-        // 處理文件上傳
+        // 处理文件上传
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file || !file.name.endsWith('.txt')) {
-                alert('請上傳TXT格式的檔');
+                alert('请上传TXT格式的文件');
                 return;
             }
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                // 確保以UTF-8編碼讀取檔
+                // 确保以UTF-8编码读取文件
                 bookContent = e.target.result;
                 bookTitle.textContent = file.name.replace('.txt', '');
                 processBookContent();
@@ -592,10 +723,10 @@
             reader.readAsText(file, 'UTF-8');
         }
         
-        // 處理書籍內容
+        // 处理书籍内容
         function processBookContent() {
-            // 使用規則運算式分割章節（支援多種章節格式）
-            const chapterRegex = /(第[零一二三四五六七八九十百千\d]+章\s+[^\n]+)|(第[零一二三四五六七八九十百千\d]+節\s+[^\n]+)|(^[一二三四五六七八九十]+、\s*[^\n]+)|(^[1-9]\d*\.\s*[^\n]+)/gm;
+            // 使用正则表达式分割章节（支持多种章节格式）
+            const chapterRegex = /(第[零一二三四五六七八九十百千\d]+章\s+[^\n]+)|(第[零一二三四五六七八九十百千\d]+节\s+[^\n]+)|(^[一二三四五六七八九十]+、\s*[^\n]+)|(^[1-9]\d*\.\s*[^\n]+)/gm;
             const matches = [];
             let match;
             
@@ -610,7 +741,7 @@
                 const title = match[0];
                 const startIndex = match.index;
                 
-                // 獲取前一章的內容
+                // 获取前一章的内容
                 if (index === 0 && startIndex > 0) {
                     chapters.push({
                         title: "前言",
@@ -618,7 +749,7 @@
                     });
                 }
                 
-                // 獲取本章內容
+                // 获取本章内容
                 const nextMatch = index < matches.length - 1 ? matches[index + 1] : null;
                 const endIndex = nextMatch ? nextMatch.index : bookContent.length;
                 const content = bookContent.substring(startIndex + title.length, endIndex).trim();
@@ -631,15 +762,15 @@
                 lastIndex = endIndex;
             });
             
-            // 處理最後一章之後的內容
+            // 处理最后一章之后的内容
             if (lastIndex < bookContent.length) {
                 chapters.push({
-                    title: "後記",
+                    title: "后记",
                     content: bookContent.substring(lastIndex).trim()
                 });
             }
             
-            // 如果沒有找到章節，將整個檔作為一章
+            // 如果没有找到章节，将整个文件作为一章
             if (chapters.length === 0) {
                 chapters.push({
                     title: "全文",
@@ -647,13 +778,13 @@
                 });
             }
             
-            // 生成目錄
+            // 生成目录
             generateTOC();
-            // 顯示第一章
+            // 显示第一章
             showChapter(0);
         }
         
-        // 生成目錄
+        // 生成目录
         function generateTOC() {
             tocList.innerHTML = '';
             chapters.forEach((chapter, index) => {
@@ -668,14 +799,14 @@
             });
         }
         
-        // 顯示指定章節
+        // 显示指定章节
         function showChapter(index) {
             if (index < 0 || index >= chapters.length) return;
             
-            // 更新當前章節索引
+            // 更新当前章节索引
             currentChapterIndex = index;
             
-            // 更新目錄活動狀態
+            // 更新目录活动状态
             document.querySelectorAll('#toc li').forEach((li, i) => {
                 if (i === index) {
                     li.classList.add('active');
@@ -684,12 +815,12 @@
                 }
             });
             
-            // 更新章節內容
+            // 更新章节内容
             const chapter = chapters[index];
             chapterTitle.textContent = chapter.title;
             contentDiv.textContent = chapter.content;
             
-            // 更新按鈕狀態
+            // 更新按钮状态
             prevChapterBtn.disabled = (index === 0);
             nextChapterBtn.disabled = (index === chapters.length - 1);
         }
@@ -708,51 +839,62 @@
             }
         }
         
-        // 朗讀當前章節
+        // 朗读当前章节
         function readCurrentChapter() {
             if (isReading) {
                 stopReading();
                 return;
             }
             
+            // 检查是否已激活语音功能
+            if (activationRequired || voices.length === 0) {
+                alert('请先按照"语音激活指南"手动激活语音功能');
+                voiceHelp.style.display = 'block';
+                voiceHelp.classList.add('activation-required');
+                return;
+            }
+            
             const chapter = chapters[currentChapterIndex];
             const text = chapter.title + "。" + chapter.content;
             
-            // 停止任何正在進行的朗讀
+            // 停止任何正在进行的朗读
             speechSynthesis.cancel();
             
-            // 創建新的朗讀實例
+            // 创建新的朗读实例
             utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-CN';
             utterance.rate = 1.0;
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
             
-            // 設置選擇的語音
+            // 设置选择的语音
             const selectedVoiceName = voiceSelect.value;
             const voice = voices.find(v => v.name === selectedVoiceName);
             
             if (voice) {
                 utterance.voice = voice;
                 utterance.lang = voice.lang;
+            } else if (voices.length > 0) {
+                // 使用第一个可用的中文语音
+                utterance.voice = voices.find(v => v.lang.startsWith('zh')) || voices[0];
             }
             
-            // 朗讀開始事件
+            // 朗读开始事件
             utterance.onstart = function() {
                 isReading = true;
                 readingIndicator.style.display = 'block';
-                readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
+                readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停朗读';
                 readAloudBtn.classList.add('btn-warning');
             };
             
-            // 朗讀結束事件
+            // 朗读结束事件
             utterance.onend = function() {
                 isReading = false;
                 readingIndicator.style.display = 'none';
-                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
+                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读本章';
                 readAloudBtn.classList.remove('btn-warning');
                 
-                // 自動播放下一個章節
+                // 自动播放下一个章节
                 if (currentChapterIndex < chapters.length - 1) {
                     setTimeout(() => {
                         goToNextChapter();
@@ -761,38 +903,56 @@
                 }
             };
             
-            // 開始朗讀
-            speechSynthesis.speak(utterance);
+            // 错误处理
+            utterance.onerror = function(event) {
+                console.error('语音朗读错误:', event.error);
+                alert('语音朗读失败: ' + event.error);
+                isReading = false;
+                readingIndicator.style.display = 'none';
+                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读本章';
+                readAloudBtn.classList.remove('btn-warning');
+            };
+            
+            // 开始朗读
+            try {
+                speechSynthesis.speak(utterance);
+            } catch (error) {
+                console.error('无法开始朗读:', error);
+                alert('无法开始朗读，请确保您的设备支持此功能');
+            }
         }
         
-        // 停止朗讀
+        // 停止朗读
         function stopReading() {
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
                 isReading = false;
                 readingIndicator.style.display = 'none';
-                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
+                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读本章';
                 readAloudBtn.classList.remove('btn-warning');
             }
         }
         
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            // 檢測流覽器是否支持Web Speech API
+            // 检测浏览器是否支持Web Speech API
             if (!('speechSynthesis' in window)) {
                 readAloudBtn.disabled = true;
-                readAloudBtn.title = "您的流覽器不支援文本朗讀功能";
+                readAloudBtn.title = "您的浏览器不支持文本朗读功能";
                 voiceSelect.disabled = true;
+                voiceHelp.style.display = 'block';
                 return;
             }
             
-            // 初始化語音清單
-            if (speechSynthesis.getVoices().length > 0) {
-                initializeVoices();
-            } else {
-                // 如果語音清單尚未載入，則等待載入完成
-                speechSynthesis.onvoiceschanged = initializeVoices;
-            }
+            // 初始化语音列表
+            initializeVoices();
+            
+            // 添加语音变化监听器
+            speechSynthesis.onvoiceschanged = function() {
+                if (voices.length === 0) {
+                    initializeVoices();
+                }
+            };
         });
     </script>
 </body>
