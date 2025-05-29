@@ -412,7 +412,7 @@
         const voices = synth.getVoices();
 
         voiceSelect.innerHTML = '';
-        const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('zh-TW'));
+        const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('中文'));
 
         if (chineseVoices.length === 0) {
             const option = document.createElement('option');
