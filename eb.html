@@ -375,7 +375,7 @@ voiceSelect.addEventListener('change', updateVoiceInfo);
 
 // 強制初始化 TTS 引擎
 function initializeTTSEngine() {
-    const testUtterance = new SpeechSynthesisUtterance('讀取中請等等');
+    const testUtterance = new SpeechSynthesisUtterance('');
     testUtterance.volume = 0; // 設置為無聲以避免可聽輸出
     testUtterance.onend = () => {
         // 無聲語音結束後重新加載語音列表
