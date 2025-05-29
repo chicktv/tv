@@ -1,794 +1,768 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Android Edge 电子书阅读器</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ebook</title>
+    <script src="https://unpkg.com/opencc-js@1.0.5/dist/umd/opencc-js.js"></script>
     <style>
+        :root {
+            --primary-color: #63b3ed;
+            --hover-color: #4299e1;
+            --bg-light: #2d3748;
+            --text-dark: #e2e8f0;
+            --border-color: #4a5568;
+            --transition-speed: 0.3s;
+        }
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            -webkit-tap-highlight-color: transparent;
         }
-        
+
         body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            color: #333;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 90vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a202c;
+            color: var(--text-dark);
         }
-        
-        header {
-            background: linear-gradient(to right, #2c3e50, #4a6491);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
-        
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        h1 i {
-            color: #4FC3F7;
-        }
-        
-        .upload-container {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            padding: 15px;
-            margin: 15px 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .upload-container:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        .upload-container i {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            color: #81D4FA;
-        }
-        
-        #file-input {
-            display: none;
-        }
-        
-        .main-content {
-            display: flex;
+
+        #main-container {
             flex: 1;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            position: relative;
         }
-        
-        .toc-container {
-            width: 280px;
-            background: #f8f9fa;
-            border-right: 1px solid #e0e0e0;
-            overflow-y: auto;
-            padding: 15px;
-            transition: transform 0.3s ease;
+
+        #controls {
+            padding: 12px 20px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
             z-index: 10;
         }
-        
-        .toc-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #4a6491;
-        }
-        
-        .toc-header h2 {
-            color: #2c3e50;
-            font-size: 1.4rem;
-        }
-        
-        .close-toc {
-            background: #4a6491;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        #toc {
-            list-style: none;
-        }
-        
-        #toc li {
-            padding: 12px 10px;
-            border-bottom: 1px dashed #ddd;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        #toc li:hover {
-            background: #e3f2fd;
-            transform: translateX(5px);
-        }
-        
-        #toc li.active {
-            background: #bbdefb;
-            border-left: 4px solid #2196F3;
-            font-weight: bold;
-        }
-        
-        .reader-container {
+
+        #content-container {
             flex: 1;
             display: flex;
-            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-light);
+            border-right: 1px solid var(--border-color);
             padding: 20px;
             overflow-y: auto;
-            position: relative;
-        }
-        
-        .book-title {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-            font-size: 1.6rem;
-        }
-        
-        .chapter-title {
-            color: #1a237e;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 1.4rem;
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 10px;
-        }
-        
-        #content {
-            line-height: 1.8;
-            font-size: 1.1rem;
-            color: #37474f;
-            text-align: justify;
-            flex: 1;
-        }
-        
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-            background: #f5f5f5;
-            border-top: 1px solid #e0e0e0;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(to right, #2196F3, #21CBF3);
-            color: white;
-            box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(to right, #4CAF50, #8BC34A);
-            color: white;
-            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
-        }
-        
-        .btn-warning {
-            background: linear-gradient(to right, #FF9800, #FFC107);
-            color: white;
-            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(to right, #F44336, #FF5252);
-            color: white;
-            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.3);
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .btn:active {
-            transform: translateY(1px);
-        }
-        
-        .toggle-toc {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: #4a6491;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 5;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        
-        .reading-indicator {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(33, 150, 243, 0.9);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            display: none;
-        }
-        
-        .empty-state {
+            transition: transform var(--transition-speed) ease;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+        }
+
+        #content {
             flex: 1;
-            padding: 20px;
-            color: #78909C;
+            padding: 30px;
+            overflow-y: auto;
+            line-height: 1.8;
+            font-size: 16px;
+            position: relative;
+            background: #1a202c;
         }
-        
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: #B0BEC5;
+
+        #sidebar::-webkit-scrollbar,
+        #content::-webkit-scrollbar {
+            width: 8px;
         }
-        
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: #546E7A;
+
+        #sidebar::-webkit-scrollbar-track,
+        #content::-webkit-scrollbar-track {
+            background: var(--bg-light);
         }
-        
-        .voice-settings {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 30px;
-            padding: 10px 15px;
-            margin-top: 10px;
+
+        #sidebar::-webkit-scrollbar-thumb,
+        #content::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
         }
-        
-        .voice-label {
-            font-size: 0.9rem;
-            white-space: nowrap;
+
+        #sidebar::-webkit-scrollbar-thumb:hover,
+        #content::-webkit-scrollbar-thumb:hover {
+            background: var(--hover-color);
         }
-        
-        #voice-select {
-            background: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 0.9rem;
-            color: #2c3e50;
-            width: 100%;
-        }
-        
-        .voice-info {
-            margin-top: 10px;
-            font-size: 0.85rem;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 12px;
-            border-radius: 10px;
-            display: none;
-        }
-        
+
         @media (max-width: 768px) {
-            .container {
-                height: 95vh;
-                border-radius: 15px;
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                bottom: 0;
+                z-index: 100;
+                box-shadow: 4px 0 12px rgba(0,0,0,0.1);
             }
-            
-            .toc-container {
-                position: absolute;
-                height: 100%;
-                transform: translateX(-100%);
+
+            #sidebar.active {
+                transform: translateX(280px);
             }
-            
-            .toc-container.active {
-                transform: translateX(0);
+
+            #content {
+                padding: 20px;
             }
-            
-            .btn {
-                padding: 10px 15px;
-                font-size: 0.9rem;
-            }
-            
-            h1 {
-                font-size: 1.5rem;
-            }
-            
-            .voice-settings {
-                flex-direction: column;
-                align-items: stretch;
+
+            #toggle-sidebar {
+                display: block !important;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 101;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }
         }
-        
-        @media (max-width: 480px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .btn {
-                justify-content: center;
-            }
-            
-            .empty-state h3 {
-                font-size: 1.3rem;
-            }
-            
-            .voice-label {
-                font-size: 0.8rem;
-            }
-            
-            #voice-select {
-                padding: 6px 10px;
-                font-size: 0.8rem;
-            }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+            color: rgba(255,255,255,0.95);
+            border: 1px solid rgba(99,179,237,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', system-ui;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 
+                0 4px 16px rgba(99,179,237,0.2),
+                0 0 0 1px rgba(255,255,255,0.1) inset,
+                0 1px 0 rgba(255,255,255,0.1) inset;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 24px rgba(99,179,237,0.3),
+                0 0 12px rgba(99,179,237,0.2),
+                0 0 0 1px rgba(255,255,255,0.15) inset;
+        }
+
+        button:active {
+            transform: translateY(1px);
+            filter: brightness(0.95);
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 25%,
+                rgba(255,255,255,0.1) 50%,
+                transparent 75%
+            );
+            animation: buttonGlow 6s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes buttonGlow {
+            0% { transform: translate(0,0) rotate(0deg); }
+            100% { transform: translate(-50%,-50%) rotate(360deg); }
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+
+        button .icon {
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+        }
+
+        button.loading {
+            pointer-events: none;
+            position: relative;
+            color: transparent;
+        }
+
+        button.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        #toc-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+
+        .toc-item {
+            padding: 10px;
+            margin: 4px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+        }
+
+        .toc-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .current-chapter {
+            background: rgba(74,144,226,0.1);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .content-line {
+            cursor: pointer;
+        }
+
+        .content-line:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .light-theme {
+            --primary-color: #4a90e2;
+            --hover-color: #357abd;
+            --bg-light: #f8f9fa;
+            --text-dark: #2d3748;
+            --border-color: #e0e0e0;
+        }
+
+        .light-theme #sidebar {
+            background: #f8f9fa;
+        }
+
+        .light-theme #content {
+            background: #f8f9fa;
+        }
+
+        .light-theme .toc-item:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .light-theme .content-line:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-book-reader"></i> Android Edge 电子书阅读器</h1>
-            <div class="upload-container" id="upload-area">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>点击上传TXT电子书 (UTF-8编码)</p>
-                <input type="file" id="file-input" accept=".txt">
-            </div>
-            <div class="voice-settings">
-                <span class="voice-label"><i class="fas fa-microphone-alt"></i> 语音选择:</span>
-                <select id="voice-select">
-                    <option value="loading">正在加载语音列表...</option>
-                </select>
-            </div>
-            <div class="voice-info" id="voice-info">
-                <i class="fas fa-info-circle"></i> 当前语音: <span id="current-voice">未选择</span> | 
-                语言: <span id="voice-lang">-</span> | 
-                类型: <span id="voice-type">-</span>
-            </div>
-        </header>
-        
-        <div class="main-content">
-            <button class="toggle-toc" id="toggle-toc">
-                <i class="fas fa-list"></i>
-            </button>
-            
-            <div class="toc-container" id="toc-container">
-                <div class="toc-header">
-                    <h2><i class="fas fa-bookmark"></i> 目录</h2>
-                    <button class="close-toc" id="close-toc">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <ul id="toc"></ul>
-            </div>
-            
-            <div class="reader-container">
-                <div class="empty-state" id="empty-state">
-                    <i class="fas fa-book-open"></i>
-                    <h3>欢迎使用电子书阅读器</h3>
-                    <p>请上传TXT格式的电子书开始阅读</p>
-                    <p>支持目录导航和语音朗读功能</p>
-                </div>
-                
-                <div id="book-content" style="display: none;">
-                    <h2 class="book-title" id="book-title">电子书标题</h2>
-                    <h3 class="chapter-title" id="chapter-title">章节标题</h3>
-                    <div id="content"></div>
-                    <div class="reading-indicator" id="reading-indicator">
-                        <i class="fas fa-volume-up"></i> 朗读中...
-                    </div>
-                </div>
-            </div>
+    <div id="main-container">
+        <div id="controls">
+            <button id="toggle-sidebar">☰ 目錄</button>
+            <input type="file" id="file-upload" accept=".txt">
+            <button id="prev-chapter">◄ 上一章</button>
+            <button id="next-chapter">下一章 ►</button>
+            <button id="read-btn">▶ 朗讀</button>
+            <button id="pause-btn" disabled>⏸ 暫停</button>
+            <select id="voice-speed">
+                <option value="0.5">0.5x</option>
+                <option value="1.0">1.0x</option>
+                <option value="1.5" selected>1.5x</option>
+                <option value="1.7">1.7x</option>
+                <option value="2.0">2.0x</option>
+            </select>
+            <select id="voice-select"></select>
+            <button id="toggle-theme">🌙 主題</button>
         </div>
-        
-        <div class="controls">
-            <button class="btn btn-primary" id="prev-chapter">
-                <i class="fas fa-arrow-left"></i> 上一章
-            </button>
-            <button class="btn btn-secondary" id="read-aloud">
-                <i class="fas fa-volume-up"></i> 朗读本章
-            </button>
-            <button class="btn btn-warning" id="stop-reading">
-                <i class="fas fa-stop"></i> 停止朗读
-            </button>
-            <button class="btn btn-primary" id="next-chapter">
-                <i class="fas fa-arrow-right"></i> 下一章
-            </button>
+
+        <div id="content-container">
+            <div id="sidebar">
+                <h3>📖 目錄</h3>
+                <ul id="toc-list"></ul>
+            </div>
+
+            <div id="content">
+                <p>請上傳TXT文件開始閱讀</p>
+            </div>
         </div>
     </div>
 
-    <script>
-       // 全局變量
-let bookContent = "";
-let chapters = [];
-let currentChapterIndex = 0;
-let speechSynthesis = window.speechSynthesis;
-let utterance = null;
-let isReading = false;
-let voices = [];
+    <div class="loading-spinner" style="display: none;"></div>
 
-// DOM元素
-const fileInput = document.getElementById('file-input');
-const uploadArea = document.getElementById('upload-area');
-const tocContainer = document.getElementById('toc-container');
-const toggleToc = document.getElementById('toggle-toc');
-const closeToc = document.getElementById('close-toc');
-const tocList = document.getElementById('toc');
-const emptyState = document.getElementById('empty-state');
-const bookContentDiv = document.getElementById('book-content');
-const bookTitle = document.getElementById('book-title');
-const chapterTitle = document.getElementById('chapter-title');
-const contentDiv = document.getElementById('content');
-const prevChapterBtn = document.getElementById('prev-chapter');
-const nextChapterBtn = document.getElementById('next-chapter');
-const readAloudBtn = document.getElementById('read-aloud');
-const stopReadingBtn = document.getElementById('stop-reading');
-const readingIndicator = document.getElementById('reading-indicator');
-const voiceSelect = document.getElementById('voice-select');
-const voiceInfo = document.getElementById('voice-info');
-const currentVoiceSpan = document.getElementById('current-voice');
-const voiceLangSpan = document.getElementById('voice-lang');
-const voiceTypeSpan = document.getElementById('voice-type');
+<script>
+    const synth = window.speechSynthesis;
+    let currentChapter = 0;
+    let originalContent = '';
+    let content = '';
+    let isDarkTheme = true;
+    let chapters = [];
+    let currentLanguage = 't2s';
+    let isReading = false;
+    let isPaused = false;
+    let selectedVoice = null;
+    let speechRate = 1.5;
+    let converter = null;
+    let startLineIndex = 0;
+    let currentFileName = '';
+    let currentUtterance = null; // 保存当前的朗读实例
+    let currentText = ''; // 保存当前朗读的文本
+    let currentCharIndex = 0; // 保存当前朗读的字符位置
 
-// 事件監聽器
-uploadArea.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', handleFileUpload);
-toggleToc.addEventListener('click', () => tocContainer.classList.toggle('active'));
-closeToc.addEventListener('click', () => tocContainer.classList.remove('active'));
-prevChapterBtn.addEventListener('click', goToPrevChapter);
-nextChapterBtn.addEventListener('click', goToNextChapter);
-readAloudBtn.addEventListener('click', readCurrentChapter);
-stopReadingBtn.addEventListener('click', stopReading);
-voiceSelect.addEventListener('change', updateVoiceInfo);
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof OpenCC === 'undefined') {
+            converter = null;
+        } else {
+            converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+        }
+        initVoices();
+        loadProgress();
+        const initUtterance = new SpeechSynthesisUtterance('');
+        synth.speak(initUtterance);
+        synth.cancel();
 
-// 初始化語音
-function initializeVoices() {
-    // 獲取所有可用的語音
-    voices = speechSynthesis.getVoices();
-    console.log('可用語音：', voices); // 調試：記錄所有可用語音
-    
-    // 清空語音選擇框
-    voiceSelect.innerHTML = '';
-    
-    // 如果沒有語音
-    if (voices.length === 0) {
-        const option = document.createElement('option');
-        option.value = '';
-        option.textContent = '未找到可用語音，請檢查設備TTS設置';
-        voiceSelect.appendChild(option);
-        voiceSelect.disabled = true;
-        voiceInfo.style.display = 'block';
-        voiceInfo.innerHTML = '<i class="fas fa-info-circle"></i> 未找到語音，請確保已安裝並啟用TTS引擎（如Google文字轉語音）';
-        return;
-    }
-    
-    // 顯示所有語音（不限於中文）
-    voices.forEach(voice => {
-        const option = document.createElement('option');
-        option.value = voice.name;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        voiceSelect.appendChild(option);
+        document.getElementById('toggle-sidebar').addEventListener('click', toggleSidebar);
+        document.getElementById('file-upload').addEventListener('change', loadFile);
+        document.getElementById('prev-chapter').addEventListener('click', previousChapter);
+        document.getElementById('next-chapter').addEventListener('click', nextChapter);
+        document.getElementById('read-btn').addEventListener('click', toggleReadAloud);
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        document.getElementById('voice-speed').addEventListener('change', updateSpeechSettings);
+        document.getElementById('voice-select').addEventListener('change', updateSpeechSettings);
+        document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
     });
-    
-    // 默認選擇第一個語音
-    voiceSelect.value = voices[0].name;
-    
-    // 更新語音信息
-    updateVoiceInfo();
-    voiceInfo.style.display = 'block';
-}
 
-// 更新語音信息
-function updateVoiceInfo() {
-    const selectedVoiceName = voiceSelect.value;
-    const voice = voices.find(v => v.name === selectedVoiceName);
-    
-    if (voice) {
-        currentVoiceSpan.textContent = voice.name;
-        voiceLangSpan.textContent = voice.lang;
-        voiceTypeSpan.textContent = voice.localService ? '本地' : '雲端';
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('active');
     }
-}
 
-// 處理文件上傳
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file || !file.name.endsWith('.txt')) {
-        alert('請上傳TXT格式的文件');
-        return;
+    function saveProgress() {
+        if (currentFileName) {
+            const progress = {
+                chapter: currentChapter,
+                line: startLineIndex,
+                fileName: currentFileName
+            };
+            localStorage.setItem('readingProgress', JSON.stringify(progress));
+        }
     }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        // 確保以UTF-8編碼讀取文件
-        bookContent = e.target.result;
-        bookTitle.textContent = file.name.replace('.txt', '');
-        processBookContent();
-        emptyState.style.display = 'none';
-        bookContentDiv.style.display = 'block';
-    };
-    reader.readAsText(file, 'UTF-8');
-}
 
-// 處理書籍內容
-function processBookContent() {
-    // 使用正則表達式分割章節（支持多種章節格式）
-    const chapterRegex = /(第[零一二三四五六七八九十百千\d]+章\s+[^\n]+)|(第[零一二三四五六七八九十百千\d]+節\s+[^\n]+)|(^[一二三四五六七八九十]+、\s*[^\n]+)|(^[1-9]\d*\.\s*[^\n]+)/gm;
-    const matches = [];
-    let match;
-    
-    while ((match = chapterRegex.exec(bookContent)) !== null) {
-        matches.push(match);
+    function loadProgress() {
+        const savedProgress = localStorage.getItem('readingProgress');
+        if (savedProgress) {
+            const progress = JSON.parse(savedProgress);
+            if (progress.fileName === currentFileName && chapters.length > 0) {
+                currentChapter = progress.chapter;
+                startLineIndex = progress.line;
+                showChapter();
+            }
+        }
     }
-    
-    chapters = [];
-    let lastIndex = 0;
-    
-    matches.forEach((match, index) => {
-        const title = match[0];
-        const startIndex = match.index;
-        
-        // 獲取前一章的內容
-        if (index === 0 && startIndex > 0) {
+
+    function scrollToCurrentChapter() {
+        const tocList = document.getElementById('toc-list');
+        const currentChapterElement = tocList.querySelector(`li:nth-child(${currentChapter + 1})`);
+        if (currentChapterElement) {
+            currentChapterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function populateVoiceList() {
+        const voiceSelect = document.getElementById('voice-select');
+        const voices = synth.getVoices();
+
+        voiceSelect.innerHTML = '';
+        const chineseVoices = voices.filter(voice => voice.lang.includes('zh-CN') || voice.lang.includes('zh-TW'));
+
+        if (chineseVoices.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = '無中文語音';
+            option.value = '';
+            voiceSelect.appendChild(option);
+            alert('未檢測到中文語音包，請檢查系統語音設置');
+            return;
+        }
+
+        chineseVoices.forEach(voice => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.value = voice.name;
+            voiceSelect.appendChild(option);
+        });
+
+        if (chineseVoices.length > 0) {
+            const yunxiVoice = chineseVoices.find(voice => voice.name.toLowerCase().includes('yunxi'));
+            selectedVoice = yunxiVoice || chineseVoices[0];
+            voiceSelect.value = selectedVoice.name;
+        }
+    }
+
+    function initVoices() {
+        const voices = synth.getVoices();
+        if (voices.length > 0) {
+            populateVoiceList();
+        } else {
+            synth.onvoiceschanged = () => {
+                populateVoiceList();
+                synth.onvoiceschanged = null;
+            };
+            setTimeout(() => {
+                if (synth.getVoices().length === 0) {
+                    setTimeout(populateVoiceList, 2000);
+                }
+            }, 1000);
+        }
+    }
+
+    function loadFile(event) {
+        const file = event.target.files[0];
+        if (file) {
+            currentFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalContent = e.target.result;
+                updateContent();
+                splitIntoChapters();
+                loadProgress();
+            };
+            reader.onerror = function() {
+                alert('文件讀取失敗，請確保文件為 UTF-8 編碼');
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    }
+
+    function updateContent() {
+        if (converter && currentLanguage === 's2t') {
+            content = converter(originalContent);
+        } else {
+            content = originalContent;
+        }
+    }
+
+    function splitIntoChapters() {
+        const lines = content.split('\n');
+        chapters = [];
+        let currentChapterContent = [];
+        let chapterTitle = '';
+        const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
+
+        for (let i = 0; i < lines.length; i++) {
+            let cleanedLine = lines[i].replace(/[\s　]+/g, '');
+            if (cleanedLine === '') {
+                continue;
+            }
+
+            if (chapterRegex.test(cleanedLine)) {
+                if (currentChapterContent.length > 0 && chapterTitle) {
+                    chapters.push({
+                        title: chapterTitle,
+                        content: currentChapterContent.join('\n')
+                    });
+                }
+                chapterTitle = lines[i];
+                currentChapterContent = [];
+            } else {
+                currentChapterContent.push(lines[i]);
+            }
+        }
+
+        if (currentChapterContent.length > 0 && chapterTitle) {
             chapters.push({
-                title: "前言",
-                content: bookContent.substring(0, startIndex).trim()
+                title: chapterTitle,
+                content: currentChapterContent.join('\n')
             });
         }
-        
-        // 獲取本章內容
-        const nextMatch = index < matches.length - 1 ? matches[index + 1] : null;
-        const endIndex = nextMatch ? nextMatch.index : bookContent.length;
-        const content = bookContent.substring(startIndex + title.length, endIndex).trim();
-        
-        chapters.push({
-            title: title,
-            content: content
-        });
-        
-        lastIndex = endIndex;
-    });
-    
-    // 處理最後一章之後的內容
-    if (lastIndex < bookContent.length) {
-        chapters.push({
-            title: "後記",
-            content: bookContent.substring(lastIndex).trim()
-        });
-    }
-    
-    // 如果沒有找到章節，將整個文件作為一章
-    if (chapters.length === 0) {
-        chapters.push({
-            title: "全文",
-            content: bookContent.trim()
-        });
-    }
-    
-    // 生成目錄
-    generateTOC();
-    // 顯示第一章
-    showChapter(0);
-}
 
-// 生成目錄
-function generateTOC() {
-    tocList.innerHTML = '';
-    chapters.forEach((chapter, index) => {
-        const li = document.createElement('li');
-        li.textContent = chapter.title;
-        li.dataset.index = index;
-        li.addEventListener('click', () => {
-            showChapter(index);
-            tocContainer.classList.remove('active');
-        });
-        tocList.appendChild(li);
-    });
-}
-
-// 顯示指定章節
-function showChapter(index) {
-    if (index < 0 || index >= chapters.length) return;
-    
-    // 更新當前章節索引
-    currentChapterIndex = index;
-    
-    // 更新目錄活動狀態
-    document.querySelectorAll('#toc li').forEach((li, i) => {
-        if (i === index) {
-            li.classList.add('active');
-        } else {
-            li.classList.remove('active');
-        }
-    });
-    
-    // 更新章節內容
-    const chapter = chapters[index];
-    chapterTitle.textContent = chapter.title;
-    contentDiv.textContent = chapter.content;
-    
-    // 更新按鈕狀態
-    prevChapterBtn.disabled = (index === 0);
-    nextChapterBtn.disabled = (index === chapters.length - 1);
-}
-
-// 上一章
-function goToPrevChapter() {
-    if (currentChapterIndex > 0) {
-        showChapter(currentChapterIndex - 1);
+        generateTOC();
+        scrollToCurrentChapter();
     }
-}
 
-// 下一章
-function goToNextChapter() {
-    if (currentChapterIndex < chapters.length - 1) {
-        showChapter(currentChapterIndex + 1);
-    }
-}
-
-// 朗讀當前章節
-function readCurrentChapter() {
-    if (isReading) {
-        stopReading();
-        return;
-    }
-    
-    const chapter = chapters[currentChapterIndex];
-    const text = chapter.title + "。" + chapter.content;
-    
-    // 停止任何正在進行的朗讀
-    speechSynthesis.cancel();
-    
-    // 創建新的朗讀實例
-    utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-    
-    // 設置選擇的語音
-    const selectedVoiceName = voiceSelect.value;
-    const voice = voices.find(v => v.name === selectedVoiceName);
-    
-    if (voice) {
-        utterance.voice = voice;
-        utterance.lang = voice.lang; // 使用語音的語言代碼
-    } else {
-        utterance.lang = 'zh-CN'; // 默認回退到中文
-    }
-    
-    // 朗讀開始事件
-    utterance.onstart = function() {
-        isReading = true;
-        readingIndicator.style.display = 'block';
-        readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
-        readAloudBtn.classList.add('btn-warning');
-    };
-    
-    // 朗讀結束事件
-    utterance.onend = function() {
-        isReading = false;
-        readingIndicator.style.display = 'none';
-        readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
-        readAloudBtn.classList.remove('btn-warning');
-        
-        // 自動播放下一個章節
-        if (currentChapterIndex < chapters.length - 1) {
-            setTimeout(() => {
-                goToNextChapter();
-                setTimeout(readCurrentChapter, 1000);
-            }, 500);
-        }
-    };
-    
-    // 開始朗讀
-    speechSynthesis.speak(utterance);
-}
-
-// 停止朗讀
-function stopReading() {
-    if (speechSynthesis.speaking) {
-        speechSynthesis.cancel();
-        isReading = false;
-        readingIndicator.style.display = 'none';
-        readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
-        readAloudBtn.classList.remove('btn-warning');
-    }
-}
-
-// 初始化
-document.addEventListener('DOMContentLoaded', () => {
-    // 檢測瀏覽器是否支持Web Speech API
-    if (!('speechSynthesis' in window)) {
-        readAloudBtn.disabled = true;
-        readAloudBtn.title = '您的設備不支持文字朗讀功能';
-        voiceSelect.disabled = true;
-        voiceInfo.style.display = 'block';
-        voiceInfo.innerHTML = '<i class="fas fa-info-circle"></i> 您的設備不支持文字朗讀功能，請嘗試更新瀏覽器或使用其他設備';
-        return;
-    }
-    
-    // 初始化語音列表
-    if (speechSynthesis.getVoices().length > 0) {
-        initializeVoices();
-    } else {
-        speechSynthesis.onvoiceschanged = initializeVoices;
-        // 語音加載失敗的回退處理
-        setTimeout(() => {
-            if (speechSynthesis.getVoices().length === 0) {
-                voiceSelect.innerHTML = '';
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = '語音加載失敗，請檢查網絡或TTS設置';
-                voiceSelect.appendChild(option);
-                voiceSelect.disabled = true;
-                voiceInfo.style.display = 'block';
-                voiceInfo.innerHTML = '<i class="fas fa-info-circle"></i> 語音加載失敗，請確保網絡連接正常並檢查TTS設置';
+    function generateTOC() {
+        const tocList = document.getElementById('toc-list');
+        tocList.innerHTML = '';
+        chapters.forEach((chapter, index) => {
+            const li = document.createElement('li');
+            li.textContent = chapter.title;
+            li.onclick = () => {
+                jumpToChapter(index);
+                if (window.innerWidth <= 768) toggleSidebar();
+            };
+            if (index === currentChapter) {
+                li.classList.add('current-chapter');
             }
-        }, 5000); // 等待 5 秒
+            tocList.appendChild(li);
+        });
+        scrollToCurrentChapter();
     }
-});
-    </script>
+
+    function scrollToTop() {
+        const contentDiv = document.getElementById('content');
+        contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function jumpToChapter(index) {
+        currentChapter = index;
+        startLineIndex = 0;
+        currentCharIndex = 0;
+        showChapter();
+        scrollToTop();
+        saveProgress();
+        if (isReading) {
+            stopReading();
+            startReading();
+        }
+        scrollToCurrentChapter();
+    }
+
+    function showChapter() {
+        if (currentChapter < 0) currentChapter = 0;
+        if (currentChapter >= chapters.length) currentChapter = chapters.length - 1;
+
+        const contentDiv = document.getElementById('content');
+        if (!chapters[currentChapter]) {
+            contentDiv.innerHTML = '無內容';
+            return;
+        }
+
+        const lines = chapters[currentChapter].content.split('\n');
+        contentDiv.innerHTML = '';
+        lines.forEach((line, lineIndex) => {
+            const p = document.createElement('p');
+            p.className = 'content-line';
+            p.textContent = line;
+            p.onclick = () => startReadingFromLine(lineIndex);
+            contentDiv.appendChild(p);
+        });
+        generateTOC();
+        scrollToCurrentChapter();
+    }
+
+    function startReadingFromLine(lineIndex) {
+        if (!selectedVoice) {
+            alert('請先選擇一個語音或等待語音載入');
+            return;
+        }
+
+        startLineIndex = lineIndex;
+        currentCharIndex = 0;
+        if (isReading) {
+            stopReading();
+        }
+        startReading();
+        saveProgress();
+        document.getElementById('read-btn').textContent = '■ 停止';
+        document.getElementById('pause-btn').disabled = false;
+    }
+
+    function previousChapter() {
+        currentChapter--;
+        startLineIndex = 0;
+        currentCharIndex = 0;
+        showChapter();
+        scrollToTop();
+        saveProgress();
+        if (isReading) {
+            stopReading();
+            startReading();
+        }
+        scrollToCurrentChapter();
+    }
+
+    function nextChapter() {
+        const nextChapterIndex = currentChapter + 1;
+        if (nextChapterIndex < chapters.length) {
+            currentChapter = nextChapterIndex;
+            startLineIndex = 0;
+            currentCharIndex = 0;
+            showChapter();
+            scrollToTop();
+            saveProgress();
+            if (isReading) {
+                stopReading();
+                startReading();
+            }
+            scrollToCurrentChapter();
+        }
+    }
+
+    function toggleReadAloud() {
+        if (!synth) {
+            alert('您的瀏覽器不支持語音合成功能');
+            return;
+        }
+        if (isReading) {
+            stopReading();
+            document.getElementById('read-btn').textContent = '▶ 朗讀';
+            document.getElementById('pause-btn').disabled = true;
+        } else {
+            if (!selectedVoice) {
+                alert('請先選擇一個語音或等待語音載入');
+                return;
+            }
+            startReading();
+            saveProgress();
+            document.getElementById('read-btn').textContent = '■ 停止';
+            document.getElementById('pause-btn').disabled = false;
+        }
+    }
+
+    function togglePause() {
+        if (!isReading || !currentUtterance) return;
+
+        if (isPaused) {
+            // 恢復朗讀從當前字符位置開始
+            synth.cancel(); // 清除當前語音隊列
+            const remainingText = currentText.substring(currentCharIndex);
+            if (remainingText) {
+                currentUtterance = new SpeechSynthesisUtterance(remainingText);
+                currentUtterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
+                currentUtterance.voice = selectedVoice;
+                currentUtterance.rate = speechRate;
+
+                currentUtterance.onboundary = (event) => {
+                    if (event.name === 'word' || event.name === 'sentence') {
+                        currentCharIndex += event.charIndex;
+                    }
+                };
+
+                currentUtterance.onend = () => {
+                    if (currentChapter < chapters.length - 1) {
+                        currentChapter++;
+                        startLineIndex = 0;
+                        currentCharIndex = 0;
+                        showChapter();
+                        scrollToTop();
+                        startReading();
+                        scrollToCurrentChapter();
+                    } else {
+                        stopReading();
+                        document.getElementById('read-btn').textContent = '▶ 朗讀';
+                        document.getElementById('pause-btn').disabled = true;
+                    }
+                };
+
+                synth.speak(currentUtterance);
+                isPaused = false;
+                document.getElementById('pause-btn').textContent = '⏸ 暫停';
+            }
+        } else {
+            // 暫停朗讀
+            synth.pause();
+            isPaused = true;
+            document.getElementById('pause-btn').textContent = '▶ 恢復';
+        }
+    }
+
+    function updateSpeechSettings() {
+        speechRate = parseFloat(document.getElementById('voice-speed').value);
+        const voiceName = document.getElementById('voice-select').value;
+        const voices = synth.getVoices();
+        selectedVoice = voices.find(voice => voice.name === voiceName) || voices[0];
+        if (isReading) {
+            stopReading();
+            startReading();
+        }
+    }
+
+    function startReading() {
+        if (chapters.length === 0 || !selectedVoice) return;
+        if (isReading) stopReading();
+        isReading = true;
+        isPaused = false;
+
+        const lines = chapters[currentChapter].content.split('\n');
+        if (startLineIndex >= lines.length) startLineIndex = 0;
+        currentText = lines.slice(startLineIndex).join('\n');
+        const textToRead = currentText.substring(currentCharIndex);
+
+        currentUtterance = new SpeechSynthesisUtterance(textToRead);
+        currentUtterance.lang = currentLanguage === 's2t' ? 'zh-TW' : 'zh-CN';
+        currentUtterance.voice = selectedVoice;
+        currentUtterance.rate = speechRate;
+
+        currentUtterance.onboundary = (event) => {
+            if (event.name === 'word' || event.name === 'sentence') {
+                currentCharIndex = (currentText.length - textToRead.length) + event.charIndex;
+            }
+        };
+
+        currentUtterance.onend = () => {
+            if (currentChapter < chapters.length - 1) {
+                currentChapter++;
+                startLineIndex = 0;
+                currentCharIndex = 0;
+                showChapter();
+                scrollToTop();
+                startReading();
+                scrollToCurrentChapter();
+            } else {
+                stopReading();
+                document.getElementById('read-btn').textContent = '▶ 朗讀';
+                document.getElementById('pause-btn').disabled = true;
+            }
+        };
+
+        synth.speak(currentUtterance);
+    }
+
+    function stopReading() {
+        if (synth.speaking || synth.paused) synth.cancel();
+        isReading = false;
+        isPaused = false;
+        currentUtterance = null;
+        currentText = '';
+        currentCharIndex = 0;
+        document.getElementById('pause-btn').textContent = '⏸ 暫停';
+        saveProgress();
+    }
+
+    function toggleTheme() {
+        isDarkTheme = !isDarkTheme;
+        document.body.classList.toggle('dark-theme');
+        const themeButton = document.getElementById('toggle-theme');
+        themeButton.textContent = isDarkTheme ? '☀ 主題' : '🌙 主題';
+    }
+</script>
 </body>
 </html>
