@@ -460,340 +460,335 @@
     </div>
 
     <script>
-        // 全局变量
-        let bookContent = "";
-        let chapters = [];
-        let currentChapterIndex = 0;
-        let speechSynthesis = window.speechSynthesis;
-        let utterance = null;
-        let isReading = false;
-        let voices = [];
+       // 全局變量
+let bookContent = "";
+let chapters = [];
+let currentChapterIndex = 0;
+let speechSynthesis = window.speechSynthesis;
+let utterance = null;
+let isReading = false;
+let voices = [];
+
+// DOM元素
+const fileInput = document.getElementById('file-input');
+const uploadArea = document.getElementById('upload-area');
+const tocContainer = document.getElementById('toc-container');
+const toggleToc = document.getElementById('toggle-toc');
+const closeToc = document.getElementById('close-toc');
+const tocList = document.getElementById('toc');
+const emptyState = document.getElementById('empty-state');
+const bookContentDiv = document.getElementById('book-content');
+const bookTitle = document.getElementById('book-title');
+const chapterTitle = document.getElementById('chapter-title');
+const contentDiv = document.getElementById('content');
+const prevChapterBtn = document.getElementById('prev-chapter');
+const nextChapterBtn = document.getElementById('next-chapter');
+const readAloudBtn = document.getElementById('read-aloud');
+const stopReadingBtn = document.getElementById('stop-reading');
+const readingIndicator = document.getElementById('reading-indicator');
+const voiceSelect = document.getElementById('voice-select');
+const voiceInfo = document.getElementById('voice-info');
+const currentVoiceSpan = document.getElementById('current-voice');
+const voiceLangSpan = document.getElementById('voice-lang');
+const voiceTypeSpan = document.getElementById('voice-type');
+
+// 事件監聽器
+uploadArea.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFileUpload);
+toggleToc.addEventListener('click', () => tocContainer.classList.toggle('active'));
+closeToc.addEventListener('click', () => tocContainer.classList.remove('active'));
+prevChapterBtn.addEventListener('click', goToPrevChapter);
+nextChapterBtn.addEventListener('click', goToNextChapter);
+readAloudBtn.addEventListener('click', readCurrentChapter);
+stopReadingBtn.addEventListener('click', stopReading);
+voiceSelect.addEventListener('change', updateVoiceInfo);
+
+// 初始化語音
+function initializeVoices() {
+    // 獲取所有可用的語音
+    voices = speechSynthesis.getVoices();
+    console.log('可用語音：', voices); // 調試：記錄所有可用語音
+    
+    // 清空語音選擇框
+    voiceSelect.innerHTML = '';
+    
+    // 如果沒有語音
+    if (voices.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = '未找到可用語音，請檢查設備TTS設置';
+        voiceSelect.appendChild(option);
+        voiceSelect.disabled = true;
+        voiceInfo.style.display = 'block';
+        voiceInfo.innerHTML = '<i class="fas fa-info-circle"></i> 未找到語音，請確保已安裝並啟用TTS引擎（如Google文字轉語音）';
+        return;
+    }
+    
+    // 顯示所有語音（不限於中文）
+    voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+    });
+    
+    // 默認選擇第一個語音
+    voiceSelect.value = voices[0].name;
+    
+    // 更新語音信息
+    updateVoiceInfo();
+    voiceInfo.style.display = 'block';
+}
+
+// 更新語音信息
+function updateVoiceInfo() {
+    const selectedVoiceName = voiceSelect.value;
+    const voice = voices.find(v => v.name === selectedVoiceName);
+    
+    if (voice) {
+        currentVoiceSpan.textContent = voice.name;
+        voiceLangSpan.textContent = voice.lang;
+        voiceTypeSpan.textContent = voice.localService ? '本地' : '雲端';
+    }
+}
+
+// 處理文件上傳
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.name.endsWith('.txt')) {
+        alert('請上傳TXT格式的文件');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        // 確保以UTF-8編碼讀取文件
+        bookContent = e.target.result;
+        bookTitle.textContent = file.name.replace('.txt', '');
+        processBookContent();
+        emptyState.style.display = 'none';
+        bookContentDiv.style.display = 'block';
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+// 處理書籍內容
+function processBookContent() {
+    // 使用正則表達式分割章節（支持多種章節格式）
+    const chapterRegex = /(第[零一二三四五六七八九十百千\d]+章\s+[^\n]+)|(第[零一二三四五六七八九十百千\d]+節\s+[^\n]+)|(^[一二三四五六七八九十]+、\s*[^\n]+)|(^[1-9]\d*\.\s*[^\n]+)/gm;
+    const matches = [];
+    let match;
+    
+    while ((match = chapterRegex.exec(bookContent)) !== null) {
+        matches.push(match);
+    }
+    
+    chapters = [];
+    let lastIndex = 0;
+    
+    matches.forEach((match, index) => {
+        const title = match[0];
+        const startIndex = match.index;
         
-        // DOM元素
-        const fileInput = document.getElementById('file-input');
-        const uploadArea = document.getElementById('upload-area');
-        const tocContainer = document.getElementById('toc-container');
-        const toggleToc = document.getElementById('toggle-toc');
-        const closeToc = document.getElementById('close-toc');
-        const tocList = document.getElementById('toc');
-        const emptyState = document.getElementById('empty-state');
-        const bookContentDiv = document.getElementById('book-content');
-        const bookTitle = document.getElementById('book-title');
-        const chapterTitle = document.getElementById('chapter-title');
-        const contentDiv = document.getElementById('content');
-        const prevChapterBtn = document.getElementById('prev-chapter');
-        const nextChapterBtn = document.getElementById('next-chapter');
-        const readAloudBtn = document.getElementById('read-aloud');
-        const stopReadingBtn = document.getElementById('stop-reading');
-        const readingIndicator = document.getElementById('reading-indicator');
-        const voiceSelect = document.getElementById('voice-select');
-        const voiceInfo = document.getElementById('voice-info');
-        const currentVoiceSpan = document.getElementById('current-voice');
-        const voiceLangSpan = document.getElementById('voice-lang');
-        const voiceTypeSpan = document.getElementById('voice-type');
-        
-        // 事件监听器
-        uploadArea.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', handleFileUpload);
-        toggleToc.addEventListener('click', () => tocContainer.classList.toggle('active'));
-        closeToc.addEventListener('click', () => tocContainer.classList.remove('active'));
-        prevChapterBtn.addEventListener('click', goToPrevChapter);
-        nextChapterBtn.addEventListener('click', goToNextChapter);
-        readAloudBtn.addEventListener('click', readCurrentChapter);
-        stopReadingBtn.addEventListener('click', stopReading);
-        voiceSelect.addEventListener('change', updateVoiceInfo);
-        
-        // 初始化语音
-        function initializeVoices() {
-            // 获取所有可用的语音
-            voices = speechSynthesis.getVoices();
-            
-            // 清空语音选择框
-            voiceSelect.innerHTML = '';
-            
-            // 如果没有语音
-            if (voices.length === 0) {
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = '未找到可用语音';
-                voiceSelect.appendChild(option);
-                voiceSelect.disabled = true;
-                return;
-            }
-            
-            // 过滤中文语音
-            const chineseVoices = voices.filter(voice => voice.lang.startsWith('zh'));
-            
-            if (chineseVoices.length === 0) {
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = '未找到中文语音';
-                voiceSelect.appendChild(option);
-                voiceSelect.disabled = true;
-                return;
-            }
-            
-            // 添加中文语音选项
-            chineseVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                voiceSelect.appendChild(option);
-            });
-            
-            // 尝试选择云希语音
-            const yunxiVoice = chineseVoices.find(voice => 
-                voice.name.includes('云希') || 
-                voice.name.includes('Yunxi') ||
-                voice.name.includes('yunxi')
-            );
-            
-            if (yunxiVoice) {
-                voiceSelect.value = yunxiVoice.name;
-            } else {
-                // 选择第一个中文语音
-                voiceSelect.value = chineseVoices[0].name;
-            }
-            
-            // 更新语音信息
-            updateVoiceInfo();
-            voiceInfo.style.display = 'block';
-        }
-        
-        // 更新语音信息
-        function updateVoiceInfo() {
-            const selectedVoiceName = voiceSelect.value;
-            const voice = voices.find(v => v.name === selectedVoiceName);
-            
-            if (voice) {
-                currentVoiceSpan.textContent = voice.name;
-                voiceLangSpan.textContent = voice.lang;
-                voiceTypeSpan.textContent = voice.localService ? '本地' : '云端';
-            }
-        }
-        
-        // 处理文件上传
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file || !file.name.endsWith('.txt')) {
-                alert('请上传TXT格式的文件');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // 确保以UTF-8编码读取文件
-                bookContent = e.target.result;
-                bookTitle.textContent = file.name.replace('.txt', '');
-                processBookContent();
-                emptyState.style.display = 'none';
-                bookContentDiv.style.display = 'block';
-            };
-            reader.readAsText(file, 'UTF-8');
-        }
-        
-        // 处理书籍内容
-        function processBookContent() {
-            // 使用正则表达式分割章节（支持多种章节格式）
-            const chapterRegex = /(第[零一二三四五六七八九十百千\d]+章\s+[^\n]+)|(第[零一二三四五六七八九十百千\d]+节\s+[^\n]+)|(^[一二三四五六七八九十]+、\s*[^\n]+)|(^[1-9]\d*\.\s*[^\n]+)/gm;
-            const matches = [];
-            let match;
-            
-            while ((match = chapterRegex.exec(bookContent)) !== null) {
-                matches.push(match);
-            }
-            
-            chapters = [];
-            let lastIndex = 0;
-            
-            matches.forEach((match, index) => {
-                const title = match[0];
-                const startIndex = match.index;
-                
-                // 获取前一章的内容
-                if (index === 0 && startIndex > 0) {
-                    chapters.push({
-                        title: "前言",
-                        content: bookContent.substring(0, startIndex).trim()
-                    });
-                }
-                
-                // 获取本章内容
-                const nextMatch = index < matches.length - 1 ? matches[index + 1] : null;
-                const endIndex = nextMatch ? nextMatch.index : bookContent.length;
-                const content = bookContent.substring(startIndex + title.length, endIndex).trim();
-                
-                chapters.push({
-                    title: title,
-                    content: content
-                });
-                
-                lastIndex = endIndex;
-            });
-            
-            // 处理最后一章之后的内容
-            if (lastIndex < bookContent.length) {
-                chapters.push({
-                    title: "后记",
-                    content: bookContent.substring(lastIndex).trim()
-                });
-            }
-            
-            // 如果没有找到章节，将整个文件作为一章
-            if (chapters.length === 0) {
-                chapters.push({
-                    title: "全文",
-                    content: bookContent.trim()
-                });
-            }
-            
-            // 生成目录
-            generateTOC();
-            // 显示第一章
-            showChapter(0);
-        }
-        
-        // 生成目录
-        function generateTOC() {
-            tocList.innerHTML = '';
-            chapters.forEach((chapter, index) => {
-                const li = document.createElement('li');
-                li.textContent = chapter.title;
-                li.dataset.index = index;
-                li.addEventListener('click', () => {
-                    showChapter(index);
-                    tocContainer.classList.remove('active');
-                });
-                tocList.appendChild(li);
+        // 獲取前一章的內容
+        if (index === 0 && startIndex > 0) {
+            chapters.push({
+                title: "前言",
+                content: bookContent.substring(0, startIndex).trim()
             });
         }
         
-        // 显示指定章节
-        function showChapter(index) {
-            if (index < 0 || index >= chapters.length) return;
-            
-            // 更新当前章节索引
-            currentChapterIndex = index;
-            
-            // 更新目录活动状态
-            document.querySelectorAll('#toc li').forEach((li, i) => {
-                if (i === index) {
-                    li.classList.add('active');
-                } else {
-                    li.classList.remove('active');
-                }
-            });
-            
-            // 更新章节内容
-            const chapter = chapters[index];
-            chapterTitle.textContent = chapter.title;
-            contentDiv.textContent = chapter.content;
-            
-            // 更新按钮状态
-            prevChapterBtn.disabled = (index === 0);
-            nextChapterBtn.disabled = (index === chapters.length - 1);
-        }
+        // 獲取本章內容
+        const nextMatch = index < matches.length - 1 ? matches[index + 1] : null;
+        const endIndex = nextMatch ? nextMatch.index : bookContent.length;
+        const content = bookContent.substring(startIndex + title.length, endIndex).trim();
         
-        // 上一章
-        function goToPrevChapter() {
-            if (currentChapterIndex > 0) {
-                showChapter(currentChapterIndex - 1);
-            }
-        }
-        
-        // 下一章
-        function goToNextChapter() {
-            if (currentChapterIndex < chapters.length - 1) {
-                showChapter(currentChapterIndex + 1);
-            }
-        }
-        
-        // 朗读当前章节
-        function readCurrentChapter() {
-            if (isReading) {
-                stopReading();
-                return;
-            }
-            
-            const chapter = chapters[currentChapterIndex];
-            const text = chapter.title + "。" + chapter.content;
-            
-            // 停止任何正在进行的朗读
-            speechSynthesis.cancel();
-            
-            // 创建新的朗读实例
-            utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-            
-            // 设置选择的语音
-            const selectedVoiceName = voiceSelect.value;
-            const voice = voices.find(v => v.name === selectedVoiceName);
-            
-            if (voice) {
-                utterance.voice = voice;
-                utterance.lang = voice.lang;
-            }
-            
-            // 朗读开始事件
-            utterance.onstart = function() {
-                isReading = true;
-                readingIndicator.style.display = 'block';
-                readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停朗读';
-                readAloudBtn.classList.add('btn-warning');
-            };
-            
-            // 朗读结束事件
-            utterance.onend = function() {
-                isReading = false;
-                readingIndicator.style.display = 'none';
-                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读本章';
-                readAloudBtn.classList.remove('btn-warning');
-                
-                // 自动播放下一个章节
-                if (currentChapterIndex < chapters.length - 1) {
-                    setTimeout(() => {
-                        goToNextChapter();
-                        setTimeout(readCurrentChapter, 1000);
-                    }, 500);
-                }
-            };
-            
-            // 开始朗读
-            speechSynthesis.speak(utterance);
-        }
-        
-        // 停止朗读
-        function stopReading() {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-                isReading = false;
-                readingIndicator.style.display = 'none';
-                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读本章';
-                readAloudBtn.classList.remove('btn-warning');
-            }
-        }
-        
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            // 检测浏览器是否支持Web Speech API
-            if (!('speechSynthesis' in window)) {
-                readAloudBtn.disabled = true;
-                readAloudBtn.title = "您的浏览器不支持文本朗读功能";
-                voiceSelect.disabled = true;
-                return;
-            }
-            
-            // 初始化语音列表
-            if (speechSynthesis.getVoices().length > 0) {
-                initializeVoices();
-            } else {
-                // 如果语音列表尚未加载，则等待加载完成
-                speechSynthesis.onvoiceschanged = initializeVoices;
-            }
+        chapters.push({
+            title: title,
+            content: content
         });
+        
+        lastIndex = endIndex;
+    });
+    
+    // 處理最後一章之後的內容
+    if (lastIndex < bookContent.length) {
+        chapters.push({
+            title: "後記",
+            content: bookContent.substring(lastIndex).trim()
+        });
+    }
+    
+    // 如果沒有找到章節，將整個文件作為一章
+    if (chapters.length === 0) {
+        chapters.push({
+            title: "全文",
+            content: bookContent.trim()
+        });
+    }
+    
+    // 生成目錄
+    generateTOC();
+    // 顯示第一章
+    showChapter(0);
+}
+
+// 生成目錄
+function generateTOC() {
+    tocList.innerHTML = '';
+    chapters.forEach((chapter, index) => {
+        const li = document.createElement('li');
+        li.textContent = chapter.title;
+        li.dataset.index = index;
+        li.addEventListener('click', () => {
+            showChapter(index);
+            tocContainer.classList.remove('active');
+        });
+        tocList.appendChild(li);
+    });
+}
+
+// 顯示指定章節
+function showChapter(index) {
+    if (index < 0 || index >= chapters.length) return;
+    
+    // 更新當前章節索引
+    currentChapterIndex = index;
+    
+    // 更新目錄活動狀態
+    document.querySelectorAll('#toc li').forEach((li, i) => {
+        if (i === index) {
+            li.classList.add('active');
+        } else {
+            li.classList.remove('active');
+        }
+    });
+    
+    // 更新章節內容
+    const chapter = chapters[index];
+    chapterTitle.textContent = chapter.title;
+    contentDiv.textContent = chapter.content;
+    
+    // 更新按鈕狀態
+    prevChapterBtn.disabled = (index === 0);
+    nextChapterBtn.disabled = (index === chapters.length - 1);
+}
+
+// 上一章
+function goToPrevChapter() {
+    if (currentChapterIndex > 0) {
+        showChapter(currentChapterIndex - 1);
+    }
+}
+
+// 下一章
+function goToNextChapter() {
+    if (currentChapterIndex < chapters.length - 1) {
+        showChapter(currentChapterIndex + 1);
+    }
+}
+
+// 朗讀當前章節
+function readCurrentChapter() {
+    if (isReading) {
+        stopReading();
+        return;
+    }
+    
+    const chapter = chapters[currentChapterIndex];
+    const text = chapter.title + "。" + chapter.content;
+    
+    // 停止任何正在進行的朗讀
+    speechSynthesis.cancel();
+    
+    // 創建新的朗讀實例
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // 設置選擇的語音
+    const selectedVoiceName = voiceSelect.value;
+    const voice = voices.find(v => v.name === selectedVoiceName);
+    
+    if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang; // 使用語音的語言代碼
+    } else {
+        utterance.lang = 'zh-CN'; // 默認回退到中文
+    }
+    
+    // 朗讀開始事件
+    utterance.onstart = function() {
+        isReading = true;
+        readingIndicator.style.display = 'block';
+        readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
+        readAloudBtn.classList.add('btn-warning');
+    };
+    
+    // 朗讀結束事件
+    utterance.onend = function() {
+        isReading = false;
+        readingIndicator.style.display = 'none';
+        readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
+        readAloudBtn.classList.remove('btn-warning');
+        
+        // 自動播放下一個章節
+        if (currentChapterIndex < chapters.length - 1) {
+            setTimeout(() => {
+                goToNextChapter();
+                setTimeout(readCurrentChapter, 1000);
+            }, 500);
+        }
+    };
+    
+    // 開始朗讀
+    speechSynthesis.speak(utterance);
+}
+
+// 停止朗讀
+function stopReading() {
+    if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        isReading = false;
+        readingIndicator.style.display = 'none';
+        readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
+        readAloudBtn.classList.remove('btn-warning');
+    }
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    // 檢測瀏覽器是否支持Web Speech API
+    if (!('speechSynthesis' in window)) {
+        readAloudBtn.disabled = true;
+        readAloudBtn.title = '您的設備不支持文字朗讀功能';
+        voiceSelect.disabled = true;
+        voiceInfo.style.display = 'block';
+        voiceInfo.innerHTML = '<i class="fas fa-info-circle"></i> 您的設備不支持文字朗讀功能，請嘗試更新瀏覽器或使用其他設備';
+        return;
+    }
+    
+    // 初始化語音列表
+    if (speechSynthesis.getVoices().length > 0) {
+        initializeVoices();
+    } else {
+        speechSynthesis.onvoiceschanged = initializeVoices;
+        // 語音加載失敗的回退處理
+        setTimeout(() => {
+            if (speechSynthesis.getVoices().length === 0) {
+                voiceSelect.innerHTML = '';
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '語音加載失敗，請檢查網絡或TTS設置';
+                voiceSelect.appendChild(option);
+                voiceSelect.disabled = true;
+                voiceInfo.style.display = 'block';
+                voiceInfo.innerHTML = '<i class="fas fa-info-circle"></i> 語音加載失敗，請確保網絡連接正常並檢查TTS設置';
+            }
+        }, 5000); // 等待 5 秒
+    }
+});
     </script>
 </body>
 </html>
