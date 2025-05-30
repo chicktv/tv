@@ -39,29 +39,65 @@
         header {
             background: linear-gradient(to right, #2c3e50, #4a6491);
             color: white;
-            padding: 20px;
+            padding: 10px 20px;
             text-align: center;
             position: relative;
+            transition: padding 0.3s ease, height 0.3s ease;
+            height: 80px; /* 縮小狀態高度 */
+            overflow: hidden;
         }
         
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
+        header.minimized {
+            padding: 10px 20px;
+        }
+        
+        header.expand {
+            height: auto; /* 展開時自動高度 */
+            padding: 20px;
+        }
+        
+        .header-toggle {
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
         
-        h1 i {
+        .header-toggle h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-toggle i {
             color: #4FC3F7;
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .header-toggle.expand i {
+            transform: rotate(180deg);
+        }
+        
+        .header-content {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+            transition: opacity 0.3s ease;
+        }
+        
+        header.expand .header-content {
+            display: flex;
+            opacity: 1;
         }
         
         .upload-container {
             background: rgba(255, 255, 255, 0.2);
             border-radius: 50px;
             padding: 15px;
-            margin: 15px 0;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -148,7 +184,7 @@
             transform: translateX(5px);
         }
         
-        #toc li.active {
+        #toc li.current-chapter {
             background: #bbdefb;
             border-left: 4px solid #2196F3;
             font-weight: bold;
@@ -220,7 +256,7 @@
             box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
         }
         
-        .btn-secondary {
+        .btn-success {
             background: linear-gradient(to right, #4CAF50, #8BC34A);
             color: white;
             box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
@@ -307,7 +343,6 @@
             background: rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             padding: 15px;
-            margin-top: 10px;
             justify-content: center;
         }
         
@@ -335,7 +370,6 @@
         }
         
         .voice-info {
-            margin-top: 10px;
             font-size: 0.85rem;
             background: rgba(255, 255, 255, 0.15);
             padding: 8px 12px;
@@ -373,7 +407,7 @@
                 font-size: 0.9rem;
             }
             
-            h1 {
+            .header-toggle h1 {
                 font-size: 1.5rem;
             }
             
@@ -421,7 +455,7 @@
             }
         }
         
-        .chapter-content {
+        .content-line {
             text-indent: 2em;
             margin-bottom: 1em;
             line-height: 1.8;
@@ -439,54 +473,59 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1><i class="fas fa-book-reader"></i> 全能電子書閱讀器</h1>
-            <div class="upload-container" id="upload-area">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>點擊上傳TXT電子書（支援所有編碼）</p>
-                <input type="file" id="file-input" accept=".txt">
+        <header class="minimized">
+            <div class="header-toggle" id="header-toggle">
+                <h1><i class="fas fa-book-reader"></i> 全能電子書閱讀器</h1>
+                <i class="fas fa-chevron-down"></i>
             </div>
-            
-            <div class="settings-panel">
-                <div class="setting-group">
-                    <span class="setting-label"><i class="fas fa-microphone-alt"></i> 語音:</span>
-                    <select id="voice-select" class="setting-control">
-                        <option value="loading">正在載入語音清單...</option>
-                    </select>
+            <div class="header-content">
+                <div class="upload-container" id="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>點擊上傳TXT電子書（支援所有編碼）</p>
+                    <input type="file" id="file-input" accept=".txt">
                 </div>
                 
-                <div class="setting-group">
-                    <span class="setting-label"><i class="fas fa-tachometer-alt"></i> 語速:</span>
-                    <select id="speed-select" class="setting-control">
-                        <option value="0.5">0.5x</option>
-                        <option value="0.7">0.7x</option>
-                        <option value="1.0">1.0x</option>
-                        <option value="1.3" selected>1.3x</option>
-                        <option value="1.5">1.5x</option>
-                        <option value="1.8">1.8x</option>
-                        <option value="2.0">2.0x</option>
-                    </select>
+                <div class="settings-panel">
+                    <div class="setting-group">
+                        <span class="setting-label"><i class="fas fa-microphone-alt"></i> 語音:</span>
+                        <select id="voice-select" class="setting-control">
+                            <option value="loading">正在載入語音清單...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <span class="setting-label"><i class="fas fa-tachometer-alt"></i> 語速:</span>
+                        <select id="speed-select" class="setting-control">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.7">0.7x</option>
+                            <option value="1.0">1.0x</option>
+                            <option value="1.3">1.3x</option>
+                            <option value="1.5" selected>1.5x</option>
+                            <option value="1.8">1.8x</option>
+                            <option value="2.0">2.0x</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <span class="setting-label"><i class="fas fa-file-code"></i> 編碼:</span>
+                        <select id="encoding-select" class="setting-control">
+                            <option value="auto" selected>自動檢測</option>
+                            <option value="utf-8">UTF-8</option>
+                            <option value="gbk">GBK/GB2312</option>
+                            <option value="big5">Big5</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <div class="setting-group">
-                    <span class="setting-label"><i class="fas fa-file-code"></i> 編碼:</span>
-                    <select id="encoding-select" class="setting-control">
-                        <option value="auto" selected>自動檢測</option>
-                        <option value="utf-8" >UTF-8</option>
-                        <option value="gbk">GBK/GB2312</option>
-                        <option value="big5">Big5</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="voice-info" id="voice-info">
-                <div class="info-item">
-                    <i class="fas fa-info-circle"></i> 
-                    <span>當前語音: <span id="current-voice">未選擇</span></span>
-                </div>
-                <div class="info-item">
-                    <i class="fas fa-globe"></i> 
-                    <span>語言: <span id="voice-lang">-</span></span>
+                <div class="voice-info" id="voice-info">
+                    <div class="info-item">
+                        <i class="fas fa-info-circle"></i> 
+                        <span>當前語音: <span id="current-voice">未選擇</span></span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-globe"></i> 
+                        <span>語言: <span id="voice-lang">-</span></span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -526,7 +565,7 @@
                         <!-- 內容將動態填充 -->
                     </div>
                     <div class="reading-indicator" id="reading-indicator">
-                        <i class="fas fa-volume-up"></i> 朗讀中... (速度: <span id="current-speed">1.3x</span>)
+                        <i class="fas fa-volume-up"></i> 朗讀中... (速度: <span id="current-speed">1.5x</span>)
                     </div>
                 </div>
             </div>
@@ -536,10 +575,10 @@
             <button class="btn btn-primary" id="prev-chapter">
                 <i class="fas fa-arrow-left"></i> 上一章
             </button>
-            <button class="btn btn-secondary" id="read-aloud">
+            <button class="btn btn-success" id="read-aloud">
                 <i class="fas fa-volume-up"></i> 朗讀本章
             </button>
-            <button class="btn btn-warning" id="stop-reading">
+            <button class="btn btn-danger" id="stop-reading">
                 <i class="fas fa-stop"></i> 停止朗讀
             </button>
             <button class="btn btn-primary" id="next-chapter">
@@ -548,454 +587,461 @@
         </div>
     </div>
 
-  <script>
-    // 全域變數
-    let bookContent = "";
-    let chapters = [];
-    let currentChapterIndex = 0;
-    let speechSynthesis = window.speechSynthesis;
-    let utterance = null;
-    let isReading = false;
-    let isPaused = false; // 新增暫停狀態
-    let voices = [];
-    let currentSpeed = 1.3;
-    let fileName = "";
-    
-    // DOM元素
-    const fileInput = document.getElementById('file-input');
-    const uploadArea = document.getElementById('upload-area');
-    const tocContainer = document.getElementById('toc-container');
-    const toggleToc = document.getElementById('toggle-toc');
-    const closeToc = document.getElementById('close-toc');
-    const tocList = document.getElementById('toc');
-    const emptyState = document.getElementById('empty-state');
-    const bookContentDiv = document.getElementById('book-content');
-    const bookTitle = document.getElementById('book-title');
-    const chapterTitle = document.getElementById('chapter-title');
-    const contentDiv = document.getElementById('content');
-    const prevChapterBtn = document.getElementById('prev-chapter');
-    const nextChapterBtn = document.getElementById('next-chapter');
-    const readAloudBtn = document.getElementById('read-aloud');
-    const stopReadingBtn = document.getElementById('stop-reading');
-    const readingIndicator = document.getElementById('reading-indicator');
-    const voiceSelect = document.getElementById('voice-select');
-    const speedSelect = document.getElementById('speed-select');
-    const encodingSelect = document.getElementById('encoding-select');
-    const voiceInfo = document.getElementById('voice-info');
-    const currentVoiceSpan = document.getElementById('current-voice');
-    const voiceLangSpan = document.getElementById('voice-lang');
-    const currentSpeedSpan = document.getElementById('current-speed');
-    const bookStatus = document.getElementById('book-status');
-    const chapterStatus = document.getElementById('chapter-status');
-    
-    // 事件監聽器
-    uploadArea.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleFileUpload);
-    toggleToc.addEventListener('click', () => tocContainer.classList.toggle('active'));
-    closeToc.addEventListener('click', () => tocContainer.classList.remove('active'));
-    prevChapterBtn.addEventListener('click', goToPrevChapter);
-    nextChapterBtn.addEventListener('click', goToNextChapter);
-    readAloudBtn.addEventListener('click', readCurrentChapter);
-    stopReadingBtn.addEventListener('click', stopReading);
-    voiceSelect.addEventListener('change', updateVoiceInfo);
-    speedSelect.addEventListener('change', function() {
-        currentSpeed = parseFloat(this.value);
-        currentSpeedSpan.textContent = this.value + 'x';
-    });
-    
-    // 初始化語音
-    function initializeVoices() {
-        voices = speechSynthesis.getVoices();
-        voiceSelect.innerHTML = '';
+    <script>
+        // 全域變數
+        let bookContent = "";
+        let chapters = [];
+        let currentChapterIndex = 0;
+        let speechSynthesis = window.speechSynthesis;
+        let utterance = null;
+        let isReading = false;
+        let isPaused = false;
+        let voices = [];
+        let currentSpeed = 1.5;
+        let fileName = "";
         
-        if (voices.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = '未找到可用語音';
-            voiceSelect.appendChild(option);
-            voiceSelect.disabled = true;
-            return;
-        }
+        // DOM元素
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
+        const tocContainer = document.getElementById('toc-container');
+        const toggleToc = document.getElementById('toggle-toc');
+        const closeToc = document.getElementById('close-toc');
+        const tocList = document.getElementById('toc');
+        const emptyState = document.getElementById('empty-state');
+        const bookContentDiv = document.getElementById('book-content');
+        const bookTitle = document.getElementById('book-title');
+        const chapterTitle = document.getElementById('chapter-title');
+        const contentDiv = document.getElementById('content');
+        const prevChapterBtn = document.getElementById('prev-chapter');
+        const nextChapterBtn = document.getElementById('next-chapter');
+        const readAloudBtn = document.getElementById('read-aloud');
+        const stopReadingBtn = document.getElementById('stop-reading');
+        const readingIndicator = document.getElementById('reading-indicator');
+        const voiceSelect = document.getElementById('voice-select');
+        const speedSelect = document.getElementById('speed-select');
+        const encodingSelect = document.getElementById('encoding-select');
+        const voiceInfo = document.getElementById('voice-info');
+        const currentVoiceSpan = document.getElementById('current-voice');
+        const voiceLangSpan = document.getElementById('voice-lang');
+        const currentSpeedSpan = document.getElementById('current-speed');
+        const bookStatus = document.getElementById('book-status');
+        const chapterStatus = document.getElementById('chapter-status');
+        const header = document.querySelector('header');
+        const headerToggle = document.getElementById('header-toggle');
         
-        const chineseVoices = voices.filter(voice => voice.lang.startsWith('zh'));
-        
-        if (chineseVoices.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = '未找到中文語音';
-            voiceSelect.appendChild(option);
-            voiceSelect.disabled = true;
-            return;
-        }
-        
-        chineseVoices.forEach(voice => {
-            const option = document.createElement('option');
-            option.value = voice.name;
-            option.textContent = `${voice.name} (${voice.lang})`;
-            voiceSelect.appendChild(option);
+        // 事件監聽器
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileUpload);
+        toggleToc.addEventListener('click', () => tocContainer.classList.toggle('active'));
+        closeToc.addEventListener('click', () => tocContainer.classList.remove('active'));
+        prevChapterBtn.addEventListener('click', goToPrevChapter);
+        nextChapterBtn.addEventListener('click', goToNextChapter);
+        readAloudBtn.addEventListener('click', readCurrentChapter);
+        stopReadingBtn.addEventListener('click', stopReading);
+        voiceSelect.addEventListener('change', updateVoiceInfo);
+        speedSelect.addEventListener('change', function() {
+            currentSpeed = parseFloat(this.value);
+            currentSpeedSpan.textContent = this.value + 'x';
+        });
+        headerToggle.addEventListener('click', () => {
+            header.classList.toggle('minimized');
+            header.classList.toggle('expand');
+            headerToggle.classList.toggle('expand');
         });
         
-        const yunxiVoice = chineseVoices.find(voice => 
-            voice.name.includes('雲希') || 
-            voice.name.includes('Yunxi') ||
-            voice.name.includes('yunxi')
-        );
-        
-        if (yunxiVoice) {
-            voiceSelect.value = yunxiVoice.name;
-        } else {
-            voiceSelect.value = chineseVoices[0].name;
-        }
-        
-        updateVoiceInfo();
-        voiceInfo.style.display = 'flex';
-    }
-    
-    // 更新語音資訊
-    function updateVoiceInfo() {
-        const selectedVoiceName = voiceSelect.value;
-        const voice = voices.find(v => v.name === selectedVoiceName);
-        
-        if (voice) {
-            currentVoiceSpan.textContent = voice.name;
-            voiceLangSpan.textContent = voice.lang;
-        }
-    }
-    
-    // 保存閱讀進度
-    function saveProgress() {
-        if (fileName && chapters.length > 0) {
-            localStorage.setItem(`readingProgress_${fileName}`, currentChapterIndex);
-        }
-    }
-    
-    // 載入閱讀進度
-    function loadProgress() {
-        if (fileName) {
-            const savedIndex = localStorage.getItem(`readingProgress_${fileName}`);
-            if (savedIndex !== null) {
-                const index = parseInt(savedIndex, 10);
-                if (index >= 0 && index < chapters.length) {
-                    currentChapterIndex = index;
-                    return true;
-                }
+        // 初始化語音
+        function initializeVoices() {
+            voices = speechSynthesis.getVoices();
+            voiceSelect.innerHTML = '';
+            
+            if (voices.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '未找到可用語音';
+                voiceSelect.appendChild(option);
+                voiceSelect.disabled = true;
+                return;
             }
-        }
-        return false;
-    }
-    
-    // 處理文件上傳
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file || !file.name.endsWith('.txt')) {
-            alert('請上傳TXT格式的檔');
-            return;
-        }
-        
-        fileName = file.name;
-        const reader = new FileReader();
-        const encoding = encodingSelect.value;
-        
-        reader.onload = function(e) {
-            try {
-                if (encoding === 'auto') {
-                    const result = detectEncoding(e.target.result);
-                    bookContent = result.content;
-                    console.log(`自動檢測編碼: ${result.encoding}`);
-                } else {
-                    const decoder = new TextDecoder(encoding);
-                    const data = new Uint8Array(e.target.result);
-                    bookContent = decoder.decode(data);
-                }
-                
-                bookTitle.textContent = fileName.replace('.txt', '');
-                splitIntoChapters();
-                emptyState.style.display = 'none';
-                bookContentDiv.style.display = 'block';
-                bookStatus.textContent = `已載入: ${fileName}`;
-                
-                if (loadProgress()) {
-                    showChapter();
-                }
-            } catch (error) {
-                console.error('檔解碼錯誤:', error);
-                alert('檔解碼失敗，請嘗試其他編碼');
+            
+            const chineseVoices = voices.filter(voice => voice.lang.startsWith('zh'));
+            
+            if (chineseVoices.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '未找到中文語音';
+                voiceSelect.appendChild(option);
+                voiceSelect.disabled = true;
+                return;
             }
-        };
-        
-        if (encoding === 'auto') {
-            reader.readAsArrayBuffer(file);
-        } else {
-            reader.readAsText(file, encoding);
-        }
-    }
-    
-    // 簡單的編碼檢測
-    function detectEncoding(buffer) {
-        const encodings = ['utf-8', 'gbk', 'big5', 'windows-1252', 'iso-8859-1'];
-        
-        for (let encoding of encodings) {
-            try {
-                const decoder = new TextDecoder(encoding);
-                const data = new Uint8Array(buffer);
-                const content = decoder.decode(data);
-                
-                const invalidCharCount = (content.match(/�/g) || []).length;
-                if (invalidCharCount / content.length < 0.1) {
-                    return {
-                        encoding: encoding,
-                        content: content
-                    };
-                }
-            } catch (e) {
-                // 繼續嘗試下一個編碼
-            }
-        }
-        
-        const decoder = new TextDecoder('auto');
-        const data = new Uint8Array(buffer);
-        return {
-            encoding: 'auto',
-            content: decoder.decode(data)
-        };
-    }
-    
-    // 分割章節
-    function splitIntoChapters() {
-        const lines = bookContent.split('\n');
-        chapters = [];
-        let currentChapterContent = [];
-        let chapterTitle = '';
-        const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
-
-        for (let i = 0; i < lines.length; i++) {
-            let cleanedLine = lines[i].replace(/[\s　]+/g, '');
-            if (cleanedLine === '') {
-                continue;
-            }
-
-            if (chapterRegex.test(cleanedLine)) {
-                if (currentChapterContent.length > 0 && chapterTitle) {
-                    chapters.push({
-                        title: chapterTitle,
-                        content: currentChapterContent.join('\n').trim()
-                    });
-                }
-                chapterTitle = lines[i].trim();
-                currentChapterContent = [];
+            
+            chineseVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+            
+            const yunxiVoice = chineseVoices.find(voice => 
+                voice.name.includes('雲希') || 
+                voice.name.includes('Yunxi') ||
+                voice.name.includes('yunxi')
+            );
+            
+            if (yunxiVoice) {
+                voiceSelect.value = yunxiVoice.name;
             } else {
-                currentChapterContent.push(lines[i]);
+                voiceSelect.value = chineseVoices[0].name;
+            }
+            
+            updateVoiceInfo();
+            voiceInfo.style.display = 'flex';
+        }
+        
+        // 更新語音資訊
+        function updateVoiceInfo() {
+            const selectedVoiceName = voiceSelect.value;
+            const voice = voices.find(v => v.name === selectedVoiceName);
+            
+            if (voice) {
+                currentVoiceSpan.textContent = voice.name;
+                voiceLangSpan.textContent = voice.lang;
             }
         }
-
-        if (currentChapterContent.length > 0 && chapterTitle) {
-            chapters.push({
-                title: chapterTitle,
-                content: currentChapterContent.join('\n').trim()
-            });
+        
+        // 保存閱讀進度
+        function saveProgress() {
+            if (fileName && chapters.length > 0) {
+                localStorage.setItem(`readingProgress_${fileName}`, currentChapterIndex);
+            }
         }
-
-        if (chapters.length === 0 && bookContent.trim()) {
-            chapters.push({
-                title: "全文",
-                content: bookContent.trim()
-            });
+        
+        // 載入閱讀進度
+        function loadProgress() {
+            if (fileName) {
+                const savedIndex = localStorage.getItem(`readingProgress_${fileName}`);
+                if (savedIndex !== null) {
+                    const index = parseInt(savedIndex, 10);
+                    if (index >= 0 && index < chapters.length) {
+                        currentChapterIndex = index;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
-
-        generateTOC();
-        showChapter();
-    }
-    
-    // 生成目錄
-    function generateTOC() {
-        tocList.innerHTML = '';
-        chapters.forEach((chapter, index) => {
-            const li = document.createElement('li');
-            li.textContent = chapter.title;
-            li.dataset.index = index;
-            li.onclick = () => {
-                jumpToChapter(index);
-                if (window.innerWidth <= 768) {
-                    tocContainer.classList.remove('active');
+        
+        // 處理文件上傳
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !file.name.endsWith('.txt')) {
+                alert('請上傳TXT格式的檔');
+                return;
+            }
+            
+            fileName = file.name;
+            const reader = new FileReader();
+            const encoding = encodingSelect.value;
+            
+            reader.onload = function(e) {
+                try {
+                    if (encoding === 'auto') {
+                        const result = detectEncoding(e.target.result);
+                        bookContent = result.content;
+                        console.log(`自動檢測編碼: ${result.encoding}`);
+                    } else {
+                        const decoder = new TextDecoder(encoding);
+                        const data = new Uint8Array(e.target.result);
+                        bookContent = decoder.decode(data);
+                    }
+                    
+                    bookTitle.textContent = fileName.replace('.txt', '');
+                    splitIntoChapters();
+                    emptyState.style.display = 'none';
+                    bookContentDiv.style.display = 'block';
+                    bookStatus.textContent = `已載入: ${fileName}`;
+                    
+                    if (loadProgress()) {
+                        showChapter();
+                    }
+                } catch (error) {
+                    console.error('檔解碼錯誤:', error);
+                    alert('檔解碼失敗，請嘗試其他編碼');
                 }
             };
-            if (index === currentChapterIndex) {
-                li.classList.add('current-chapter');
-            }
-            tocList.appendChild(li);
-        });
-    }
-    
-    // 滾動到頂部
-    function scrollToTop() {
-        contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    
-    // 跳轉到指定章節
-    function jumpToChapter(index) {
-        currentChapterIndex = index;
-        showChapter();
-        scrollToTop();
-        saveProgress();
-        if (isReading) {
-            stopReading();
-            readCurrentChapter();
-        }
-    }
-    
-    // 顯示當前章節
-    function showChapter() {
-        if (currentChapterIndex < 0) currentChapterIndex = 0;
-        if (currentChapterIndex >= chapters.length) currentChapterIndex = chapters.length - 1;
-
-        if (!chapters[currentChapterIndex]) {
-            contentDiv.innerHTML = '無內容';
-            bookTitle.textContent = fileName.replace('.txt', '');
-            chapterTitle.textContent = '';
-            chapterStatus.textContent = '0/0 章';
-            prevChapterBtn.disabled = true;
-            nextChapterBtn.disabled = true;
-            return;
-        }
-
-        const chapter = chapters[currentChapterIndex];
-        bookTitle.textContent = fileName.replace('.txt', '');
-        chapterTitle.textContent = chapter.title;
-
-        const lines = chapter.content.split('\n').filter(line => line.trim().length > 0);
-        contentDiv.innerHTML = '';
-        lines.forEach((line, lineIndex) => {
-            const p = document.createElement('p');
-            p.className = 'content-line';
-            p.textContent = line;
-            p.onclick = () => {};
-            contentDiv.appendChild(p);
-        });
-
-        prevChapterBtn.disabled = (currentChapterIndex === 0);
-        nextChapterBtn.disabled = (currentChapterIndex === chapters.length - 1);
-        chapterStatus.textContent = `${currentChapterIndex + 1}/${chapters.length} 章`;
-
-        generateTOC();
-    }
-    
-    // 上一章
-    function goToPrevChapter() {
-        if (currentChapterIndex > 0) {
-            jumpToChapter(currentChapterIndex - 1);
-        }
-    }
-    
-    // 下一章
-    function goToNextChapter() {
-        if (currentChapterIndex < chapters.length - 1) {
-            jumpToChapter(currentChapterIndex + 1);
-        }
-    }
-    
-    // 朗讀當前章節
-    function readCurrentChapter() {
-        if (isReading && !isPaused) {
-            // 正在朗讀，執行暫停
-            speechSynthesis.pause();
-            isPaused = true;
-            readAloudBtn.innerHTML = '<i class="fas fa-play"></i> 繼續朗讀';
-            readAloudBtn.classList.remove('btn-warning');
-            readAloudBtn.classList.add('btn-success');
-            readingIndicator.style.display = 'block';
-            return;
-        } else if (isPaused) {
-            // 處於暫停狀態，恢復朗讀
-            speechSynthesis.resume();
-            isReading = true;
-            isPaused = false;
-            readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
-            readAloudBtn.classList.remove('btn-success');
-            readAloudBtn.classList.add('btn-warning');
-            readingIndicator.style.display = 'block';
-            return;
-        }
-        
-        const chapter = chapters[currentChapterIndex];
-        if (!chapter) return;
-        
-        const text = chapter.title + "。" + chapter.content;
-        
-        speechSynthesis.cancel();
-        
-        utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'zh-CN';
-        utterance.rate = currentSpeed;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-        
-        const selectedVoiceName = voiceSelect.value;
-        const voice = voices.find(v => v.name === selectedVoiceName);
-        
-        if (voice) {
-            utterance.voice = voice;
-            utterance.lang = voice.lang;
-        }
-        
-        utterance.onstart = function() {
-            isReading = true;
-            isPaused = false;
-            readingIndicator.style.display = 'block';
-            readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
-            readAloudBtn.classList.remove('btn-success');
-            readAloudBtn.classList.add('btn-warning');
-        };
-        
-        utterance.onend = function() {
-            isReading = false;
-            isPaused = false;
-            readingIndicator.style.display = 'none';
-            readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
-            readAloudBtn.classList.remove('btn-warning');
-            readAloudBtn.classList.remove('btn-success');
             
-            if (currentChapterIndex < chapters.length - 1) {
-                setTimeout(() => {
-                    goToNextChapter();
-                    setTimeout(readCurrentChapter, 1000);
-                }, 500);
+            if (encoding === 'auto') {
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.readAsText(file, encoding);
             }
-        };
+        }
         
-        speechSynthesis.speak(utterance);
-    }
-    
-    // 停止朗讀
-    function stopReading() {
-        if (speechSynthesis.speaking || isPaused) {
+        // 簡單的編碼檢測
+        function detectEncoding(buffer) {
+            const encodings = ['utf-8', 'gbk', 'big5', 'windows-1252', 'iso-8859-1'];
+            
+            for (let encoding of encodings) {
+                try {
+                    const decoder = new TextDecoder(encoding);
+                    const data = new Uint8Array(buffer);
+                    const content = decoder.decode(data);
+                    
+                    const invalidCharCount = (content.match(/�/g) || []).length;
+                    if (invalidCharCount / content.length < 0.1) {
+                        return {
+                            encoding: encoding,
+                            content: content
+                        };
+                    }
+                } catch (e) {
+                    // 繼續嘗試下一個編碼
+                }
+            }
+            
+            const decoder = new TextDecoder('auto');
+            const data = new Uint8Array(buffer);
+            return {
+                encoding: 'auto',
+                content: decoder.decode(data)
+            };
+        }
+        
+        // 分割章節
+        function splitIntoChapters() {
+            const lines = bookContent.split('\n');
+            chapters = [];
+            let currentChapterContent = [];
+            let chapterTitle = '';
+            const chapterRegex = /^第[一二三四五六七八九十百千\d]+章/i;
+
+            for (let i = 0; i < lines.length; i++) {
+                let cleanedLine = lines[i].replace(/[\s　]+/g, '');
+                if (cleanedLine === '') {
+                    continue;
+                }
+
+                if (chapterRegex.test(cleanedLine)) {
+                    if (currentChapterContent.length > 0 && chapterTitle) {
+                        chapters.push({
+                            title: chapterTitle,
+                            content: currentChapterContent.join('\n').trim()
+                        });
+                    }
+                    chapterTitle = lines[i].trim();
+                    currentChapterContent = [];
+                } else {
+                    currentChapterContent.push(lines[i]);
+                }
+            }
+
+            if (currentChapterContent.length > 0 && chapterTitle) {
+                chapters.push({
+                    title: chapterTitle,
+                    content: currentChapterContent.join('\n').trim()
+                });
+            }
+
+            if (chapters.length === 0 && bookContent.trim()) {
+                chapters.push({
+                    title: "全文",
+                    content: bookContent.trim()
+                });
+            }
+
+            generateTOC();
+            showChapter();
+        }
+        
+        // 生成目錄
+        function generateTOC() {
+            tocList.innerHTML = '';
+            chapters.forEach((chapter, index) => {
+                const li = document.createElement('li');
+                li.textContent = chapter.title;
+                li.dataset.index = index;
+                li.onclick = () => {
+                    jumpToChapter(index);
+                    if (window.innerWidth <= 768) {
+                        tocContainer.classList.remove('active');
+                    }
+                };
+                if (index === currentChapterIndex) {
+                    li.classList.add('current-chapter');
+                }
+                tocList.appendChild(li);
+            });
+        }
+        
+        // 滾動到頂部
+        function scrollToTop() {
+            contentDiv.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // 跳轉到指定章節
+        function jumpToChapter(index) {
+            currentChapterIndex = index;
+            showChapter();
+            scrollToTop();
+            saveProgress();
+            if (isReading) {
+                stopReading();
+                readCurrentChapter();
+            }
+        }
+        
+        // 顯示當前章節
+        function showChapter() {
+            if (currentChapterIndex < 0) currentChapterIndex = 0;
+            if (currentChapterIndex >= chapters.length) currentChapterIndex = chapters.length - 1;
+
+            if (!chapters[currentChapterIndex]) {
+                contentDiv.innerHTML = '無內容';
+                bookTitle.textContent = fileName.replace('.txt', '');
+                chapterTitle.textContent = '';
+                chapterStatus.textContent = '0/0 章';
+                prevChapterBtn.disabled = true;
+                nextChapterBtn.disabled = true;
+                return;
+            }
+
+            const chapter = chapters[currentChapterIndex];
+            bookTitle.textContent = fileName.replace('.txt', '');
+            chapterTitle.textContent = chapter.title;
+
+            const lines = chapter.content.split('\n').filter(line => line.trim().length > 0);
+            contentDiv.innerHTML = '';
+            lines.forEach((line, lineIndex) => {
+                const p = document.createElement('p');
+                p.className = 'content-line';
+                p.textContent = line;
+                p.onclick = () => {};
+                contentDiv.appendChild(p);
+            });
+
+            prevChapterBtn.disabled = (currentChapterIndex === 0);
+            nextChapterBtn.disabled = (currentChapterIndex === chapters.length - 1);
+            chapterStatus.textContent = `${currentChapterIndex + 1}/${chapters.length} 章`;
+
+            generateTOC();
+        }
+        
+        // 上一章
+        function goToPrevChapter() {
+            if (currentChapterIndex > 0) {
+                jumpToChapter(currentChapterIndex - 1);
+            }
+        }
+        
+        // 下一章
+        function goToNextChapter() {
+            if (currentChapterIndex < chapters.length - 1) {
+                jumpToChapter(currentChapterIndex + 1);
+            }
+        }
+        
+        // 朗讀當前章節
+        function readCurrentChapter() {
+            if (isReading && !isPaused) {
+                // 正在朗讀，執行暫停
+                speechSynthesis.pause();
+                isPaused = true;
+                readAloudBtn.innerHTML = '<i class="fas fa-play"></i> 繼續朗讀';
+                readAloudBtn.classList.remove('btn-warning');
+                readAloudBtn.classList.add('btn-success');
+                readingIndicator.style.display = 'block';
+                return;
+            } else if (isPaused) {
+                // 處於暫停狀態，恢復朗讀
+                speechSynthesis.resume();
+                isReading = true;
+                isPaused = false;
+                readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
+                readAloudBtn.classList.remove('btn-success');
+                readAloudBtn.classList.add('btn-warning');
+                readingIndicator.style.display = 'block';
+                return;
+            }
+            
+            const chapter = chapters[currentChapterIndex];
+            if (!chapter) return;
+            
+            const text = chapter.title + "。" + chapter.content;
+            
             speechSynthesis.cancel();
-            isReading = false;
-            isPaused = false;
-            readingIndicator.style.display = 'none';
-            readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
-            readAloudBtn.classList.remove('btn-warning');
-            readAloudBtn.classList.remove('btn-success');
+            
+            utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = currentSpeed;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            const selectedVoiceName = voiceSelect.value;
+            const voice = voices.find(v => v.name === selectedVoiceName);
+            
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang;
+            }
+            
+            utterance.onstart = function() {
+                isReading = true;
+                isPaused = false;
+                readingIndicator.style.display = 'block';
+                readAloudBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停朗讀';
+                readAloudBtn.classList.remove('btn-success');
+                readAloudBtn.classList.add('btn-warning');
+            };
+            
+            utterance.onend = function() {
+                isReading = false;
+                isPaused = false;
+                readingIndicator.style.display = 'none';
+                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
+                readAloudBtn.classList.remove('btn-warning');
+                readAloudBtn.classList.remove('btn-success');
+                
+                if (currentChapterIndex < chapters.length - 1) {
+                    setTimeout(() => {
+                        goToNextChapter();
+                        setTimeout(readCurrentChapter, 1000);
+                    }, 500);
+                }
+            };
+            
+            speechSynthesis.speak(utterance);
         }
-    }
-    
-    // 初始化
-    document.addEventListener('DOMContentLoaded', () => {
-        speedSelect.value = "1.3";
-        currentSpeedSpan.textContent = "1.3x";
         
-        if (!('speechSynthesis' in window)) {
-            readAloudBtn.disabled = true;
-            readAloudBtn.title = "您的流覽器不支援文本朗讀功能";
-            voiceSelect.disabled = true;
-            return;
+        // 停止朗讀
+        function stopReading() {
+            if (speechSynthesis.speaking || isPaused) {
+                speechSynthesis.cancel();
+                isReading = false;
+                isPaused = false;
+                readingIndicator.style.display = 'none';
+                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗讀本章';
+                readAloudBtn.classList.remove('btn-warning');
+                readAloudBtn.classList.remove('btn-success');
+            }
         }
         
-        if (speechSynthesis.getVoices().length > 0) {
-            initializeVoices();
-        } else {
-            speechSynthesis.onvoiceschanged = initializeVoices;
-        }
-    });
-</script>
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            speedSelect.value = "1.5";
+            currentSpeedSpan.textContent = "1.5x";
+            
+            if (!('speechSynthesis' in window)) {
+                readAloudBtn.disabled = true;
+                readAloudBtn.title = "您的瀏覽器不支援文本朗讀功能";
+                voiceSelect.disabled = true;
+                return;
+            }
+            
+            if (speechSynthesis.getVoices().length > 0) {
+                initializeVoices();
+            } else {
+                speechSynthesis.onvoiceschanged = initializeVoices;
+            }
+        });
+    </script>
 </body>
 </html>
