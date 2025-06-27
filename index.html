@@ -237,6 +237,7 @@
                     <option value="twitch">Twitch</option>
                     <option value="kick">Kick</option>
                     <option value="ok">OK.ru</option>
+                    <option value="at">angelthump</option>
                 </select>
                 <button onclick="clickyClick()">加台</button>
                 <button onclick="editClick()">del台</button>
@@ -426,6 +427,8 @@
                 return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
             } else if (channel.platform === "ok") {
                 return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
+            } else if (channel.platform === "at") { 
+                return `https://player.angelthump.com/?channel=${channel.id}`;    
             }
         }
 
