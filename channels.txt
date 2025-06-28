@@ -9,7 +9,7 @@ QT,qt369,kick
 A,alancml,twitch
 朗,mingpig930_2,twitch
 哥,godzilla_2025,twitch
-友,yaubotai2,twitch
+木,muse_tw2,twitch
 友,yaubotai,kick
 QT,3849262800563,ok
 翼,9784642182771,ok
