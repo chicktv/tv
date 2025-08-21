@@ -5,7 +5,7 @@ A,collartv,kick
 西,nanase-maru525,kick
 爵,jeukpo,kick
 QT,qt369,kick
-哥,cobra2024,kick
+哥,cobra-and-godzilla,kick
 A,alancml,twitch
 朗,mingpig930_2,twitch
 哥,godzilla_2025,twitch
@@ -13,5 +13,6 @@ A,alancml,twitch
 友,yaubotai,kick
 QT,3849262800563,ok
 翼,9784642182771,ok
+
 
 
