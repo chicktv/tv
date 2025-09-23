@@ -12,7 +12,8 @@ A,alancml,twitch
 木,muse_tw2,twitch
 友,yaubotai,kick
 QT,3849262800563,ok
-翼,9784642182771,ok
+翼,10268974521971,ok
+
 
 
 
