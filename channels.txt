@@ -1,5 +1,4 @@
 翼,wing36747,twitch
-翼,wwhite1852,kick
 N,Eastsnake25,kick
 A,collartv,kick
 西,nanase-maru525,kick
@@ -13,6 +12,7 @@ A,alancml,twitch
 友,yaubotai,kick
 QT,3849262800563,ok
 翼,10268974521971,ok
+
 
 
 
