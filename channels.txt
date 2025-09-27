@@ -10,8 +10,9 @@ A,alancml,twitch
 哥,godzilla_2025,twitch
 木,muse_tw2,twitch
 友,yaubotai,kick
-QT,3849262800563,ok
 w,10268974521971,ok
+絕,ppkkkp,at
+
 
 
 
