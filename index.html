@@ -360,7 +360,7 @@
             const btn = document.createElement("button");
             btn.className = "status-button";
             btn.id = `btn-${channel.id}`;
-            btn.innerText = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : "ⓞ"}${channel.name}`;
+            btn.innerText = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
 
             btn.onclick = () => {
                 console.log("Switching to stream for:", channel.name);
@@ -422,7 +422,7 @@
                 checkbox.value = channel.id;
                 checkbox.dataset.platform = channel.platform;
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(`${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : "ⓞ"}${channel.name}`));
+                label.appendChild(document.createTextNode(`${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`));
                 label.classList.add("not-live");
                 label.id = `status-${channel.id}`;
                 container.appendChild(label);
