@@ -86,7 +86,13 @@
             color: #FFFFFF;
             border-color: #FFFFFF !important;
         }
-		
+
+        .unknown2 {
+            color: #00ff88;
+            animation: pulse-glow 1.5s infinite;
+            border: 2px solid #00ff88;
+        }
+		 
         @keyframes pulse-glow {
             0%, 100% {
                 border-color: #00ff88;
@@ -451,11 +457,11 @@
 			 //  angelthump 的狀態檢查
         if (channel.platform === "m3u8" || channel.platform === "at") {
         if (btn) {
-            btn.classList.add("unknown");
+            btn.classList.add("unknown2");
             btn.classList.remove("live", "not-live");
         }
         if (label) {
-            label.classList.add("unknown");
+            label.classList.add("unknown2");
             label.classList.remove("live", "not-live");
         }
         return; // 不進行進一步的狀態檢查
