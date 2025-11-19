@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>終極獨立 Twitch 聊天室（一鍵 Twitch 登入）</title>
+<style>
+    body {font-family:Arial,sans-serif;background:#1e1e1e;color:#eee;margin:0;padding:10px;}
+    #chat {height:70vh;overflow-y:scroll;background:#2c2f33;padding:10px;border-radius:8px;}
+    .msg {margin:6px 0;word-wrap:break-word;line-height:1.5;}
+    .name {font-weight:bold;margin-right:6px;}
+    #status {margin:10px 0;font-weight:bold;color:#0f0;}
+    #inputArea {display:flex;margin-top:10px;align-items:center;}
+    #msgInput {flex:1;padding:12px;background:#333;color:white;border:none;border-radius:6px;font-size:14px;}
+    #sendBtn {padding:0 20px;background:#9146ff;color:white;border:none;border-radius:6px;margin-left:8px;cursor:pointer;}
+    #emojiBtn, #loginBtn, #logoutBtn {padding:10px 15px;background:#333;color:white;border:none;border-radius:6px;margin-left:8px;cursor:pointer;}
+    #loginBtn {background:#9146ff;}
+    #logoutBtn {background:#6441a5;}
+    a {color:#1e90ff;text-decoration:underline;}
+    img, video, iframe {max-width:320px;max-height:200px;margin:5px 0;border-radius:6px;display:block;cursor:pointer;}
+    video {background:#000;}
+    iframe {border:none;}
+    .emoji-panel {position:fixed;background:#18181b;border:1px solid #333;border-radius:8px;z-index:999999;width:380px;height:460px;display:none;box-shadow:0 0 20px rgba(0,0,0,0.8);color:white;}
+    .emoji-header {background:#9146ff;padding:10px;text-align:center;cursor:move;font-weight:bold;}
+    .emoji-tabs {display:flex;flex-wrap:wrap;background:#1f1f23;padding:8px;gap:4px;}
+    .emoji-tab {width:36px;height:36px;background:#333;border-radius:6px;cursor:pointer;background-size:cover;background-position:center;}
+    .emoji-tab.active {outline:3px solid #9146ff;}
+    .emoji-content {height:340px;overflow-y:auto;padding:10px;background:#18181b;}
+    .emoji-item {display:inline-block;margin:5px;position:relative;}
+    .emoji-item img {width:40px;height:40px;border-radius:4px;}
+    .delete-btn {position:absolute;top:-8px;right:-8px;background:red;color:white;width:20px;height:20px;border-radius:50%;font-size:12px;line-height:20px;text-align:center;cursor:pointer;display:none;}
+    .emoji-item:hover .delete-btn {display:block;}
+</style>
+</head>
+<body>
+<h2>終極獨立 Twitch 聊天室（一鍵登入）</h2>
+<div id="status">載入中...</div>
+<div id="chat"></div>
+<div id="inputArea">
+    <input type="text" id="msgInput" placeholder="登入後才能發言..." autocomplete="off" disabled>
+    <button id="sendBtn" disabled>送出</button>
+    <button id="emojiBtn">表情</button>
+    <button id="loginBtn">Twitch 登入</button>
+    <button id="logoutBtn" style="display:none;">登出</button>
+</div>
+
+<!-- 表情面板 -->
+<div id="emojiPanel" class="emoji-panel">
+    <div class="emoji-header">自訂表情面板（拖曳移動）</div>
+    <div class="emoji-tabs" id="emojiTabs"></div>
+    <div class="emoji-content" id="emojiContent"></div>
+</div>
+
+<script src="https://chicktv.github.io/tv/tmi.min.js"></script>
+<script>
+// ============= Twitch OAuth 設定 =============
+const CLIENT_ID = 'gp762nuuoq4n3p3h1i7t1q7h7t1q7h';  // 公開 Client ID（安全）
+const REDIRECT_URI = location.origin + location.pathname;  // 當前頁面
+const SCOPES = 'chat:read chat:edit';
+
+// 從 URL 取得 token
+function getTokenFromUrl() {
+    const hash = location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get('access_token');
+    if (token) {
+        localStorage.setItem('twitch_token', token);
+        history.replaceState(null, null, ' '); // 清除 #hash
+        location.reload();
+    }
+}
+
+// 檢查是否已登入
+let oauthToken = localStorage.getItem('twitch_token');
+let username = localStorage.getItem('twitch_username') || 'justinfan666';
+
+// 登入按鈕
+document.getElementById('loginBtn').onclick = () => {
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(SCOPES)}`;
+    location.href = authUrl;
+};
+
+// 登出按鈕
+document.getElementById('logoutBtn').onclick = () => {
+    localStorage.removeItem('twitch_token');
+    localStorage.removeItem('twitch_username');
+    location.reload();
+};
+
+// 驗證 token 並取得使用者名稱
+async function validateToken() {
+    if (!oauthToken) return false;
+    try {
+        const res = await fetch('https://id.twitch.tv/oauth2/validate', {
+            headers: { 'Authorization': 'OAuth ' + oauthToken }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            username = data.login;
+            localStorage.setItem('twitch_username', username);
+            return true;
+        } else {
+            localStorage.removeItem('twitch_token');
+            oauthToken = null;
+            return false;
+        }
+    } catch (e) {
+        return false;
+    }
+}
+
+// ============= 基本設定 =============
+const channel = "whitewing940920";  // ← 改成你想看的頻道
+const status = document.getElementById('status');
+const chat   = document.getElementById('chat');
+const input  = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+
+// 表情系統（省略，與前一版相同）
+let emojiLists = {}, altToEmojiMap = {};
+let deleteMode = false;
+
+// 載入表情集（chicktv）
+function loadEmojiSets() {
+    fetch("https://chicktv.github.io/tv/showset.txt").then(r => r.json()).then(setarray => {
+        setarray.set.forEach(list => {
+            emojiLists[list.name] = { emojis: [], image: list.image || 'https://via.placeholder.com/32' };
+            fetch(`https://chicktv.github.io/tv/${list.name}.txt`).then(r => r.json()).then(data => {
+                data[list.name].forEach(i => {
+                    if (i.alt && i.src) {
+                        emojiLists[list.name].emojis.push(i);
+                        altToEmojiMap[i.alt] = { src: i.src };
+                    }
+                });
+                renderEmojiPanel();
+            });
+        });
+        // 本台 + BTTV（略，同前版）
+        const savedBTTV = JSON.parse(localStorage.getItem('myBTTV') || '[]');
+        emojiLists["BTTV"] = { emojis: savedBTTV.map(u=>({src:u,alt:u.split('/').pop()})), image: 'https://cdn.betterttv.net/assets/logo.png' };
+        renderEmojiPanel();
+    });
+}
+
+// 訊息處理（連結 + 表情）
+function processMessage(msg) {
+    let html = msg;
+    for (const [alt, d] of Object.entries(altToEmojiMap)) {
+        const regex = new RegExp('\\b' + alt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+        html = html.replace(regex, `<img src="${d.src}" width="32" height="32" style="vertical-align:middle;margin:0 3px;">`);
+    }
+    html = html.replace(/(https?:\/\/[^\s<]+)/g, url => {
+        if (url.match(/youtu\.be\/|youtube\.com\/watch\?v=/)) {
+            const id = url.match(/[a-zA-Z0-9_-]{11}/)[0];
+            return `<br><iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>`;
+        }
+        if (url.match(/\.(jpe?g|png|gif|webp)(\?.*)?$/i)) return `<br><img src="${url}" onclick="window.open(this.src,'_blank')">`;
+        if (url.match(/\.(mp4|webm)(\?.*)?$/i)) return `<br><video src="${url}" controls autoplay loop muted></video>`;
+        return `<a href="${url}" target="_blank">${url}</a>`;
+    });
+    return html;
+}
+
+// ============= 主程式 =============
+(async () => {
+    getTokenFromUrl(); // 檢查是否從登入回來
+
+    const loggedIn = oauthToken && await validateToken();
+
+    if (loggedIn) {
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('msgInput').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('msgInput').placeholder = `已登入 ${username}，按 Enter 發言`;
+        status.textContent = `已登入 ${username}，連線中...`;
+    } else {
+        status.textContent = `未登入（只能觀看），點右邊按鈕登入`;
+        status.style.color = '#ff0';
+    }
+
+    // 建立 tmi 客戶端
+    const client = new tmi.client({
+        connection: { secure: true, reconnect: true },
+        identity: loggedIn ? { username: username, password: 'oauth:' + oauthToken } : undefined,
+        channels: [channel]
+    });
+
+    client.on('connected', () => {
+        status.textContent = loggedIn ? `已登入 ${username}，連線 #${channel}` : `匿名觀看 #${channel}`;
+        status.style.color = '#0f0';
+        loadEmojiSets();
+    });
+
+    client.on('message', (ch, tags, message) => {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.style.color = tags.color || '#9146ff';
+        name.textContent = (tags['display-name'] || tags.username) + ': ';
+        div.appendChild(name);
+        const msg = document.createElement('span');
+        msg.innerHTML = processMessage(message);
+        div.appendChild(msg);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    });
+
+    // 發送訊息
+    function send() {
+        const msg = input.value.trim();
+        if (msg && loggedIn) {
+            client.say(channel, msg);
+            input.value = '';
+        }
+    }
+    document.getElementById('sendBtn').onclick = send;
+    input.addEventListener('keypress', e => e.key === 'Enter' && send());
+
+    client.connect();
+})();
+
+// 表情面板功能（與前一版完全相同，略）
+document.getElementById('emojiBtn').onclick = () => {
+    const p = document.getElementById('emojiPanel');
+    p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    if (p.style.display === 'block') {
+        p.style.left = '50%'; p.style.top = '50%'; p.style.transform = 'translate(-50%,-50%)';
+        renderEmojiPanel();
+    }
+};
+// （其他表情相關函式：renderEmojiPanel, addBTTV, deleteBTTV 等與前一版相同，可直接複製）
+</script>
+</body>
+</html>
