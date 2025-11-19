@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Twitch Style Chat</title>
+<style>
+    :root {
+        --twitch-purple: #9146ff;
+        --twitch-dark: #0e0e10;
+        --twitch-gray: #1f1f23;
+        --twitch-light-gray: #3a3a3d;
+        --twitch-text: #efeff1;
+        --twitch-text-secondary: #adadb8;
+    }
+    
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        font-family: 'Inter', 'Roobert', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background: var(--twitch-dark);
+        color: var(--twitch-text);
+        line-height: 1.4;
+        padding: 16px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-width: 100%;
+        background: var(--twitch-dark);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .chat-header {
+        background: var(--twitch-gray);
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    
+
+    
+
+    .viewer-count {
+        color: var(--twitch-text-secondary);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .message {
+        display: flex;
+        padding: 4px 0;
+        word-wrap: break-word;
+    }
+
+    .message-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .message-content {
+        flex: 1;
+    }
+
+    .message-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2px;
+    }
+
+    .username {
+        font-weight: 700;
+        font-size: 14px;
+        margin-right: 8px;
+    }
+
+    .timestamp {
+        color: var(--twitch-text-secondary);
+        font-size: 12px;
+    }
+
+    .message-text {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .badges {
+        display: flex;
+        gap: 4px;
+        margin-right: 6px;
+    }
+
+    .badge {
+        width: 18px;
+        height: 18px;
+        border-radius: 2px;
+    }
+
+    .chat-input-container {
+        background: var(--twitch-gray);
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: var(--twitch-dark);
+        border-radius: 4px;
+        padding: 8px 12px;
+    }
+
+    .chat-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--twitch-text);
+        font-size: 14px;
+        outline: none;
+    }
+
+    .chat-input::placeholder {
+        color: var(--twitch-text-secondary);
+    }
+
+    .chat-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .chat-button {
+        background: transparent;
+        border: none;
+        color: var(--twitch-text-secondary);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-button:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .login-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .login-button {
+        background: var(--twitch-purple);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .login-button:hover {
+        background: #772ce8;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+
+    .logout-button {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--twitch-text);
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .logout-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .status-message {
+        padding: 8px 16px;
+        background: rgba(145, 70, 255, 0.1);
+        border-radius: 4px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-message::before {
+        content: "●";
+        color: var(--twitch-purple);
+        font-size: 12px;
+    }
+
+    /* 表情面板样式 */
+    .emoji-panel {
+        position: fixed;
+        background: var(--twitch-gray);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        z-index: 1000;
+        width: 380px;
+        height: 460px;
+        display: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        color: white;
+        flex-direction: column;
+        font-size: 13px;
+        overflow: hidden;
+    }
+
+    .emoji-header {
+        background: var(--twitch-purple);
+        padding: 12px;
+        text-align: center;
+        cursor: move;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .emoji-tabs {
+        display: flex;
+        background: var(--twitch-dark);
+        padding: 8px;
+        gap: 5px;
+        overflow-x: auto;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .emoji-tab {
+        width: 36px;
+        height: 36px;
+        background: var(--twitch-light-gray);
+        border-radius: 6px;
+        cursor: pointer;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+
+    .emoji-tab.active {
+        outline: 2px solid var(--twitch-purple);
+    }
+
+    .emoji-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        background: var(--twitch-gray);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-content: flex-start;
+    }
+
+    .emoji-item {
+        position: relative;
+    }
+
+    .emoji-item img {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .delete-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #e91916;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 12px;
+        line-height: 20px;
+        text-align: center;
+        cursor: pointer;
+        display: none;
+    }
+
+    .emoji-item:hover .delete-btn {
+        display: block;
+    }
+
+    .bttv-input {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .bttv-input input {
+        flex: 1;
+        padding: 8px;
+        background: var(--twitch-dark);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    /* 媒体内容样式 */
+    a {
+        color: #bf94ff;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    img, video, iframe {
+        max-width: 320px;
+        max-height: 220px;
+        margin: 6px 0;
+        border-radius: 8px;
+        display: block;
+        cursor: pointer;
+    }
+
+    video {
+        background: #000;
+    }
+
+    iframe {
+        border: none;
+    }
+
+    .zero-width-image {
+        max-width: 340px;
+        max-height: 260px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        margin: 10px 0;
+    }
+
+    /* 滚动条样式 */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+       
+        
+    </div>
+
+    <div id="status" class="status-message">載入中...</div>
+
+    <div class="chat-messages" id="chat"></div>
+
+    <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+            <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
+            <div class="chat-buttons">
+                <button class="chat-button" id="emojiBtn" title="表情">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                    </svg>
+                </button>
+                <button class="chat-button" id="sendBtn" disabled title="送出訊息">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="login-section">
+            <button id="loginBtn" class="login-button">Twitch 登入</button>
+            <div id="userInfo" class="user-info" style="display:none;">
+                
+                <span id="userName"></span>
+                <button id="logoutBtn" class="logout-button">登出</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 自訂表情面板 -->
+<div id="emojiPanel" class="emoji-panel">
+    <div class="emoji-header">自訂表情面板（拖曳移動）</div>
+    <div class="emoji-tabs" id="emojiTabs"></div>
+    <div class="emoji-content" id="emojiContent"></div>
+</div>
+
+<script src="https://chicktv.github.io/tv/tmi.min.js"></script>
+<script>
+// ===================== 重要設定 =====================
+const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5'; // 前往 https://twitchapps.com/tmi/ 取得（點 Connect with Twitch 後會給你）
+const channel = "whitewing940920"; // 要觀看的頻道（小寫）
+
+const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
+const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
+
+// ===================== 全域變數 =====================
+let oauthToken = '';
+let username = 'justinfan666';
+let userDisplayName = '';
+let userAvatar = '';
+let client = null;
+
+const status   = document.getElementById('status');
+const chat     = document.getElementById('chat');
+const input    = document.getElementById('msgInput');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const userInfo = document.getElementById('userInfo');
+const userAvatarEl = document.getElementById('userAvatar');
+const userNameEl   = document.getElementById('userName');
+
+// 表情系統
+let emojiLists = {};
+let altToEmojiMap = {};
+let isDeleteMode = false;
+
+// 正則
+const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+const twitterImageRegex = /https?:\/\/pbs\.twimg\.com\/media\/[^?]+\?format=(jpg|jpeg|png|gif|webp)/i;
+const mp4Regex = /\.mp4(?:[/?].*)?$/i;
+
+// ===================== 登入系統 =====================
+function checkLogin() {
+    if (location.hash.includes('access_token=')) {
+        const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
+        if (token) {
+            oauthToken = 'oauth:' + token;
+            localStorage.setItem('twitch_token', oauthToken);
+            history.replaceState(null, null, location.pathname);
+            fetchUserInfo(token);
+        }
+    } else {
+        const saved = localStorage.getItem('twitch_token');
+        if (saved) {
+            oauthToken = saved;
+            fetchUserInfo(saved.replace('oauth:', ''));
+        }
+    }
+}
+
+async function fetchUserInfo(token) {
+    try {
+        const res = await fetch('https://api.twitch.tv/helix/users', {
+            headers: { 'Client-ID': CLIENT_ID, 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.data?.[0]) {
+            username = data.data[0].login;
+            userDisplayName = data.data[0].display_name;
+            userAvatar = data.data[0].profile_image_url;
+            loginSuccess();
+        }
+    } catch (e) {
+        alert('登入失敗，請重新登入');
+        logout();
+    }
+}
+
+function loginSuccess() {
+    status.textContent = `已登入成功：${userDisplayName}，可以發言囉！`;
+    input.disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    loginBtn.style.display = 'none';
+    userInfo.style.display = 'flex';
+    userAvatarEl.src = userAvatar;
+    userNameEl.textContent = userDisplayName;
+    connectChat();
+}
+
+function logout() {
+    localStorage.removeItem('twitch_token');
+    location.reload();
+}
+
+loginBtn.onclick = () => {
+    if (!CLIENT_ID.includes('請填入')) location.href = AUTH_URL;
+    else alert('請先填入 CLIENT_ID！\n前往 https://twitchapps.com/tmi/ 點「Connect with Twitch」取得');
+};
+logoutBtn.onclick = logout;
+
+// ===================== 訊息處理 =====================
+function processMessage(text) {
+    let html = text;
+
+    // [s]...[e] 處理
+    html = html.replace(/\[s\](https?:\/\/[^\s\[\]]+)\[e\]/gi, (match, url) => {
+        return `<br><img src="${url}" class="zero-width-image" loading="lazy" 
+                onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<a href=&quot;${url}&quot; target=_blank>${url}</a>')"
+                onclick="window.open(this.src,'_blank')">`;
+    });
+
+    // 裸網址處理
+    html = html.replace(/(https?:\/\/[^\s<>"'\]\[]+)/g, url => {
+        // YouTube、MP4 還是走原本邏輯
+        if (youtubeRegex.test(url)) {
+            const id = url.match(youtubeRegex)[1];
+            return `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen></iframe>`;
+        }
+        if (mp4Regex.test(url)) {
+            return `<br><video src="${url}" controls autoplay loop muted class="zero-width-image" loading="lazy"></video>`;
+        }
+
+        // 其餘所有網址：先當圖片試，失敗就自動變連結
+        return `<br><img src="${url}" class="zero-width-image" loading="lazy"
+                onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<a href=&quot;${url}&quot; target=_blank>${url}</a>')"
+                onclick="window.open(this.src,'_blank')">`;
+    });
+
+    // 表情處理
+    for (const [alt, data] of Object.entries(altToEmojiMap)) {
+        const escaped = alt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(^|\\s)(${escaped})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
+        html = html.replace(regex, `$1<img src="${data.src}" style="height:7.5em;vertical-align:middle;margin:0 2px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
+    }
+
+    return html;
+}
+
+// ===================== 表情系統 =====================
+function loadEmojiSets() {
+    // 公開表情包
+    fetch("https://chicktv.github.io/tv/showset.txt").then(r=>r.json()).then(setarray=>{
+        setarray.set.forEach(list=>{
+            emojiLists[list.name] = {emojis:[], image:list.image||''};
+            fetch(`https://chicktv.github.io/tv/${list.name}.txt`).then(r=>r.json()).then(data=>{
+                data[list.name].forEach(icon=>{
+                    if(icon.alt && icon.src){
+                        emojiLists[list.name].emojis.push({alt:icon.alt, src:icon.src, dis:icon.dis||icon.alt});
+                        altToEmojiMap[icon.alt] = {src:icon.src, width:'32', height:'32'};
+                    }
+                });
+                renderEmojiPanel();
+            });
+        });
+    });
+
+    // 本台專屬
+    fetch("https://chicktv.github.io/tv/skuser_icon.txt").then(r=>r.json()).then(icons=>{
+        emojiLists["本台"] = {emojis:[], image:"https://i.imgur.com/5z3X8dP.png"};
+        icons.forEach(i=>{
+            emojiLists["本台"].emojis.push({alt:i.alt, src:i.src, dis:i.alt});
+            altToEmojiMap[i.alt] = {src:i.src, width:'32', height:'32'};
+        });
+        renderEmojiPanel();
+    });
+
+    // 個人 BTTV
+    const saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
+    emojiLists["BTTV"] = {
+        emojis: saved.map(url=>({alt:url.split('/').pop().split('?')[0], src:url, dis:url})),
+        image: "https://cdn.betterttv.net/assets/logo.png"
+    };
+    renderEmojiPanel();
+}
+
+function renderEmojiPanel() {
+    const tabs = document.getElementById('emojiTabs');
+    const content = document.getElementById('emojiContent');
+    tabs.innerHTML = ''; content.innerHTML = '';
+
+    Object.keys(emojiLists).forEach((name, i) => {
+        const tab = document.createElement('div');
+        tab.className = 'emoji-tab';
+        tab.style.backgroundImage = `url(${emojiLists[name].image || 'https://via.placeholder.com/36?text=' + name[0]})`;
+        tab.title = name;
+        tab.onclick = () => {
+            document.querySelectorAll('.emoji-tab').forEach(t=>t.classList.remove('active'));
+            tab.classList.add('active');
+            renderTabContent(name);
+        };
+        if (i===0) tab.classList.add('active');
+        tabs.appendChild(tab);
+    });
+    renderTabContent(Object.keys(emojiLists)[0] || 'BTTV');
+}
+
+function renderTabContent(name) {
+    const content = document.getElementById('emojiContent');
+    content.innerHTML = '';
+
+    if (name === "BTTV") {
+        content.innerHTML += `
+            <div class="bttv-input">
+                <input type="text" id="bttvUrl" placeholder="輸入 BTTV 圖片網址">
+                <button onclick="addBTTV()" style="background:var(--twitch-purple);color:white;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;">儲存</button>
+                <button onclick="isDeleteMode=!isDeleteMode;renderEmojiPanel()" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;">
+                    ${isDeleteMode?'取消刪除':'開啟刪除'}
+                </button>
+            </div>`;
+    }
+
+    emojiLists[name].emojis.forEach(emoji => {
+        const div = document.createElement('div');
+        div.className = 'emoji-item';
+        div.innerHTML = `<img src="${emoji.src}" title="${emoji.dis||emoji.alt}">`;
+        if (name==="BTTV" && isDeleteMode) {
+            div.innerHTML += `<div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${emoji.src}')">X</div>`;
+        }
+        div.onclick = () => {
+            if (name!=="BTTV" || !isDeleteMode) {
+                input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
+                input.focus();
+            }
+        };
+        content.appendChild(div);
+    });
+}
+
+window.addBTTV = () => {
+    const url = document.getElementById('bttvUrl').value.trim();
+    if (!url) return;
+    const saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
+    if (!saved.includes(url)) {
+        saved.push(url);
+        localStorage.setItem('myBTTV', JSON.stringify(saved));
+        emojiLists["BTTV"].emojis.push({alt:url.split('/').pop().split('?')[0], src:url});
+        renderEmojiPanel();
+    }
+    document.getElementById('bttvUrl').value = '';
+};
+
+window.deleteBTTV = (url) => {
+    let saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
+    saved = saved.filter(u=>u!==url);
+    localStorage.setItem('myBTTV', JSON.stringify(saved));
+    emojiLists["BTTV"].emojis = emojiLists["BTTV"].emojis.filter(e=>e.src!==url);
+    renderEmojiPanel();
+};
+
+// 表情面板拖曳
+let dragging = false, offsetX, offsetY;
+document.querySelector('.emoji-header')?.addEventListener('mousedown', e=>{
+    dragging = true;
+    const p = document.getElementById('emojiPanel');
+    offsetX = e.clientX - p.offsetLeft;
+    offsetY = e.clientY - p.offsetTop;
+});
+document.addEventListener('mousemove', e=>{
+    if(dragging){
+        const p = document.getElementById('emojiPanel');
+        p.style.left = (e.clientX - offsetX) + 'px';
+        p.style.top = (e.clientY - offsetY) + 'px';
+    }
+});
+document.addEventListener('mouseup', ()=>{dragging=false;});
+
+document.getElementById('emojiBtn').onclick = () => {
+    const p = document.getElementById('emojiPanel');
+    p.style.display = p.style.display==='flex' ? 'none' : 'flex';
+    if (p.style.display==='flex') {
+        p.style.left = '50%'; p.style.top = '50%';
+        p.style.transform = 'translate(-50%,-50%)';
+        renderEmojiPanel();
+    }
+};
+
+// ===================== tmi.js 連線 =====================
+function connectChat() {
+    client = new tmi.client({
+        connection: { secure: true, reconnect: true },
+        identity: oauthToken ? { username, password: oauthToken } : undefined,
+        channels: [channel]
+    });
+
+    client.on('connected', () => {
+        status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
+        loadEmojiSets();
+    });
+
+    client.on('message', (ch, tags, message) => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+
+        // 頭像
+      
+
+        // 訊息內容
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+
+        // 訊息標頭 (使用者名稱和時間)
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'message-header';
+
+        // 徽章
+        if (tags.badges) {
+            const badgesDiv = document.createElement('div');
+            badgesDiv.className = 'badges';
+            
+            // 這裡可以根據 badges 添加實際徽章圖片
+            // 目前使用占位符
+            if (tags.badges.subscriber) {
+                const badge = document.createElement('div');
+                badge.className = 'badge';
+                badge.style.background = '#9146ff';
+                badge.title = '訂閱者';
+                badgesDiv.appendChild(badge);
+            }
+            
+            if (tags.badges.broadcaster) {
+                const badge = document.createElement('div');
+                badge.className = 'badge';
+                badge.style.background = '#e91916';
+                badge.title = '實況主';
+                badgesDiv.appendChild(badge);
+            }
+            
+            if (tags.badges.moderator) {
+                const badge = document.createElement('div');
+                badge.className = 'badge';
+                badge.style.background = '#34ae5b';
+                badge.title = '管理員';
+                badgesDiv.appendChild(badge);
+            }
+            
+            headerDiv.appendChild(badgesDiv);
+        }
+
+        // 使用者名稱
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'username'+ ': ';
+        nameSpan.style.color = tags.color || '#9146ff';
+        nameSpan.textContent = tags['display-name'] || tags.username ;
+        headerDiv.appendChild(nameSpan);
+
+        // 時間戳記
+        
+
+        contentDiv.appendChild(headerDiv);
+
+        // 訊息文字
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.innerHTML = processMessage(message);
+        contentDiv.appendChild(textDiv);
+
+        messageDiv.appendChild(contentDiv);
+        chat.appendChild(messageDiv);
+        chat.scrollTop = chat.scrollHeight;
+    });
+
+    client.connect().catch(console.error);
+}
+
+function send() {
+    const msg = input.value.trim();
+    if (msg && oauthToken && client?.readyState() === 'OPEN') {
+        client.say(channel, msg);
+        input.value = '';
+    }
+}
+
+document.getElementById('sendBtn').onclick = send;
+input.addEventListener('keypress', e => { if(e.key==='Enter') send(); });
+
+// ===================== 啟動 =====================
+if (!oauthToken) connectChat();
+checkLogin();
+</script>
+</body>
+</html>
