@@ -423,6 +423,9 @@ logoutBtn.onclick = logout;
 function processMessage(text) {
     let html = text;
 
+    // Step 0: 过滤掉 [s]、[e]、[y]、[t] 标记
+    html = html.replace(/\[s\]|\[e\]|\[y\]|\[t\]/gi, '');
+
     // Step 1: [s]...[e] 直接暴力當圖片（不管三七二十一）
     html = html.replace(/\[s\](https?:\/\/[^\s\[\]]+)\[e\]/gi, (match, url) => {
         return `<br><img src="${url}" class="zero-width-image" loading="lazy" 
@@ -451,7 +454,7 @@ function processMessage(text) {
     for (const [alt, data] of Object.entries(altToEmojiMap)) {
         const escaped = alt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(^|\\s)(${escaped})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
-        html = html.replace(regex, `$1<img src="${data.src}" style="height:7em;vertical-align:middle;margin:0 3px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
+        html = html.replace(regex, `$1<img src="${data.src}" style="max-width:200px;max-height:200px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
     }
 
     return html;
