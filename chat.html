@@ -2,12 +2,12 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title></title>
+<title>Twitch 聊天室 - 带回复功能</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        background: #18181b;
+        background: #0e0e10;
         color: #efeff1;
         margin: 0;
         padding: 0px;
@@ -18,18 +18,66 @@
     #chat {
         height: 80vh;
         overflow-y: auto;
-        background: #18181b;
+        background: #0e0e10;
         padding: 12px;
         border-radius: 0;
         margin-bottom: 12px;
         border: 1px solid #26262c;
         font-size: 13px;
     }
-    
+	
+	 .chat-input-container {
+        background: #1f1f23;
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: #0e0e10;
+        border-radius: 4px;
+        padding: 8px 12px;
+    }
+
+    .chat-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #efeff1;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .chat-input::placeholder {
+        color: #adadb8;
+    }
+
+    .chat-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .chat-button {
+        background: transparent;
+        border: none;
+        color: var(--twitch-text-secondary);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     .msg {
         margin: 4px 0;
         word-wrap: break-word;
         padding: 2px 0;
+        position: relative;
+    }
+    
+    .msg:hover .reply-btn {
+        opacity: 1;
     }
     
     .name {
@@ -37,6 +85,8 @@
         margin-right: 9px;
         color: inherit;
     }
+	
+	
     
     #status {
         margin: 0px 0;
@@ -45,34 +95,15 @@
         font-size: 10px;
     }
     
-    #inputArea {
-        display: none;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0px;
-        background: #18181b;
-        padding: 0px;
-        border-radius: 0px;
-        border: 0px solid #26262c;
-    }
     
-    #msgInput {
-        flex: 1;
-        min-width: 200px;
-        padding: 8px 12px;
-        background: #1f1f23;
-        color: #efeff1;
-        border: 1px solid #3a3a3d;
-        border-radius: 4px;
-        font-size: 13px;
-    }
+    
     
     #msgInput:focus {
         outline: none;
         border-color: #9147ff;
     }
     
-    button {
+    #loginBtn {
         padding: 8px 16px;
         background: #9147ff;
         color: white;
@@ -104,6 +135,43 @@
     #logoutBtn:hover {
         background: #c51614;
     }
+	
+	#pastebtn {
+      position: relative;
+      display: flex;
+      gap: 4px;
+    }
+    .sk_botton {
+      position: absolute;
+      bottom: 100%;
+      margin-bottom: 2px;
+      padding: 0 8px;
+      height: 17px;
+      line-height: 17px;
+      font-size: 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    /* 各按鈕位置 */
+    [data-name="photo"]   { left: 0px; }
+    [data-name="video"]   { left: 32px; }
+    [data-name="pid"]     { left: 64px; }
+    .open-news-btn        { right: 0px; width: auto; left: auto; }
+
+    /* 滑鼠移入效果 */
+    .quikelink:hover {
+      top: -23px !important;
+      height: 23px !important;
+    }
+
+    /* 原本的 padding-top 調整 */
+    .OsGMV {
+      padding-top: 15px !important;
+    }
     
     #userInfo {
         display: flex;
@@ -134,7 +202,7 @@
         max-height: 180px;
         margin: 6px 0;
         border-radius: 4px;
-        display: block;
+        display: inline;
         cursor: pointer;
     }
     
@@ -296,10 +364,88 @@
         background: #3a3a3d;
         border-radius: 3px;
     }
+    
+    /* 回覆功能樣式 */
+    .reply-btn {
+        opacity: 0;
+        background: none;
+        border: none;
+        color: #adadb8;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 2px 6px;
+        margin-left: 8px;
+        transition: all 0.2s;
+        border-radius: 3px;
+    }
+    
+    .reply-btn:hover {
+        background: #3a3a3d;
+        color: #efeff1;
+    }
+    
+    .reply-indicator {
+        display: flex;
+        align-items: center;
+        background: #1f1f23;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #adadb8;
+    }
+    
+    .reply-indicator .cancel-reply {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: #adadb8;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    
+    .reply-indicator .cancel-reply:hover {
+        background: #3a3a3d;
+        color: #efeff1;
+    }
+    
+    .reply-preview {
+        background: #1f1f23;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        border-left: 3px solid #9147ff;
+        font-size: 12px;
+        color: #adadb8;
+    }
+    
+    .reply-preview .replying-to {
+        font-weight: bold;
+        color: #9147ff;
+    }
+    
+    .reply-context {
+        font-size: 11px;
+        color: #adadb8;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .reply-context .reply-icon {
+        margin-right: 4px;
+        color: #9147ff;
+    }
+    
+    .reply-context .replying-to {
+        font-weight: bold;
+        color: #9147ff;
+    }
 </style>
 </head>
 <body>
-
 
 <div id="status">載入中...</div>
 
@@ -311,11 +457,30 @@
 
 <div id="chat"></div>
 
+<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 10px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button><a type="button" class="sk_botton sktoptag quikelink" onclick="opennews();" style="cursor: pointer;right: 0px;width: auto;"></a></span>
 <div id="inputArea">
-    <input type="text" id="msgInput" placeholder="登入後即可發言..." autocomplete="off" disabled>
-    <button id="sendBtn" disabled>送出</button>
-    <button id="emojiBtn">表情</button>
-    <button id="loginBtn">Twitch 登入</button>
+
+<div id="replyIndicator" class="reply-indicator" style="display: none;">
+        <span>回覆給 <span id="replyTargetName"></span></span>
+        <button class="cancel-reply" id="cancelReplyBtn">取消</button>
+    </div>
+	<div class="chat-input-container">
+        <div class="chat-input-wrapper">
+            <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
+            <div class="chat-buttons">
+                <button class="chat-button" id="emojiBtn" title="表情">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                    </svg>
+                </button>
+                <button class="chat-button" id="sendBtn" disabled title="送出訊息">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <button id="loginBtn">Twitch 登入</button>
 </div>
 
 <!-- 自訂表情面板 -->
@@ -328,7 +493,7 @@
 <script src="https://chicktv.github.io/tv/tmi.min.js"></script>
 <script>
 // ===================== 重要設定 =====================
-const CLIENT_ID = '請填入你的_CLIENT_ID'; // 前往 https://twitchapps.com/tmi/ 取得（點 Connect with Twitch 後會給你）
+const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9'; // 前往 https://twitchapps.com/tmi/ 取得（點 Connect with Twitch 後會給你）
 const channel = "whitewing940920"; // 要觀看的頻道（小寫）
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
@@ -340,6 +505,7 @@ let username = 'justinfan666';
 let userDisplayName = '';
 let userAvatar = '';
 let client = null;
+let isConnected = false;
 
 const status   = document.getElementById('status');
 const chat     = document.getElementById('chat');
@@ -349,6 +515,12 @@ const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
 const userAvatarEl = document.getElementById('userAvatar');
 const userNameEl   = document.getElementById('userName');
+
+// 回覆功能變數
+let replyingTo = null;
+const replyIndicator = document.getElementById('replyIndicator');
+const replyTargetName = document.getElementById('replyTargetName');
+const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
 // 表情系統
 let emojiLists = {};
@@ -375,6 +547,9 @@ function checkLogin() {
         if (saved) {
             oauthToken = saved;
             fetchUserInfo(saved.replace('oauth:', ''));
+        } else {
+            // 如果没有登录信息，直接连接匿名聊天
+            connectChat();
         }
     }
 }
@@ -405,7 +580,9 @@ function loginSuccess() {
     userInfo.style.display = 'flex';
     userAvatarEl.src = userAvatar;
     userNameEl.textContent = userDisplayName;
-    connectChat();
+    
+    // 重新连接聊天，使用登录后的身份
+    reconnectChat();
 }
 
 function logout() {
@@ -460,9 +637,91 @@ function processMessage(text) {
     return html;
 }
 
+//pastebtn
+// ===================== 貼上按鈕功能 =====================
+document.getElementById('pastephoto').addEventListener('click', function() {
+    if (input.disabled) {
+        alert('請先登入後再使用此功能');
+        return;
+    }
+    
+    // 插入 [s]網址[e] 並選中"網址"兩字
+    const template = '[s] 網址 [e]';
+    input.value += template;
+    
+    // 找到"網址"的位置並選中
+    const startPos = input.value.indexOf('網址');
+    const endPos = startPos + 2; // "網址"是2個字符
+    
+    input.focus();
+    input.setSelectionRange(startPos, endPos);
+});
+
+document.getElementById('pastevideo').addEventListener('click', function() {
+    if (input.disabled) {
+        alert('請先登入後再使用此功能');
+        return;
+    }
+    
+    // 插入 [y]網址[t] 並選中"網址"兩字
+    const template = '[y] 網址 [t]';
+    input.value += template;
+    
+    // 找到"網址"的位置並選中
+    const startPos = input.value.indexOf('網址');
+    const endPos = startPos + 2; // "網址"是2個字符
+    
+    input.focus();
+    input.setSelectionRange(startPos, endPos);
+});
+
+
+// ===================== 回覆功能 =====================
+function setupReply(messageId, username, messageText) {
+    replyingTo = {
+        id: messageId,
+        username: username,
+        message: messageText
+    };
+    
+    replyTargetName.textContent = username;
+    replyIndicator.style.display = 'flex';
+    input.focus();
+    
+    // 在輸入框上方顯示回覆預覽
+    const existingPreview = document.getElementById('replyPreview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    const preview = document.createElement('div');
+    preview.id = 'replyPreview';
+    preview.className = 'reply-preview';
+    preview.innerHTML = `
+        回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 50)}
+    `;
+    
+    replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
+}
+
+function cancelReply() {
+    replyingTo = null;
+    replyIndicator.style.display = 'none';
+    
+    const preview = document.getElementById('replyPreview');
+    if (preview) {
+        preview.remove();
+    }
+}
+
+function truncateMessage(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
 // ===================== 表情系統 =====================
 function loadEmojiSets() {
-    // 公開表情包
+    // 公開表情包https://sk-knower.com/sklive_api/read/skchat_set.php?showset=public
     fetch("https://chicktv.github.io/tv/showset.txt").then(r=>r.json()).then(setarray=>{
         setarray.set.forEach(list=>{
             emojiLists[list.name] = {emojis:[], image:list.image||''};
@@ -478,9 +737,9 @@ function loadEmojiSets() {
         });
     });
 
-    // 本台專屬
+    // 本台專屬https://sk-knower.com/sklive_api/read/skchat_icon.php?set=sk9fish
     fetch("https://chicktv.github.io/tv/skuser_icon.txt").then(r=>r.json()).then(icons=>{
-        emojiLists["本台"] = {emojis:[], image:"https://i.imgur.com/5z3X8dP.png"};
+        emojiLists["本台"] = {emojis:[], title:"本台"};
         icons.forEach(i=>{
             emojiLists["本台"].emojis.push({alt:i.alt, src:i.src, dis:i.alt});
             altToEmojiMap[i.alt] = {src:i.src, width:'32', height:'32'};
@@ -544,6 +803,8 @@ function renderTabContent(name) {
             if (name!=="BTTV" || !isDeleteMode) {
                 input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
                 input.focus();
+                // 點選表情後自動關閉面板
+                document.getElementById('emojiPanel').style.display = 'none';
             }
         };
         content.appendChild(div);
@@ -600,6 +861,8 @@ document.getElementById('emojiBtn').onclick = () => {
 
 // ===================== tmi.js 連線 =====================
 function connectChat() {
+    if (isConnected) return; // 防止重复连接
+    
     client = new tmi.client({
         connection: { secure: true, reconnect: true },
         identity: oauthToken ? { username, password: oauthToken } : undefined,
@@ -607,13 +870,27 @@ function connectChat() {
     });
 
     client.on('connected', () => {
+        isConnected = true;
         status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
         loadEmojiSets();
     });
 
-    client.on('message', (ch, tags, message) => {
+    client.on('message', (ch, tags, message, self) => {
         const div = document.createElement('div');
         div.className = 'msg';
+        div.id = `msg-${tags.id}`;
+
+        // 檢查是否有回覆的訊息
+        const isReply = tags['reply-parent-msg-id'];
+        if (isReply) {
+            const replyContext = document.createElement('div');
+            replyContext.className = 'reply-context';
+            replyContext.innerHTML = `
+                <span class="reply-icon">↩️</span>
+                回覆給 <span class="replying-to">${tags['reply-parent-display-name']}</span>
+            `;
+            div.appendChild(replyContext);
+        }
 
         const name = document.createElement('span');
         name.className = 'name';
@@ -625,6 +902,18 @@ function connectChat() {
         msg.innerHTML = processMessage(message);
         div.appendChild(msg);
 
+        // 添加回覆按鈕（只有登入用戶才能看到）
+        if (oauthToken && !self) {
+            const replyBtn = document.createElement('button');
+            replyBtn.className = 'reply-btn';
+            replyBtn.innerHTML = '↩️';
+            replyBtn.title = '回覆此訊息';
+            replyBtn.onclick = () => {
+                setupReply(tags.id, tags['display-name'] || tags.username, message);
+            };
+            div.appendChild(replyBtn);
+        }
+
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
     });
@@ -632,19 +921,49 @@ function connectChat() {
     client.connect().catch(console.error);
 }
 
+function reconnectChat() {
+    if (client) {
+        // 断开现有连接
+        client.disconnect();
+        isConnected = false;
+    }
+    
+    // 重新连接
+    connectChat();
+}
+
 function send() {
     const msg = input.value.trim();
     if (msg && oauthToken && client?.readyState() === 'OPEN') {
-        client.say(channel, msg);
-        input.value = '';
+        if (replyingTo) {
+            // 使用回覆功能發送訊息
+            client.reply(channel, msg, replyingTo.id).then(() => {
+                input.value = '';
+                cancelReply();
+            }).catch(err => {
+                console.error('回覆發送失敗:', err);
+                // 如果回覆失敗，嘗試普通發送
+                client.say(channel, msg).then(() => {
+                    input.value = '';
+                    cancelReply();
+                });
+            });
+        } else {
+            // 普通發送訊息
+            client.say(channel, msg).then(() => {
+                input.value = '';
+            });
+        }
     }
 }
 
 document.getElementById('sendBtn').onclick = send;
 input.addEventListener('keypress', e => { if(e.key==='Enter') send(); });
 
+// 取消回覆按鈕事件
+cancelReplyBtn.onclick = cancelReply;
+
 // ===================== 啟動 =====================
-if (!oauthToken) connectChat();
 checkLogin();
 </script>
 </body>
