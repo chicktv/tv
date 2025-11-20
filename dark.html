@@ -427,6 +427,7 @@ let username = 'justinfan666';
 let userDisplayName = '';
 let userAvatar = '';
 let client = null;
+let isConnected = false;
 
 const status   = document.getElementById('status');
 const chat     = document.getElementById('chat');
@@ -468,6 +469,9 @@ function checkLogin() {
         if (saved) {
             oauthToken = saved;
             fetchUserInfo(saved.replace('oauth:', ''));
+        } else {
+            // 如果没有登录信息，直接连接匿名聊天
+            connectChat();
         }
     }
 }
@@ -498,7 +502,9 @@ function loginSuccess() {
     userInfo.style.display = 'flex';
     userAvatarEl.src = userAvatar;
     userNameEl.textContent = userDisplayName;
-    connectChat();
+    
+    // 重新连接聊天，使用登录后的身份
+    reconnectChat();
 }
 
 function logout() {
@@ -736,6 +742,8 @@ document.getElementById('emojiBtn').onclick = () => {
 
 // ===================== tmi.js 連線 =====================
 function connectChat() {
+    if (isConnected) return; // 防止重复连接
+    
     client = new tmi.client({
         connection: { secure: true, reconnect: true },
         identity: oauthToken ? { username, password: oauthToken } : undefined,
@@ -743,6 +751,7 @@ function connectChat() {
     });
 
     client.on('connected', () => {
+        isConnected = true;
         status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
         loadEmojiSets();
     });
@@ -793,6 +802,17 @@ function connectChat() {
     client.connect().catch(console.error);
 }
 
+function reconnectChat() {
+    if (client) {
+        // 断开现有连接
+        client.disconnect();
+        isConnected = false;
+    }
+    
+    // 重新连接
+    connectChat();
+}
+
 function send() {
     const msg = input.value.trim();
     if (msg && oauthToken && client?.readyState() === 'OPEN') {
@@ -825,7 +845,6 @@ input.addEventListener('keypress', e => { if(e.key==='Enter') send(); });
 cancelReplyBtn.onclick = cancelReply;
 
 // ===================== 啟動 =====================
-if (!oauthToken) connectChat();
 checkLogin();
 </script>
 </body>
