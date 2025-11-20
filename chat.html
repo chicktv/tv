@@ -631,7 +631,7 @@ function processMessage(text) {
     for (const [alt, data] of Object.entries(altToEmojiMap)) {
         const escaped = alt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(^|\\s)(${escaped})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
-        html = html.replace(regex, `$1<img src="${data.src}" style="max-width:200px;max-height:200px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
+        html = html.replace(regex, `$1<img src="${data.src}" style="max-width:170px;max-height:170px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
     }
 
     return html;
