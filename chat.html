@@ -24,10 +24,12 @@
         margin-bottom: 12px;
         border: 1px solid #26262c;
         font-size: 13px;
-		scroll-behavior: smooth;
+        scroll-behavior: smooth;
+        /* 确保滚动条始终可见 */
+        overflow-anchor: none; /* 防止自动滚动锚定 */
     }
-	
-	 .chat-input-container {
+    
+    .chat-input-container {
         background: #1f1f23;
         padding: 12px 16px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -508,6 +510,11 @@
     
     .reply-container {
         margin-bottom: 8px;
+    }
+    
+    /* 新添加的样式，确保滚动条正常工作 */
+    .scroll-fix {
+        overflow-anchor: none;
     }
 </style>
 </head>
@@ -1027,10 +1034,27 @@ function connectChat() {
         }
 
         chat.appendChild(div);
-        chat.scrollTop = chat.scrollHeight;
+        
+        // 修复滚动条问题 - 使用更可靠的滚动方法
+        scrollToBottom();
     });
 
     client.connect().catch(console.error);
+}
+
+// 修复滚动问题的函数
+function scrollToBottom() {
+    // 使用requestAnimationFrame确保在下一帧执行
+    requestAnimationFrame(() => {
+        // 使用scrollTo方法，并确保behavior为smooth
+        chat.scrollTo({
+            top: chat.scrollHeight,
+            behavior: 'smooth'
+        });
+        
+        // 同时设置scrollTop作为备用
+        chat.scrollTop = chat.scrollHeight;
+    });
 }
 
 function reconnectChat() {
@@ -1079,5 +1103,4 @@ cancelReplyBtn.onclick = cancelReply;
 checkLogin();
 </script>
 </body>
-
 </html>
