@@ -693,6 +693,7 @@ function loginSuccess() {
     status.textContent = `已登入成功：${userDisplayName}，可以發言囉！`;
     input.disabled = false;
     document.getElementById('sendBtn').disabled = false;
+	input.placeholder = "傳送訊息"; //
     loginBtn.style.display = 'none';
     userInfo.style.display = 'flex';
     userAvatarEl.src = userAvatar;
@@ -1148,4 +1149,5 @@ cancelReplyBtn.onclick = cancelReply;
 // 頁面載入時已經在 window.addEventListener('load') 中調用 checkLogin()
 </script>
 </body>
+
 </html>
