@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>chickchat</title>
+<title>Twitch 聊天室 - 带回复功能</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -16,7 +16,7 @@
     }
     
     #chat {
-        height: 75vh;
+        height: 79vh;
         overflow-y: auto;
         background: #0e0e10;
         padding: 12px;
@@ -523,7 +523,7 @@
 
 <div id="chat"></div>
 
-<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button></span>
+<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button><a type="button" class="sk_botton sktoptag quikelink" onclick="opennews();" style="cursor: pointer;right: 0px;width: auto;"></a></span>
 <div id="inputArea">
 
 <div id="replyIndicator" class="reply-indicator" style="display: none;">
@@ -601,91 +601,106 @@ const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu
 const twitterImageRegex = /https?:\/\/pbs\.twimg\.com\/media\/[^?]+\?format=(jpg|jpeg|png|gif|webp)/i;
 const mp4Regex = /\.mp4(?:[/?].*)?$/i;
 
-// ===================== 智能滚动功能 =====================
-let chatObserver = null;
+// ===================== 簡單直接的滾動解決方案 =====================
 let autoScrollEnabled = true;
+let scrollTimeout = null;
 
-// 检查是否在聊天底部
+// 檢查是否在聊天底部
 function isAtBottom() {
-    const threshold = 100; // 距离底部的阈值
+    const threshold = 50; // 距離底部的閾值
     return chat.scrollHeight - chat.clientHeight - chat.scrollTop <= threshold;
 }
 
-// 滚动到底部
+// 滾動到底部
 function scrollToBottom() {
     chat.scrollTop = chat.scrollHeight;
 }
 
-// 智能滚动 - 如果用户在底部附近，则自动滚动
+// 智能滾動 - 如果用戶在底部附近，則自動滾動
 function smartScroll() {
     if (autoScrollEnabled && isAtBottom()) {
         scrollToBottom();
     }
 }
 
-// 监听媒体加载事件
-function observeMediaLoad(mediaElement) {
-    if (mediaElement.tagName === 'IMG' || mediaElement.tagName === 'VIDEO') {
-        mediaElement.addEventListener('load', () => {
-            // 媒体加载完成后，如果用户在底部附近，则滚动到底部
-            setTimeout(smartScroll, 100);
-        });
-        
-        // 对于已经加载的媒体，也触发一次检查
-        if (mediaElement.complete) {
-            setTimeout(smartScroll, 100);
-        }
-    }
-}
-
-// 设置聊天内容变化的监听
-function setupChatObserver() {
-    if (chatObserver) {
-        chatObserver.disconnect();
+// 監聽媒體加載事件
+function setupMediaLoadListeners(messageElement) {
+    const mediaElements = messageElement.querySelectorAll('img, video, iframe');
+    
+    if (mediaElements.length === 0) {
+        // 如果沒有媒體元素，立即滾動
+        setTimeout(smartScroll, 10);
+        return;
     }
     
-    chatObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        // 检查新添加的消息中的媒体元素
-                        const mediaElements = node.querySelectorAll('img, video, iframe');
-                        mediaElements.forEach(observeMediaLoad);
-                        
-                        // 如果是媒体元素本身
-                        if (node.tagName === 'IMG' || node.tagName === 'VIDEO' || node.tagName === 'IFRAME') {
-                            observeMediaLoad(node);
-                        }
+    let loadedCount = 0;
+    const totalMedia = mediaElements.length;
+    
+    mediaElements.forEach(media => {
+        if (media.tagName === 'IMG') {
+            if (media.complete) {
+                // 圖片已經加載完成
+                loadedCount++;
+            } else {
+                // 監聽圖片加載事件
+                media.addEventListener('load', () => {
+                    loadedCount++;
+                    if (loadedCount === totalMedia) {
+                        // 所有媒體都已加載完成
+                        setTimeout(smartScroll, 100);
                     }
                 });
-                
-                // 内容变化后智能滚动
-                setTimeout(smartScroll, 100);
+                media.addEventListener('error', () => {
+                    loadedCount++;
+                    if (loadedCount === totalMedia) {
+                        // 所有媒體都已加載完成（即使有錯誤）
+                        setTimeout(smartScroll, 100);
+                    }
+                });
             }
-        });
+        } else if (media.tagName === 'VIDEO') {
+            // 對於視頻，監聽 canplay 事件
+            media.addEventListener('canplay', () => {
+                loadedCount++;
+                if (loadedCount === totalMedia) {
+                    setTimeout(smartScroll, 100);
+                }
+            });
+            media.addEventListener('error', () => {
+                loadedCount++;
+                if (loadedCount === totalMedia) {
+                    setTimeout(smartScroll, 100);
+                }
+            });
+        } else if (media.tagName === 'IFRAME') {
+            // 對於 iframe，很難檢測加載完成，所以假設它們會加載
+            setTimeout(() => {
+                loadedCount++;
+                if (loadedCount === totalMedia) {
+                    setTimeout(smartScroll, 100);
+                }
+            }, 500);
+        }
     });
     
-    chatObserver.observe(chat, {
-        childList: true,
-        subtree: true
-    });
+    // 如果所有媒體都已經加載完成（例如緩存的圖片）
+    if (loadedCount === totalMedia) {
+        setTimeout(smartScroll, 100);
+    }
 }
 
-// 监听用户手动滚动
+// 監聽用戶手動滾動
 function setupUserScrollListener() {
-    let scrollTimeout;
-    
     chat.addEventListener('scroll', () => {
-        // 用户手动滚动时，暂时禁用自动滚动
+        // 用戶手動滾動時，暫時禁用自動滾動
         autoScrollEnabled = false;
         
-        // 清除之前的定时器
+        // 清除之前的定時器
         clearTimeout(scrollTimeout);
         
-        // 设置新的定时器，如果用户停止滚动一段时间，重新启用自动滚动
+        // 設置新的定時器，如果用戶停止滾動一段時間，重新啟用自動滾動
         scrollTimeout = setTimeout(() => {
-            // 如果用户滚动到底部附近，重新启用自动滚动
+            // 如果用戶滾動到底部附近，重新啟用自動滾動
             if (isAtBottom()) {
                 autoScrollEnabled = true;
             }
@@ -709,7 +724,7 @@ function checkLogin() {
             oauthToken = saved;
             fetchUserInfo(saved.replace('oauth:', ''));
         } else {
-            // 如果没有登录信息，直接连接匿名聊天
+            // 如果沒有登入信息，直接連接匿名聊天
             connectChat();
         }
     }
@@ -742,7 +757,7 @@ function loginSuccess() {
     userAvatarEl.src = userAvatar;
     userNameEl.textContent = userDisplayName;
     
-    // 重新连接聊天，使用登录后的身份
+    // 重新連接聊天，使用登入後的身份
     reconnectChat();
 }
 
@@ -1043,8 +1058,7 @@ function connectChat() {
         status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
         loadEmojiSets();
         
-        // 设置聊天监听
-        setupChatObserver();
+        // 设置用户滚动监听
         setupUserScrollListener();
     });
 
@@ -1084,7 +1098,7 @@ function connectChat() {
             // 添加回復用戶名
             const replyUsername = document.createElement('span');
             replyUsername.className = 'reply-username';
-            replyUsername.textContent = tags['reply-parent-display-name'] || tags['reply-parent-user-login']+ ': ';
+            replyUsername.textContent = tags['reply-parent-display-name'] || tags['reply-parent-user-login'];
             replyContent.appendChild(replyUsername);
             
             // 添加回復訊息內容
@@ -1124,8 +1138,11 @@ function connectChat() {
 
         chat.appendChild(div);
         
-        // 立即滚动到最底部
-        setTimeout(smartScroll, 100);
+        // 設置媒體加載監聽器
+        setupMediaLoadListeners(div);
+        
+        // 立即滾動一次（針對純文字訊息）
+        setTimeout(smartScroll, 10);
     });
 
     client.connect().catch(console.error);
@@ -1133,12 +1150,12 @@ function connectChat() {
 
 function reconnectChat() {
     if (client) {
-        // 断开现有连接
+        // 斷開現有連接
         client.disconnect();
         isConnected = false;
     }
     
-    // 重新连接
+    // 重新連接
     connectChat();
 }
 
@@ -1177,6 +1194,4 @@ cancelReplyBtn.onclick = cancelReply;
 checkLogin();
 </script>
 </body>
-
 </html>
-
