@@ -807,7 +807,7 @@ function loadEmojiSets() {
 
     // 本台專屬https://sk-knower.com/sklive_api/read/skchat_icon.php?set=sk9fish
     fetch("https://chicktv.github.io/tv/skuser_icon.txt").then(r=>r.json()).then(icons=>{
-        emojiLists["本台"] = {emojis:[], title:"本台"};
+        emojiLists["本台"] = {emojis:[], image:"https://chicktv.github.io/tv/chick.jpg"};
         icons.forEach(i=>{
             emojiLists["本台"].emojis.push({alt:i.alt, src:i.src, dis:i.alt});
             altToEmojiMap[i.alt] = {src:i.src, width:'32', height:'32'};
@@ -1079,4 +1079,5 @@ cancelReplyBtn.onclick = cancelReply;
 checkLogin();
 </script>
 </body>
+
 </html>
