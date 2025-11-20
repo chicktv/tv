@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>chickchat</title>
+<title>Twitch 聊天室 - 带回复功能</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -16,7 +16,7 @@
     }
     
     #chat {
-        height: 78vh;
+        height: 79vh;
         overflow-y: auto;
         background: #0e0e10;
         padding: 12px;
@@ -25,8 +25,6 @@
         border: 1px solid #26262c;
         font-size: 13px;
 		scroll-behavior: smooth;
-		display: flex;
-      
     }
 	
 	 .chat-input-container {
@@ -89,17 +87,12 @@
         color: inherit;
     }
 	
-	
-    
     #status {
         margin: 0px 0;
         font-weight: 500;
         color: #bf94ff;
         font-size: 10px;
     }
-    
-    
-    
     
     #msgInput:focus {
         outline: none;
@@ -202,7 +195,7 @@
     
     img, video, iframe {
         max-width: 320px;
-        max-height: 180px;
+        max-height: 150px;
         margin: 6px 0;
         border-radius: 4px;
         display: inline;
@@ -220,7 +213,7 @@
     /* [s][e] 圖片樣式 */
     .zero-width-image {
         max-width: 320px;
-        max-height: 180px;
+        max-height: 150px;
         border-radius: 4px;
         margin: 6px 0;
     }
@@ -429,6 +422,7 @@
         color: #9147ff;
     }
     
+    /* 引用回复样式 - 新增 */
     .reply-context {
         font-size: 11px;
         color: #adadb8;
@@ -445,6 +439,53 @@
     .reply-context .replying-to {
         font-weight: bold;
         color: #9147ff;
+    }
+    
+    .reply-message {
+        background: #1f1f23;
+        border-left: 2px solid #9147ff;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        border-radius: 0 4px 4px 0;
+        font-size: 12px;
+        color: #adadb8;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .reply-message .reply-avatar {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 6px;
+        flex-shrink: 0;
+    }
+    
+    .reply-message .reply-content {
+        flex: 1;
+        overflow: hidden;
+    }
+    
+    .reply-message .reply-username {
+        font-weight: bold;
+        color: #9147ff;
+        margin-right: 6px;
+    }
+    
+    .reply-message .reply-text {
+        color: #adadb8;
+        word-break: break-word;
+        line-height: 1.3;
+    }
+    
+    .reply-message .reply-arrow {
+        color: #9147ff;
+        margin-right: 6px;
+        font-size: 10px;
+    }
+    
+    .reply-container {
+        margin-bottom: 8px;
     }
 </style>
 </head>
@@ -497,7 +538,7 @@
 <script>
 // ===================== 重要設定 =====================
 const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9'; // 前往 https://twitchapps.com/tmi/ 取得（點 Connect with Twitch 後會給你）
-const channel = "whitewing940920"; // 要觀看的頻道（小寫）
+const channel = "69nocondom"; // 要觀看的頻道（小寫）
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
 const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -634,13 +675,12 @@ function processMessage(text) {
     for (const [alt, data] of Object.entries(altToEmojiMap)) {
         const escaped = alt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(^|\\s)(${escaped})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
-        html = html.replace(regex, `$1<img src="${data.src}" style="max-width:170px;max-height:170px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
+        html = html.replace(regex, `$1<img src="${data.src}" style="max-width:150px;max-height:150px;cursor:pointer;" onclick="window.open(this.src,'_blank')">`);
     }
 
     return html;
 }
 
-//pastebtn
 // ===================== 貼上按鈕功能 =====================
 document.getElementById('pastephoto').addEventListener('click', function() {
     if (input.disabled) {
@@ -885,20 +925,55 @@ function connectChat() {
 
         // 檢查是否有回覆的訊息
         const isReply = tags['reply-parent-msg-id'];
+        
         if (isReply) {
-            const replyContext = document.createElement('div');
-            replyContext.className = 'reply-context';
-            replyContext.innerHTML = `
-                <span class="reply-icon">↩️</span>
-                回覆給 <span class="replying-to">${tags['reply-parent-display-name']}</span>
-            `;
-            div.appendChild(replyContext);
+            // 創建回復容器
+            const replyContainer = document.createElement('div');
+            replyContainer.className = 'reply-container';
+            
+            // 創建被回復的訊息預覽
+            const replyMessage = document.createElement('div');
+            replyMessage.className = 'reply-message';
+            
+            // 添加回復箭頭
+            const replyArrow = document.createElement('span');
+            replyArrow.className = 'reply-arrow';
+            replyArrow.innerHTML = '↩';
+            replyMessage.appendChild(replyArrow);
+            
+            // 添加回復頭像（使用默認頭像，因為我們沒有被回復用戶的頭像）
+            const replyAvatar = document.createElement('img');
+            replyAvatar.className = 'reply-avatar';
+            replyAvatar.src = 'https://static-cdn.jtvnw.net/user-default-pictures-uv/13e5fa74-defa-11e9-809c-784f43822e80-profile_image-70x70.png';
+            replyMessage.appendChild(replyAvatar);
+            
+            // 添加回復內容
+            const replyContent = document.createElement('div');
+            replyContent.className = 'reply-content';
+            
+            // 添加回復用戶名
+            const replyUsername = document.createElement('span');
+            replyUsername.className = 'reply-username';
+            replyUsername.textContent = tags['reply-parent-display-name'] || tags['reply-parent-user-login'];
+            replyContent.appendChild(replyUsername);
+            
+            // 添加回復訊息內容
+            const replyText = document.createElement('span');
+            replyText.className = 'reply-text';
+            replyText.innerHTML = processMessage(tags['reply-parent-msg-body'] || '');
+            replyContent.appendChild(replyText);
+            
+            replyMessage.appendChild(replyContent);
+            replyContainer.appendChild(replyMessage);
+            
+            // 將回復容器添加到訊息中
+            div.appendChild(replyContainer);
         }
 
         const name = document.createElement('span');
         name.className = 'name';
         name.style.color = tags.color || '#9147ff';
-        name.textContent = (tags['display-name'] || tags.username) + '：';
+        name.textContent = (tags['display-name'] || tags.username) + ': ';
         div.appendChild(name);
 
         const msg = document.createElement('span');
@@ -971,3 +1046,5 @@ checkLogin();
 </script>
 </body>
 </html>
+
+
