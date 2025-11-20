@@ -895,7 +895,7 @@ function connectChat() {
         const name = document.createElement('span');
         name.className = 'name';
         name.style.color = tags.color || '#9147ff';
-        name.textContent = (tags['display-name'] || tags.username) + ': ';
+        name.textContent = (tags['display-name'] || tags.username) + '：';
         div.appendChild(name);
 
         const msg = document.createElement('span');
