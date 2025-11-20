@@ -523,7 +523,7 @@
 
 <div id="chat"></div>
 
-<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button></span>
+<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button><a type="button" class="sk_botton sktoptag quikelink" onclick="opennews();" style="cursor: pointer;right: 0px;width: auto;"></a></span>
 <div id="inputArea">
 
 <div id="replyIndicator" class="reply-indicator" style="display: none;">
@@ -601,111 +601,24 @@ const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu
 const twitterImageRegex = /https?:\/\/pbs\.twimg\.com\/media\/[^?]+\?format=(jpg|jpeg|png|gif|webp)/i;
 const mp4Regex = /\.mp4(?:[/?].*)?$/i;
 
-// ===================== 簡單直接的滾動解決方案 =====================
-let autoScrollEnabled = true;
-let scrollTimeout = null;
-
-// 檢查是否在聊天底部
-function isAtBottom() {
-    const threshold = 50; // 距離底部的閾值
-    return chat.scrollHeight - chat.clientHeight - chat.scrollTop <= threshold;
-}
-
-// 滾動到底部
-function scrollToBottom() {
+// ===================== 強制滾動解決方案 =====================
+// 每次有新消息時，強制滾動到最底部，不論內容是什麼
+function forceScrollToBottom() {
+    // 立即滾動
     chat.scrollTop = chat.scrollHeight;
-}
-
-// 智能滾動 - 如果用戶在底部附近，則自動滾動
-function smartScroll() {
-    if (autoScrollEnabled && isAtBottom()) {
-        scrollToBottom();
-    }
-}
-
-// 監聽媒體加載事件
-function setupMediaLoadListeners(messageElement) {
-    const mediaElements = messageElement.querySelectorAll('img, video, iframe');
     
-    if (mediaElements.length === 0) {
-        // 如果沒有媒體元素，立即滾動
-        setTimeout(smartScroll, 10);
-        return;
-    }
+    // 多次嘗試滾動，確保滾動到底部
+    const maxAttempts = 10;
+    let attempts = 0;
     
-    let loadedCount = 0;
-    const totalMedia = mediaElements.length;
-    
-    mediaElements.forEach(media => {
-        if (media.tagName === 'IMG') {
-            if (media.complete) {
-                // 圖片已經加載完成
-                loadedCount++;
-            } else {
-                // 監聽圖片加載事件
-                media.addEventListener('load', () => {
-                    loadedCount++;
-                    if (loadedCount === totalMedia) {
-                        // 所有媒體都已加載完成
-                        setTimeout(smartScroll, 100);
-                    }
-                });
-                media.addEventListener('error', () => {
-                    loadedCount++;
-                    if (loadedCount === totalMedia) {
-                        // 所有媒體都已加載完成（即使有錯誤）
-                        setTimeout(smartScroll, 100);
-                    }
-                });
-            }
-        } else if (media.tagName === 'VIDEO') {
-            // 對於視頻，監聽 canplay 事件
-            media.addEventListener('canplay', () => {
-                loadedCount++;
-                if (loadedCount === totalMedia) {
-                    setTimeout(smartScroll, 100);
-                }
-            });
-            media.addEventListener('error', () => {
-                loadedCount++;
-                if (loadedCount === totalMedia) {
-                    setTimeout(smartScroll, 100);
-                }
-            });
-        } else if (media.tagName === 'IFRAME') {
-            // 對於 iframe，很難檢測加載完成，所以假設它們會加載
-            setTimeout(() => {
-                loadedCount++;
-                if (loadedCount === totalMedia) {
-                    setTimeout(smartScroll, 100);
-                }
-            }, 500);
+    const scrollInterval = setInterval(() => {
+        chat.scrollTop = chat.scrollHeight;
+        attempts++;
+        
+        if (attempts >= maxAttempts) {
+            clearInterval(scrollInterval);
         }
-    });
-    
-    // 如果所有媒體都已經加載完成（例如緩存的圖片）
-    if (loadedCount === totalMedia) {
-        setTimeout(smartScroll, 100);
-    }
-}
-
-// 監聽用戶手動滾動
-function setupUserScrollListener() {
-    chat.addEventListener('scroll', () => {
-        // 用戶手動滾動時，暫時禁用自動滾動
-        autoScrollEnabled = false;
-        
-        // 清除之前的定時器
-        clearTimeout(scrollTimeout);
-        
-        // 設置新的定時器，如果用戶停止滾動一段時間，重新啟用自動滾動
-        scrollTimeout = setTimeout(() => {
-            // 如果用戶滾動到底部附近，重新啟用自動滾動
-            if (isAtBottom()) {
-                autoScrollEnabled = true;
-            }
-        }, 2000);
-    });
+    }, 100);
 }
 
 // ===================== 登入系統 =====================
@@ -1057,9 +970,6 @@ function connectChat() {
         isConnected = true;
         status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
         loadEmojiSets();
-        
-        // 设置用户滚动监听
-        setupUserScrollListener();
     });
 
     client.on('message', (ch, tags, message, self) => {
@@ -1138,11 +1048,8 @@ function connectChat() {
 
         chat.appendChild(div);
         
-        // 設置媒體加載監聽器
-        setupMediaLoadListeners(div);
-        
-        // 立即滾動一次（針對純文字訊息）
-        setTimeout(smartScroll, 10);
+        // 強制滾動到最底部
+        forceScrollToBottom();
     });
 
     client.connect().catch(console.error);
@@ -1195,4 +1102,3 @@ checkLogin();
 </script>
 </body>
 </html>
-
