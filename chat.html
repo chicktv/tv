@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>chickchat</title>
+<title>Twitch 聊天室 - 带回复功能</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -905,9 +905,15 @@ window.addEventListener('load', async function() {
 
 // ===================== 訊息處理 =====================
 function processMessage(text) {
-    // 先進行 HTML 轉義
-    let safeText = escapeHtml(text);
-    let html = safeText;
+    // 先解碼 HTML 實體
+    function decodeHtmlEntities(text) {
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        return textarea.value;
+    }
+    
+    let decodedText = decodeHtmlEntities(text);
+    let html = decodedText;
 
     // 驗證 URL 是否安全的函數
     function isValidUrl(url) {
@@ -922,7 +928,8 @@ function processMessage(text) {
 
     // 檢查是否為圖片 URL
     function isImageUrl(url) {
-        return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+        return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url) || 
+               /pbs\.twimg\.com\/media/.test(url);
     }
 
     // 檢查是否為影片 URL
@@ -930,20 +937,33 @@ function processMessage(text) {
         return /\.(mp4|webm|ogg|mov|avi|mkv)(\?.*)?$/i.test(url);
     }
 
+    // 先處理表情符號 - 在 HTML 轉義之前
+    for (const [alt, data] of Object.entries(altToEmojiMap)) {
+        try {
+            // 使用正則表達式跳脫函數
+            const escapedAlt = escapeRegExp(alt);
+            // 使用單詞邊界來匹配表情符號
+            const regex = new RegExp(`(^|\\s)(${escapedAlt})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
+            html = html.replace(regex, `$1<img src="${escapeHtml(data.src)}" style="max-width:150px;max-height:150px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
+        } catch (error) {
+            console.warn('表情符號處理錯誤:', alt, error);
+        }
+    }
+
     // 處理圖片和影片格式 [s]網址[e]
-    html = html.replace(/\[s\]\s*(https?:\/\/[^\s\[\]]+?)\s*\[e\]/gi, (match, url) => {
+    html = html.replace(/\[s\]\s*((?:https?:\/\/[^\s\[\]]+?))\s*\[e\]/gi, (match, url) => {
         if (!isValidUrl(url)) {
             return escapeHtml(match);
         }
         
         // 根據檔案類型決定顯示圖片還是影片
         if (isVideoUrl(url)) {
-            return `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy" style="max-width:300px;max-height:150px;object-fit:contain;">
+            return `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
                     <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
                     </video>`;
         } else if (isImageUrl(url)) {
             return `<br><img src="${escapeHtml(url)}" class="zero-width-image" loading="lazy" 
-                    onerror="this.style.display='none'" 
+                    onerror="this.style.display='none'; this.nextElementSibling && this.nextElementSibling.style.display='inline'" 
                     onclick="window.open('${escapeHtml(url)}','_blank')">`;
         } else {
             // 如果不是圖片或影片，顯示為超連結
@@ -952,7 +972,7 @@ function processMessage(text) {
     });
 
     // 處理影片格式 [y]網址[t]
-    html = html.replace(/\[y\]\s*(https?:\/\/[^\s\[\]]+?)\s*\[t\]/gi, (match, url) => {
+    html = html.replace(/\[y\]\s*((?:https?:\/\/[^\s\[\]]+?))\s*\[t\]/gi, (match, url) => {
         if (!isValidUrl(url)) {
             return escapeHtml(match);
         }
@@ -964,7 +984,7 @@ function processMessage(text) {
         }
         
         if (isVideoUrl(url)) {
-            return `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy" style="max-width:300px;max-height:150px;object-fit:contain;">
+            return `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
                     <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
                     </video>`;
         }
@@ -988,16 +1008,6 @@ function processMessage(text) {
         
         return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
     });
-
-    // 簡化表情符號處理
-    for (const [alt, data] of Object.entries(altToEmojiMap)) {
-        try {
-            const regex = new RegExp(`\\b${escapeRegExp(alt)}\\b`, 'g');
-            html = html.replace(regex, `<img src="${escapeHtml(data.src)}" style="max-width:150px;max-height:150px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
-        } catch (error) {
-            console.warn('表情符號處理錯誤:', alt, error);
-        }
-    }
 
     return html;
 }
