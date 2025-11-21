@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>Twitch 聊天室 - 带回复功能</title>
+<title>chickchat</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -196,26 +196,34 @@
         text-decoration: underline;
     }
     
-     img, video, iframe, .zero-width-image {
-        max-width: 300px;
-        max-height: 150px;
-        border-radius: 6px;
-        object-fit: contain;
-        background: #000;
-        flex-shrink: 0;
-        /* 新增：確保媒體元素垂直對齊 */
-        vertical-align: top;
-        align-self: flex-start;
-		padding:0px
-    }
-    
-	/* [s][e] 圖片樣式 */
-    .zero-width-image {
-        max-width: 300px;
-        max-height: 150px;
-        border-radius: 4px;
-        margin: 6px 0;
-    }
+    /* 確保所有媒體元素都有相同的大小 */
+img.zero-width-image, 
+video.zero-width-image, 
+iframe.zero-width-image, 
+.zero-width-image {
+    max-width: 300px !important;
+    max-height: 200px !important;
+    border-radius: 6px !important;
+    object-fit: contain !important;
+    background: #000 !important;
+    flex-shrink: 0 !important;
+    vertical-align: top !important;
+    align-self: flex-start !important;
+    padding: 0px !important;
+}
+
+/* 另外確保普通的 img, video, iframe 也有相同的大小 */
+img, video, iframe {
+    max-width: 300px !important;
+    max-height: 200px !important;
+    border-radius: 6px !important;
+    object-fit: contain !important;
+    background: #000 !important;
+    flex-shrink: 0 !important;
+    vertical-align: top !important;
+    align-self: flex-start !important;
+    padding: 0px !important;
+}
 	
     video {
         background: #000;
@@ -912,18 +920,38 @@ function processMessage(text) {
         }
     }
 
-    // 處理圖片格式 [s]網址[e] - 修復允許空格
+    // 檢查是否為圖片 URL
+    function isImageUrl(url) {
+        return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+    }
+
+    // 檢查是否為影片 URL
+    function isVideoUrl(url) {
+        return /\.(mp4|webm|ogg|mov|avi|mkv)(\?.*)?$/i.test(url);
+    }
+
+    // 處理圖片和影片格式 [s]網址[e]
     html = html.replace(/\[s\]\s*(https?:\/\/[^\s\[\]]+?)\s*\[e\]/gi, (match, url) => {
         if (!isValidUrl(url)) {
             return escapeHtml(match);
         }
-        // 使用一次性處理，避免後續重複處理
-        return `<!--IMG_START--><br><img src="${escapeHtml(url)}" class="zero-width-image" loading="lazy" 
-                onerror="this.style.display='none'" 
-                onclick="window.open('${escapeHtml(url)}','_blank')"><!--IMG_END-->`;
+        
+        // 根據檔案類型決定顯示圖片還是影片
+        if (isVideoUrl(url)) {
+            return `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy" style="max-width:300px;max-height:150px;object-fit:contain;">
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
+                    </video>`;
+        } else if (isImageUrl(url)) {
+            return `<br><img src="${escapeHtml(url)}" class="zero-width-image" loading="lazy" 
+                    onerror="this.style.display='none'" 
+                    onclick="window.open('${escapeHtml(url)}','_blank')">`;
+        } else {
+            // 如果不是圖片或影片，顯示為超連結
+            return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+        }
     });
 
-    // 處理影片格式 [y]網址[t] - 修復允許空格
+    // 處理影片格式 [y]網址[t]
     html = html.replace(/\[y\]\s*(https?:\/\/[^\s\[\]]+?)\s*\[t\]/gi, (match, url) => {
         if (!isValidUrl(url)) {
             return escapeHtml(match);
@@ -932,11 +960,13 @@ function processMessage(text) {
         const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&[^&\s]*)?/);
         if (youtubeMatch) {
             const id = escapeHtml(youtubeMatch[1]);
-            return `<!--VIDEO_START--><br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen></iframe><!--VIDEO_END-->`;
+            return `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
         }
         
-        if (mp4Regex.test(url)) {
-            return `<!--VIDEO_START--><br><video src="${escapeHtml(url)}" controls autoplay loop muted class="zero-width-image" loading="lazy"></video><!--VIDEO_END-->`;
+        if (isVideoUrl(url)) {
+            return `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy" style="max-width:300px;max-height:150px;object-fit:contain;">
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
+                    </video>`;
         }
 
         return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
@@ -945,19 +975,13 @@ function processMessage(text) {
     // 移除殘留的標籤字符
     html = html.replace(/\[s\]|\[e\]|\[y\]|\[t\]/gi, '');
 
-    // 處理其他普通網址（轉為超連結）- 跳過已經處理過的媒體
+    // 處理其他普通網址（轉為超連結）
     html = html.replace(/(https?:\/\/[^\s<>"'\]\[]+)/g, url => {
         if (!isValidUrl(url)) {
             return escapeHtml(url);
         }
         
-        // 跳過已經被處理過的網址（在註解標記內的）
-        if (html.includes(`<!--IMG_START-->`) && html.includes(url) ||
-            html.includes(`<!--VIDEO_START-->`) && html.includes(url)) {
-            return url;
-        }
-        
-        // 跳過已經在標籤內的網址
+        // 跳過已經被處理過的網址
         if (html.includes(`src="${url}"`) || html.includes(`href="${url}"`)) {
             return url;
         }
@@ -965,12 +989,8 @@ function processMessage(text) {
         return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
     });
 
-    // 移除臨時註解標記
-    html = html.replace(/<!--IMG_START-->|<!--IMG_END-->|<!--VIDEO_START-->|<!--VIDEO_END-->/g, '');
-
-    // 簡化表情符號處理 - 避免正則表達式錯誤
+    // 簡化表情符號處理
     for (const [alt, data] of Object.entries(altToEmojiMap)) {
-        // 使用簡單的字串替換，避免正則表達式複雜性
         try {
             const regex = new RegExp(`\\b${escapeRegExp(alt)}\\b`, 'g');
             html = html.replace(regex, `<img src="${escapeHtml(data.src)}" style="max-width:150px;max-height:150px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
