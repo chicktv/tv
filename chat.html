@@ -197,7 +197,7 @@
     }
     
      img, video, iframe, .zero-width-image {
-        max-width: 320px;
+        max-width: 300px;
         max-height: 150px;
         border-radius: 6px;
         object-fit: contain;
@@ -207,6 +207,14 @@
         vertical-align: top;
         align-self: flex-start;
 		padding:0px
+    }
+
+	/* [s][e] 圖片樣式 */
+    .zero-width-image {
+        max-width: 300px;
+        max-height: 150px;
+        border-radius: 4px;
+        margin: 6px 0;
     }
     
     video {
@@ -1254,4 +1262,5 @@ cancelReplyBtn.onclick = cancelReply;
 // 頁面載入時已經在 window.addEventListener('load') 中調用 checkLogin()
 </script>
 </body>
+
 </html>
