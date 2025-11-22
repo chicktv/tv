@@ -234,14 +234,13 @@ img, video, iframe {
 
     
     .message-text {
-        display: inline-block;
+        display: inline;
         line-height: 1.4;
         vertical-align: top;
         padding-top: 0px;
-        word-break: break-word; /* 允許單詞內換行 */
-        overflow-wrap: break-word; /* 處理長單詞或URL */
-        white-space: normal; /* 確保文字正常換行 */
-        width: 100%; /* 確保佔滿可用空間 */
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
     }
 	
 
@@ -423,7 +422,8 @@ img, video, iframe {
         transition: all 0.2s;
         border-radius: 3px;
         flex-shrink: 0;
-        white-space: nowrap; /* 防止回覆按鈕換行 */
+        white-space: nowrap;
+        align-self: flex-start; /* 確保按鈕在頂部對齊 */
     }
     
     .reply-btn:hover {
@@ -589,36 +589,48 @@ img, video, iframe {
         margin-right: 6px;
     }
     
-    /* 修改訊息內容布局 */
+    /* 修正訊息內容布局 - 使用 table 佈局而不是 flex */
     .msg-content {
-        display: flex;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 4px;
-        line-height: 1.4;
-        align-content: flex-start;
+        display: table;
         width: 100%;
+        table-layout: fixed;
+        line-height: 1.4;
     }
     
     .msg-with-reply .msg-content {
         padding: 8px 12px;
+        display: table;
+        width: 100%;
+        table-layout: fixed;
     }
     
     .msg-with-reply:hover .reply-btn {
         opacity: 1;
     }
     
-    .msg-content .reply-btn {
-        margin-left: auto; /* 將回覆按鈕推到右側 */
-        flex-shrink: 0;
+    /* 使用 table-cell 佈局確保正確對齊 */
+    .name-container {
+        display: table-cell;
+        vertical-align: top;
+        white-space: nowrap;
+        width: 1%; /* 讓寬度自動調整 */
+        padding-right: 6px;
     }
     
-    /* 新增：確保文字正確換行 */
-    .text-content {
-        flex: 1;
-        min-width: 0; /* 重要：允許內容收縮 */
+    .text-container {
+        display: table-cell;
+        vertical-align: top;
+        width: auto;
         word-break: break-word;
         overflow-wrap: break-word;
+    }
+    
+    .button-container {
+        display: table-cell;
+        vertical-align: top;
+        width: 1%; /* 讓寬度自動調整 */
+        white-space: nowrap;
+        padding-left: 8px;
     }
 </style>
 </head>
@@ -720,49 +732,11 @@ const mp4Regex = /\.mp4(?:[/?].*)?$/i;
 let messageCount = 0;
 const MAX_MESSAGES = 100;
 
-// 圖片代理設置
-const PROXY_URL = 'https://corsproxy.io/?';
-const IMAGE_PROXY_URLS = [
-    'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url=',
-    'https://cors-anywhere.herokuapp.com/'
-];
-
 //防止 XSS
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-// ===================== 圖片代理功能 =====================
-async function testImageUrl(url) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        img.src = url;
-        
-        // 設定超時
-        setTimeout(() => resolve(false), 5000);
-    });
-}
-
-async function getWorkingProxyUrl(url) {
-    // 先測試原始URL
-    if (await testImageUrl(url)) {
-        return url;
-    }
-    
-    // 測試各個代理
-    for (const proxy of IMAGE_PROXY_URLS) {
-        const proxyUrl = proxy + encodeURIComponent(url);
-        if (await testImageUrl(proxyUrl)) {
-            return proxyUrl;
-        }
-    }
-    
-    return null; // 所有代理都失敗
 }
 
 // ===================== 徽章功能 =====================
@@ -975,7 +949,6 @@ window.addEventListener('load', async function() {
     }
 });
 
-// ===================== 訊息處理 =====================
 // ===================== 訊息處理 =====================
 async function processMessage(text) {
     // 先解碼 HTML 實體
@@ -1374,7 +1347,6 @@ function connectChat() {
                     <span class="reply-icon">↩</span>
                      <span>回覆</span>
                     <span class="reply-username">${tags['reply-parent-display-name'] || tags['reply-parent-user-login']}</span>
-                   
                 `;
                 replyContainer.appendChild(replyHeader);
                 
@@ -1389,9 +1361,13 @@ function connectChat() {
                 const msgContent = document.createElement('div');
                 msgContent.className = 'msg-content';
                 
-                const nameContainer = document.createElement('span');
-                nameContainer.className = 'name';
-                nameContainer.style.color = tags.color || '#9147ff';
+                // 創建名稱容器
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'name-container';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'name';
+                nameSpan.style.color = tags.color || '#9147ff';
                 
                 // 使用更安全的方式插入徽章和用户名
                 const badges = parseBadges(tags.badges);
@@ -1399,18 +1375,28 @@ function connectChat() {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
                 while (tempDiv.firstChild) {
-                    nameContainer.appendChild(tempDiv.firstChild);
+                    nameSpan.appendChild(tempDiv.firstChild);
                 }
                 
+                nameContainer.appendChild(nameSpan);
                 msgContent.appendChild(nameContainer);
+                
+                // 創建文字容器
+                const textContainer = document.createElement('div');
+                textContainer.className = 'text-container';
                 
                 const msg = document.createElement('span');
                 msg.className = 'message-text';
                 msg.innerHTML = await processMessage(message);
-                msgContent.appendChild(msg);
+                textContainer.appendChild(msg);
                 
-                // 為回覆訊息添加回覆按鈕
+                msgContent.appendChild(textContainer);
+                
+                // 創建按鈕容器
                 if (oauthToken && !self) {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'button-container';
+                    
                     const replyBtn = document.createElement('button');
                     replyBtn.className = 'reply-btn';
                     replyBtn.innerHTML = '↩️';
@@ -1418,7 +1404,9 @@ function connectChat() {
                     replyBtn.onclick = () => {
                         setupReply(tags.id, tags['display-name'] || tags.username, message);
                     };
-                    msgContent.appendChild(replyBtn);
+                    buttonContainer.appendChild(replyBtn);
+                    
+                    msgContent.appendChild(buttonContainer);
                 }
                 
                 replyContainer.appendChild(msgContent);
@@ -1431,9 +1419,13 @@ function connectChat() {
                 const msgContent = document.createElement('div');
                 msgContent.className = 'msg-content';
                 
-                const nameContainer = document.createElement('span');
-                nameContainer.className = 'name';
-                nameContainer.style.color = tags.color || '#9147ff';
+                // 創建名稱容器
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'name-container';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'name';
+                nameSpan.style.color = tags.color || '#9147ff';
                 
                 // 使用更安全的方式插入徽章和用户名
                 const badges = parseBadges(tags.badges);
@@ -1441,17 +1433,28 @@ function connectChat() {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
                 while (tempDiv.firstChild) {
-                    nameContainer.appendChild(tempDiv.firstChild);
+                    nameSpan.appendChild(tempDiv.firstChild);
                 }
                 
+                nameContainer.appendChild(nameSpan);
                 msgContent.appendChild(nameContainer);
+                
+                // 創建文字容器
+                const textContainer = document.createElement('div');
+                textContainer.className = 'text-container';
                 
                 const msg = document.createElement('span');
                 msg.className = 'message-text';
                 msg.innerHTML = await processMessage(message);
-                msgContent.appendChild(msg);
+                textContainer.appendChild(msg);
                 
+                msgContent.appendChild(textContainer);
+                
+                // 創建按鈕容器
                 if (oauthToken && !self) {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'button-container';
+                    
                     const replyBtn = document.createElement('button');
                     replyBtn.className = 'reply-btn';
                     replyBtn.innerHTML = '↩️';
@@ -1459,7 +1462,9 @@ function connectChat() {
                     replyBtn.onclick = () => {
                         setupReply(tags.id, tags['display-name'] || tags.username, message);
                     };
-                    msgContent.appendChild(replyBtn);
+                    buttonContainer.appendChild(replyBtn);
+                    
+                    msgContent.appendChild(buttonContainer);
                 }
                 
                 div.appendChild(msgContent);
@@ -1478,10 +1483,14 @@ function connectChat() {
             fallbackDiv.className = 'msg';
             fallbackDiv.innerHTML = `
                 <div class="msg-content">
-                    <span class="name" style="color: ${tags.color || '#9147ff'}">
-                        ${escapeHtml(tags['display-name'] || tags.username)}: 
-                    </span>
-                    <span class="message-text">${escapeHtml(message)}</span>
+                    <div class="name-container">
+                        <span class="name" style="color: ${tags.color || '#9147ff'}">
+                            ${escapeHtml(tags['display-name'] || tags.username)}: 
+                        </span>
+                    </div>
+                    <div class="text-container">
+                        <span class="message-text">${escapeHtml(message)}</span>
+                    </div>
                 </div>
             `;
             chat.appendChild(fallbackDiv);
