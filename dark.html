@@ -1550,14 +1550,11 @@ function connectChat() {
             const isReply = tags['reply-parent-msg-id'];
             addRecentUser(tags);
             
-            // 過濾掉回覆指令
+            // 更徹底地過濾回覆指令
             let displayMessage = message;
-            if (isReply && message.startsWith('@reply-parent-msg-id=')) {
-                // 移除回覆指令部分
-                const messageParts = message.split(' ');
-                if (messageParts.length > 1 && messageParts[0].startsWith('@reply-parent-msg-id=')) {
-                    displayMessage = messageParts.slice(1).join(' ');
-                }
+            if (message.includes('@reply-parent-msg-id=')) {
+                // 使用正則表達式完全移除回覆指令
+                displayMessage = message.replace(/@reply-parent-msg-id=[a-f0-9-]+\s*/i, '');
             }
             
             if (isReply) {
