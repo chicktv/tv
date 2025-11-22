@@ -1058,7 +1058,7 @@ async function processMessage(text) {
             const escapedAlt = escapeRegExp(alt);
             // 使用單詞邊界來匹配表情符號
             const regex = new RegExp(`(^|\\s)(${escapedAlt})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
-            html = html.replace(regex, `$1<img src="${escapeHtml(data.src)}" style="max-width:120px;max-height:120px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
+            html = html.replace(regex, `$1<img src="${escapeHtml(data.src)}" style="max-width:90px;max-height:90px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
         } catch (error) {
             console.warn('表情符號處理錯誤:', alt, error);
         }
