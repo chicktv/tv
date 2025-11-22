@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>chickchat</title>
+<title>Twitch 聊天室 - 带回复功能</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -1565,6 +1565,7 @@ function connectChat() {
                 // 顯示回覆標頭
                 const replyHeader = document.createElement('div');
                 replyHeader.className = 'reply-header';
+                replyHeader.style.display = 'flex'; // 確保顯示
                 replyHeader.innerHTML = `
                     <span class="reply-icon">↩</span>
                     <span>回覆</span>
@@ -1725,24 +1726,42 @@ function reconnectChat() {
     connectChat();
 }
 
-// ===================== 修復回覆功能 =====================
+// ===================== 修復回覆功能 - 使用 Twitch 官方方式 =====================
 function send() {
     const msg = input.value.trim();
     if (msg && oauthToken && client?.readyState() === 'OPEN') {
         if (replyingTo) {
-            // 使用 Twitch 的回覆格式
-            const replyMsg = `@reply-parent-msg-id=${replyingTo.id} ${msg}`;
-            client.say(channel, replyMsg).then(() => {
-                input.value = '';
-                cancelReply();
-            }).catch(err => {
-                console.error('回覆發送失敗:', err);
-                // 如果回覆失敗，嘗試發送普通訊息
-                client.say(channel, msg).then(() => {
+            // 使用 Twitch 官方支援的回覆方式
+            // 注意：tmi.js 1.8.5+ 版本支援 reply 方法
+            if (client.reply) {
+                // 使用 tmi.js 的 reply 方法
+                client.reply(channel, replyingTo.id, msg).then(() => {
                     input.value = '';
                     cancelReply();
+                }).catch(err => {
+                    console.error('回覆發送失敗:', err);
+                    // 如果回覆失敗，嘗試發送普通訊息
+                    client.say(channel, msg).then(() => {
+                        input.value = '';
+                        cancelReply();
+                    });
                 });
-            });
+            } else {
+                // 如果 tmi.js 版本不支援 reply 方法，使用傳統方式
+                // 但這可能會在 Twitch 聊天室中顯示回覆指令
+                const replyMsg = `@reply-parent-msg-id=${replyingTo.id} ${msg}`;
+                client.say(channel, replyMsg).then(() => {
+                    input.value = '';
+                    cancelReply();
+                }).catch(err => {
+                    console.error('回覆發送失敗:', err);
+                    // 如果回覆失敗，嘗試發送普通訊息
+                    client.say(channel, msg).then(() => {
+                        input.value = '';
+                        cancelReply();
+                    });
+                });
+            }
         } else {
             client.say(channel, msg).then(() => {
                 input.value = '';
