@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>chickchat</title>
+<title>chickchat2</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -39,7 +39,6 @@
         background: #0e0e10;
         border-radius: 4px;
         padding: 8px 12px;
-        position: relative;
     }
 
     .chat-input {
@@ -171,60 +170,7 @@
     .OsGMV {
       padding-top: 15px !important;
     }
-	
-    /* @ 功能樣式 */
-.autocomplete-box {
-    position: absolute;
-    background: #18181b;
-    border: 1px solid #26262c;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 300px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    display: none;
-    top: 100%;
-    left: 0;
-    margin-top: 4px;
-}
-
-.autocomplete-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #26262c;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.autocomplete-item:hover {
-    background: #9147ff;
-}
-
-.autocomplete-item .user-avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-}
-
-.autocomplete-item .username {
-    font-weight: bold;
-}
-
-.autocomplete-item .display-name {
-    color: #adadb8;
-}
-
-.mentioned-user {
-    background: #9147ff33;
-    color: #bf94ff;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-         
+    
     #userInfo {
         display: flex;
         align-items: center;
@@ -694,8 +640,6 @@ img, video, iframe {
 </div>
 
 <div id="chat"></div>
-<!-- @ 功能自動完成 -->
-<div id="autocompleteBox" class="autocomplete-box"></div>
 <div id="replyIndicator" class="reply-indicator" style="display: none;">
         <span>回覆給 <span id="replyTargetName"></span></span>
         <button class="cancel-reply" id="cancelReplyBtn">取消</button>
@@ -771,11 +715,6 @@ let emojiLists = {};
 let altToEmojiMap = {};
 let isDeleteMode = false;
 
-// ===================== @ 功能變數 =====================
-let recentUsers = [];
-let userColorMap = {};
-const MAX_RECENT_USERS = 50;
-
 // 徽章映射
 let badgeMap = {};
 
@@ -788,7 +727,7 @@ const mp4Regex = /\.mp4(?:[/?].*)?$/i;
 let messageCount = 0;
 const MAX_MESSAGES = 100;
 
-// 防止 XSS
+//防止 XSS
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -796,7 +735,7 @@ function escapeHtml(text) {
 }
 
 // ===================== 徽章功能 =====================
-// 載入徽章映射
+// 載入徽章映射https://www.streamdatabase.com/twitch/global-badges
 async function loadBadgeMap() {
     try {
         const response = await fetch('https://chicktv.github.io/tv/badges.txt');
@@ -805,6 +744,7 @@ async function loadBadgeMap() {
         console.log('徽章映射載入成功');
     } catch (error) {
         console.error('載入徽章映射失敗:', error);
+        // 如果載入失敗，使用預設的徽章URL格式
         badgeMap = {};
     }
 }
@@ -815,29 +755,34 @@ function parseBadges(badgesData) {
     const badges = [];
     
     try {
+        // 處理不同格式的徽章數據
         let badgePairs = [];
         
         if (typeof badgesData === 'string') {
+            // 如果是字串格式：'broadcaster/1,moderator/1'
             badgePairs = badgesData.split(',');
         } else if (typeof badgesData === 'object') {
+            // 如果是物件格式：{broadcaster: '1', moderator: '1'}
             badgePairs = Object.entries(badgesData).map(([name, version]) => `${name}/${version}`);
         }
         
         for (const pair of badgePairs) {
             const [name, version] = pair.split('/');
             if (name && version) {
+                // 從映射中獲取徽章URL，如果沒有則使用預設格式
                 const badgeKey = `${name}/${version}`;
                 let badgeUrl;
                 
                 if (badgeMap[badgeKey]) {
                     badgeUrl = badgeMap[badgeKey];
                 } else {
+                    // 如果映射中沒有，使用預設的Twitch徽章URL格式
                     badgeUrl = `https://static-cdn.jtvnw.net/badges/v1/${name}/${version}`;
                 }
                 
                 badges.push({
                     name: name,
-                    displayName: name.charAt(0).toUpperCase() + name.slice(1),
+                    displayName: name.charAt(0).toUpperCase() + name.slice(1), // 首字母大寫
                     url: badgeUrl,
                     version: version
                 });
@@ -878,8 +823,10 @@ function forceScrollToBottom() {
 
 // ===================== 訊息限制功能 =====================
 function limitMessages() {
+    // 獲取所有訊息元素
     const messages = chat.querySelectorAll('.msg, .msg-with-reply');
     
+    // 如果訊息數量超過限制，移除最舊的訊息
     if (messages.length > MAX_MESSAGES) {
         const messagesToRemove = messages.length - MAX_MESSAGES;
         for (let i = 0; i < messagesToRemove; i++) {
@@ -960,15 +907,9 @@ function loginSuccess() {
     document.getElementById('sendBtn').disabled = false;
 	input.placeholder = "傳送訊息";
     loginBtn.style.display = 'none';
-    userInfo.style.display = 'flex';
+    userInfo.style.display = 'none';
     userAvatarEl.src = userAvatar;
     userNameEl.textContent = userDisplayName;
-    
-    addRecentUser({
-        username: username,
-        'display-name': userDisplayName,
-        color: '#9147ff'
-    });
     
     reconnectChat();
 }
@@ -982,6 +923,7 @@ loginBtn.onclick = loginWithPopup;
 logoutBtn.onclick = logout;
 
 window.addEventListener('load', async function() {
+    // 先載入徽章映射
     await loadBadgeMap();
     
     if (location.hash.includes('access_token=')) {
@@ -1002,108 +944,8 @@ window.addEventListener('load', async function() {
     }
 });
 
-// ===================== @ 功能實現 =====================
-function addRecentUser(tags) {
-    const username = tags.username;
-    const displayName = tags['display-name'] || username;
-    const color = tags.color || '#9147ff';
-    
-    recentUsers = recentUsers.filter(user => user.username !== username);
-    
-    recentUsers.unshift({
-        username: username,
-        displayName: displayName,
-        color: color
-    });
-    
-    if (recentUsers.length > MAX_RECENT_USERS) {
-        recentUsers.pop();
-    }
-    
-    userColorMap[username] = color;
-}
-
-function showAutocomplete(filter = '') {
-    const box = document.getElementById('autocompleteBox');
-    box.innerHTML = '';
-    
-    if (!filter) {
-        box.style.display = 'none';
-        return;
-    }
-    
-    const matchedUsers = recentUsers.filter(user => 
-        user.username.toLowerCase().includes(filter.toLowerCase()) ||
-        user.displayName.toLowerCase().includes(filter.toLowerCase())
-    ).slice(0, 8);
-    
-    if (matchedUsers.length === 0) {
-        box.style.display = 'none';
-        return;
-    }
-    
-    matchedUsers.forEach(user => {
-        const item = document.createElement('div');
-        item.className = 'autocomplete-item';
-        item.innerHTML = `
-            <span class="username" style="color: ${user.color}">${user.displayName}</span>
-            <span class="display-name">@${user.username}</span>
-        `;
-        item.onclick = () => {
-            selectUser(user);
-        };
-        box.appendChild(item);
-    });
-    
-    positionAutocompleteBox();
-    box.style.display = 'block';
-}
-
-function positionAutocompleteBox() {
-    const box = document.getElementById('autocompleteBox');
-    const input = document.getElementById('msgInput');
-    const inputRect = input.getBoundingClientRect();
-    
-    box.style.top = (inputRect.bottom + window.scrollY) + 'px';
-    box.style.left = (inputRect.left + window.scrollX) + 'px';
-    box.style.width = inputRect.width + 'px';
-}
-
-function selectUser(user) {
-    const input = document.getElementById('msgInput');
-    const currentValue = input.value;
-    const cursorPos = input.selectionStart;
-    
-    const atPos = currentValue.lastIndexOf('@', cursorPos);
-    if (atPos === -1) return;
-    
-    const newValue = currentValue.substring(0, atPos) + `@${user.username} ` + currentValue.substring(cursorPos);
-    input.value = newValue;
-    
-    hideAutocomplete();
-    
-    const newCursorPos = atPos + user.username.length + 2;
-    input.focus();
-    input.setSelectionRange(newCursorPos, newCursorPos);
-}
-
-function hideAutocomplete() {
-    document.getElementById('autocompleteBox').style.display = 'none';
-}
-
-// 處理 @ 提及的訊息顯示
-function processMentions(text) {
-    return text.replace(/@(\w+)/g, (match, username) => {
-        const user = recentUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
-        if (user) {
-            return `<span class="mentioned-user" style="color: ${user.color}">@${user.displayName}</span>`;
-        }
-        return match;
-    });
-}
-
 // ===================== 訊息處理 =====================
-async function processMessage(text, tags = {}) {
+async function processMessage(text) {
     // 先解碼 HTML 實體
     function decodeHtmlEntities(text) {
         const textarea = document.createElement('textarea');
@@ -1118,16 +960,19 @@ async function processMessage(text, tags = {}) {
     function isValidUrl(url) {
         try {
             const urlObj = new URL(url);
+            // 只允許 http 和 https 協議
             return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
         } catch {
             return false;
         }
     }
 
-    // 先處理表情符號
+    // 先處理表情符號 - 在 HTML 轉義之前
     for (const [alt, data] of Object.entries(altToEmojiMap)) {
         try {
+            // 使用正則表達式跳脫函數
             const escapedAlt = escapeRegExp(alt);
+            // 使用單詞邊界來匹配表情符號
             const regex = new RegExp(`(^|\\s)(${escapedAlt})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
             html = html.replace(regex, `$1<img src="${escapeHtml(data.src)}" style="max-width:150px;max-height:150px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
         } catch (error) {
@@ -1148,11 +993,14 @@ async function processMessage(text, tags = {}) {
                 
                 let replacement;
                 
+                // 檢查是否包含 .mp4
                 if (url.toLowerCase().includes('.mp4')) {
+                    // 使用 video 標籤
                     replacement = `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
                             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
                             </video>`;
                 } else {
+                    // 否則使用 img 標籤
                     replacement = `<br><img src="${escapeHtml(url)}" class="zero-width-image" loading="lazy" 
                             onerror="this.style.display='none'; this.nextElementSibling && this.nextElementSibling.style.display='inline'" 
                             onclick="window.open('${escapeHtml(url)}','_blank')">`;
@@ -1176,15 +1024,18 @@ async function processMessage(text, tags = {}) {
                 
                 let replacement;
                 
+                // 檢查是否為 YouTube 影片
                 const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&[^&\s]*)?/);
                 if (youtubeMatch) {
                     const id = escapeHtml(youtubeMatch[1]);
                     replacement = `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
                 } else if (url.toLowerCase().includes('.mp4')) {
+                    // 如果不是 YouTube 但包含 .mp4，使用 video 標籤
                     replacement = `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
                             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
                             </video>`;
                 } else {
+                    // 既不是 YouTube 也不是 .mp4，顯示為連結
                     replacement = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
                 }
                 
@@ -1202,16 +1053,14 @@ async function processMessage(text, tags = {}) {
             return escapeHtml(url);
         }
         
+        // 跳過已經被處理過的網址
         if (html.includes(`src="${url}"`) || html.includes(`href="${url}"`)) {
             return url;
         }
         
         return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
     });
-    
-    // 處理 @ 提及
-    html = processMentions(html);
-    
+
     return html;
 }
 
@@ -1229,6 +1078,19 @@ function escapeHtml(text) {
         .replace(/'/g, '&#x27;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+// 新增：創建備用連結的函數
+function createFallbackLink(url) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = url;
+    link.style.color = '#bf94ff';
+    link.style.textDecoration = 'none';
+    link.style.wordBreak = 'break-all';
+    return link;
 }
 
 // ===================== 貼上按鈕功能 =====================
@@ -1449,86 +1311,6 @@ document.getElementById('emojiCloseBtn').onclick = () => {
     document.getElementById('emojiPanel').style.display = 'none';
 };
 
-// ===================== 輸入框事件監聽 =====================
-document.getElementById('msgInput').addEventListener('input', function(e) {
-    const value = e.target.value;
-    const cursorPos = e.target.selectionStart;
-    
-    let atPos = -1;
-    for (let i = cursorPos - 1; i >= 0; i--) {
-        if (value[i] === '@') {
-            atPos = i;
-            break;
-        }
-        if (value[i] === ' ') break;
-    }
-    
-    if (atPos !== -1) {
-        const filter = value.substring(atPos + 1, cursorPos);
-        showAutocomplete(filter);
-    } else {
-        hideAutocomplete();
-    }
-});
-
-document.getElementById('msgInput').addEventListener('keydown', function(e) {
-    const box = document.getElementById('autocompleteBox');
-    if (box.style.display === 'block') {
-        const items = box.getElementsByClassName('autocomplete-item');
-        let currentSelected = -1;
-        
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].style.background === 'rgb(145, 71, 255)') {
-                currentSelected = i;
-                break;
-            }
-        }
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            const nextIndex = (currentSelected + 1) % items.length;
-            selectAutocompleteItem(nextIndex);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            const prevIndex = (currentSelected - 1 + items.length) % items.length;
-            selectAutocompleteItem(prevIndex);
-        } else if (e.key === 'Enter' && currentSelected !== -1) {
-            e.preventDefault();
-            items[currentSelected].click();
-        } else if (e.key === 'Escape') {
-            hideAutocomplete();
-        }
-    }
-});
-
-function selectAutocompleteItem(index) {
-    const box = document.getElementById('autocompleteBox');
-    const items = box.getElementsByClassName('autocomplete-item');
-    
-    for (let i = 0; i < items.length; i++) {
-        items[i].style.background = '';
-    }
-    
-    if (items[index]) {
-        items[index].style.background = '#9147ff';
-    }
-}
-
-// 點擊頁面其他區域時隱藏自動完成框
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('#autocompleteBox') && !e.target.closest('#msgInput')) {
-        hideAutocomplete();
-    }
-});
-
-// 窗口滾動時重新定位自動完成框
-window.addEventListener('scroll', function() {
-    const box = document.getElementById('autocompleteBox');
-    if (box.style.display === 'block') {
-        positionAutocompleteBox();
-    }
-});
-
 // ===================== tmi.js 連線 =====================
 function connectChat() {
     if (isConnected) return;
@@ -1547,43 +1329,41 @@ function connectChat() {
 
     client.on('message', async (ch, tags, message, self) => {
         try {
-            const isReply = tags['reply-parent-msg-id'];
-            addRecentUser(tags);
-            
-            // 處理回覆訊息顯示 - 移除回覆指令
-            let displayMessage = message;
-            if (isReply && message.includes('@reply-parent-msg-id=')) {
-                displayMessage = message.replace(/@reply-parent-msg-id=[a-f0-9-]+\s*/i, '');
-            }
+            // 修改這裡：檢查是否為回覆訊息（包含自己發送的回覆）
+            const isReply = tags['reply-parent-msg-id'] || 
+                          (self && replyingTo); // 如果是自己發的且正在回覆中
             
             if (isReply) {
+                // 如果是自己發送的回覆，使用 replyingTo 中的資訊
+                const replyParentMsgId = tags['reply-parent-msg-id'] || (replyingTo ? replyingTo.id : null);
+                const replyParentDisplayName = tags['reply-parent-display-name'] || (replyingTo ? replyingTo.username : '');
+                const replyParentMsgBody = tags['reply-parent-msg-body'] || (replyingTo ? replyingTo.message : '');
+                
                 const replyContainer = document.createElement('div');
                 replyContainer.className = 'msg-with-reply';
-                replyContainer.id = `msg-${tags.id}`;
+                replyContainer.id = `msg-${tags.id || 'temp-' + Date.now()}`;
                 
-                // 顯示回覆標頭
                 const replyHeader = document.createElement('div');
                 replyHeader.className = 'reply-header';
-                replyHeader.style.display = 'flex';
                 replyHeader.innerHTML = `
                     <span class="reply-icon">↩</span>
-                    <span>回覆</span>
-                    <span class="reply-username">${tags['reply-parent-display-name'] || tags['reply-parent-user-login']}</span>
+                     <span>回覆</span>
+                    <span class="reply-username">${replyParentDisplayName}</span>
                 `;
                 replyContainer.appendChild(replyHeader);
                 
-                // 顯示被回覆的原始訊息
                 const replyOriginal = document.createElement('div');
                 replyOriginal.className = 'reply-original';
                 replyOriginal.innerHTML = `
-                    <span class="original-username">${tags['reply-parent-display-name'] || tags['reply-parent-user-login']}:</span>
-                    ${truncateMessage(tags['reply-parent-msg-body'] || '', 100)}
+                    <span class="original-username">${replyParentDisplayName}:</span>
+                    ${truncateMessage(replyParentMsgBody, 100)}
                 `;
                 replyContainer.appendChild(replyOriginal);
                 
                 const msgContent = document.createElement('div');
                 msgContent.className = 'msg-content';
                 
+                // 創建名稱容器
                 const nameContainer = document.createElement('div');
                 nameContainer.className = 'name-container';
                 
@@ -1591,10 +1371,11 @@ function connectChat() {
                 nameSpan.className = 'name';
                 nameSpan.style.color = tags.color || '#9147ff';
                 
+                // 使用更安全的方式插入徽章和用户名
                 const badges = parseBadges(tags.badges);
                 const badgesHtml = renderBadges(badges);
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
+                tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username || userDisplayName) + ': ';
                 while (tempDiv.firstChild) {
                     nameSpan.appendChild(tempDiv.firstChild);
                 }
@@ -1602,16 +1383,18 @@ function connectChat() {
                 nameContainer.appendChild(nameSpan);
                 msgContent.appendChild(nameContainer);
                 
+                // 創建文字容器
                 const textContainer = document.createElement('div');
                 textContainer.className = 'text-container';
                 
                 const msg = document.createElement('span');
                 msg.className = 'message-text';
-                msg.innerHTML = await processMessage(displayMessage, tags);
+                msg.innerHTML = await processMessage(message);
                 textContainer.appendChild(msg);
                 
                 msgContent.appendChild(textContainer);
                 
+                // 創建按鈕容器
                 if (oauthToken && !self) {
                     const buttonContainer = document.createElement('div');
                     buttonContainer.className = 'button-container';
@@ -1621,7 +1404,7 @@ function connectChat() {
                     replyBtn.innerHTML = '↩️';
                     replyBtn.title = '回覆此訊息';
                     replyBtn.onclick = () => {
-                        setupReply(tags.id, tags['display-name'] || tags.username, displayMessage);
+                        setupReply(tags.id, tags['display-name'] || tags.username, message);
                     };
                     buttonContainer.appendChild(replyBtn);
                     
@@ -1630,6 +1413,13 @@ function connectChat() {
                 
                 replyContainer.appendChild(msgContent);
                 chat.appendChild(replyContainer);
+                
+                // 如果是自己發送的回覆，清除回覆狀態
+                if (self && replyingTo) {
+                    setTimeout(() => {
+                        cancelReply();
+                    }, 100);
+                }
             } else {
                 const div = document.createElement('div');
                 div.className = 'msg';
@@ -1638,6 +1428,7 @@ function connectChat() {
                 const msgContent = document.createElement('div');
                 msgContent.className = 'msg-content';
                 
+                // 創建名稱容器
                 const nameContainer = document.createElement('div');
                 nameContainer.className = 'name-container';
                 
@@ -1645,6 +1436,7 @@ function connectChat() {
                 nameSpan.className = 'name';
                 nameSpan.style.color = tags.color || '#9147ff';
                 
+                // 使用更安全的方式插入徽章和用户名
                 const badges = parseBadges(tags.badges);
                 const badgesHtml = renderBadges(badges);
                 const tempDiv = document.createElement('div');
@@ -1656,16 +1448,18 @@ function connectChat() {
                 nameContainer.appendChild(nameSpan);
                 msgContent.appendChild(nameContainer);
                 
+                // 創建文字容器
                 const textContainer = document.createElement('div');
                 textContainer.className = 'text-container';
                 
                 const msg = document.createElement('span');
                 msg.className = 'message-text';
-                msg.innerHTML = await processMessage(displayMessage, tags);
+                msg.innerHTML = await processMessage(message);
                 textContainer.appendChild(msg);
                 
                 msgContent.appendChild(textContainer);
                 
+                // 創建按鈕容器
                 if (oauthToken && !self) {
                     const buttonContainer = document.createElement('div');
                     buttonContainer.className = 'button-container';
@@ -1675,7 +1469,7 @@ function connectChat() {
                     replyBtn.innerHTML = '↩️';
                     replyBtn.title = '回覆此訊息';
                     replyBtn.onclick = () => {
-                        setupReply(tags.id, tags['display-name'] || tags.username, displayMessage);
+                        setupReply(tags.id, tags['display-name'] || tags.username, message);
                     };
                     buttonContainer.appendChild(replyBtn);
                     
@@ -1686,12 +1480,14 @@ function connectChat() {
                 chat.appendChild(div);
             }
             
+            // 限制訊息數量為100條
             limitMessages();
             forceScrollToBottom();
         } catch (error) {
             console.error('處理訊息時發生錯誤:', error);
             console.log('有問題的訊息資料:', { tags, message });
             
+            // 如果出错，使用简单的方式显示消息（不带徽章）
             const fallbackDiv = document.createElement('div');
             fallbackDiv.className = 'msg';
             fallbackDiv.innerHTML = `
@@ -1708,6 +1504,7 @@ function connectChat() {
             `;
             chat.appendChild(fallbackDiv);
             
+            // 限制訊息數量為100條
             limitMessages();
             forceScrollToBottom();
         }
@@ -1725,18 +1522,29 @@ function reconnectChat() {
     connectChat();
 }
 
-// ===================== 修復回覆功能 - 使用 tmi.js 的 reply 方法 =====================
+// ===================== 發送訊息功能 =====================
 function send() {
     const msg = input.value.trim();
     if (msg && oauthToken && client?.readyState() === 'OPEN') {
         if (replyingTo) {
-            // 使用 tmi.js 的 reply 方法 - 這會正確使用標籤而不是在訊息內容中顯示
-            client.reply(channel, replyingTo.id, msg).then(() => {
+            // 儲存當前的回覆目標
+            const currentReplyTarget = {...replyingTo};
+            
+            client.reply(channel, msg, replyingTo.id).then(() => {
                 input.value = '';
-                cancelReply();
+                // 不在這裡立即清除 replyingTo，讓訊息處理器使用
+                
+                // 安全機制：如果3秒後 replyingTo 還在，強制清除
+                setTimeout(() => {
+                    if (replyingTo && replyingTo.id === currentReplyTarget.id) {
+                        console.log('安全機制：強制清除回覆狀態');
+                        cancelReply();
+                    }
+                }, 3000);
+                
             }).catch(err => {
                 console.error('回覆發送失敗:', err);
-                // 如果回覆失敗，嘗試發送普通訊息
+                // 回覆失敗時改為發送普通訊息
                 client.say(channel, msg).then(() => {
                     input.value = '';
                     cancelReply();
@@ -1749,6 +1557,7 @@ function send() {
         }
     }
 }
+
 
 document.getElementById('sendBtn').onclick = send;
 input.addEventListener('keypress', e => { if(e.key==='Enter') send(); });
