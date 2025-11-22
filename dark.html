@@ -680,6 +680,28 @@ img, video, iframe {
     .mention-item:hover .display-name, .mention-item.active .display-name {
         color: white;
     }
+    
+    /* @提及視覺反饋樣式 */
+    .mention-highlight {
+        background-color: #000000;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    /* 被提及的訊息容器樣式 */
+    .mentioned-message {
+        background: rgba(145, 71, 255, 0.1);
+        border-left: 3px solid #9147ff;
+        padding: 8px 12px;
+        margin: 8px 0;
+        border-radius: 4px;
+    }
+    
+    .mentioned-message .msg-content {
+        padding: 0;
+    }
 </style>
 </head>
 <body>
@@ -1026,6 +1048,12 @@ async function processMessage(text) {
         } catch {
             return false;
         }
+    }
+
+    // 處理@提及高亮 - 在處理其他內容之前
+    if (username && username !== 'justinfan666') {
+        const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
+        html = html.replace(mentionRegex, `<span class="mention-highlight">@${username}</span>`);
     }
 
     // 先處理表情符號 - 在 HTML 轉義之前
@@ -1391,6 +1419,15 @@ function handleInputChange(e) {
     }
 }
 
+// 檢查訊息是否提及當前用戶
+function checkMention(messageText, tags) {
+    if (!username || username === 'justinfan666') return false;
+    
+    // 使用正則表達式檢查是否提及當前用戶
+    const mentionRegex = new RegExp(`@${username}\\b`, 'i');
+    return mentionRegex.test(messageText);
+}
+
 // ===================== 表情系統 =====================
 function loadEmojiSets() {
     fetch("https://chicktv.github.io/tv/showset.txt").then(r=>r.json()).then(setarray=>{
@@ -1559,6 +1596,9 @@ function connectChat() {
                 tags['user-avatar'] || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
             );
 
+            // 檢查是否提及當前用戶
+            const isMentioned = checkMention(message, tags);
+            
             // 修改這裡：檢查是否為回覆訊息（包含自己發送的回覆）
             const isReply = tags['reply-parent-msg-id'] || 
                           (self && replyingTo); // 如果是自己發的且正在回覆中
@@ -1570,7 +1610,7 @@ function connectChat() {
                 const replyParentMsgBody = tags['reply-parent-msg-body'] || (replyingTo ? replyingTo.message : '');
                 
                 const replyContainer = document.createElement('div');
-                replyContainer.className = 'msg-with-reply';
+                replyContainer.className = `msg-with-reply ${isMentioned ? 'mentioned-message' : ''}`;
                 replyContainer.id = `msg-${tags.id || 'temp-' + Date.now()}`;
                 
                 const replyHeader = document.createElement('div');
@@ -1652,7 +1692,7 @@ function connectChat() {
                 }
             } else {
                 const div = document.createElement('div');
-                div.className = 'msg';
+                div.className = `msg ${isMentioned ? 'mentioned-message' : ''}`;
                 div.id = `msg-${tags.id}`;
 
                 const msgContent = document.createElement('div');
