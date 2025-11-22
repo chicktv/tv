@@ -39,6 +39,7 @@
         background: #0e0e10;
         border-radius: 4px;
         padding: 8px 12px;
+        position: relative;
     }
 
     .chat-input {
@@ -627,6 +628,74 @@ img, video, iframe {
         margin-left: auto;
         padding-left: 8px;
     }
+
+    /* @功能樣式 */
+    .mention-autocomplete {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #18181b;
+        border: 1px solid #26262c;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        display: none;
+    }
+    
+    .mention-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #26262c;
+    }
+    
+    .mention-item:last-child {
+        border-bottom: none;
+    }
+    
+    .mention-item:hover, .mention-item.active {
+        background: #9147ff;
+        color: white;
+    }
+    
+    .mention-item img {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    
+    .mention-item .username {
+        font-weight: bold;
+    }
+    
+    .mention-item .display-name {
+        color: #adadb8;
+    }
+    
+    .mention-item:hover .display-name, .mention-item.active .display-name {
+        color: white;
+    }
+    
+    /* @提及視覺反饋樣式 */
+    .mention-highlight {
+        background-color: #9147ff;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    /* 被提及的訊息容器樣式 */
+    
+    
+    .mentioned-message .msg-content {
+        padding: 0;
+    }
 </style>
 </head>
 <body>
@@ -651,6 +720,7 @@ img, video, iframe {
 	<div class="chat-input-container">
         <div class="chat-input-wrapper">
             <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
+            <div class="mention-autocomplete" id="mentionAutocomplete"></div>
             <div class="chat-buttons">
                 <button class="chat-button" id="emojiBtn" title="表情">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -717,6 +787,13 @@ let isDeleteMode = false;
 
 // 徽章映射
 let badgeMap = {};
+
+// @功能變數
+let recentUsers = []; // 存儲最近發言的用戶
+let mentionAutocomplete = document.getElementById('mentionAutocomplete');
+let mentionActive = false;
+let mentionIndex = -1;
+let mentionQuery = '';
 
 // 正則
 const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -967,6 +1044,12 @@ async function processMessage(text) {
         }
     }
 
+    // 處理@提及高亮 - 在處理其他內容之前
+    if (username && username !== 'justinfan666') {
+        const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
+        html = html.replace(mentionRegex, `<span class="mention-highlight">@${username}</span>`);
+    }
+
     // 先處理表情符號 - 在 HTML 轉義之前
     for (const [alt, data] of Object.entries(altToEmojiMap)) {
         try {
@@ -1168,6 +1251,177 @@ function truncateMessage(text, maxLength) {
     return text.substring(0, maxLength) + '...';
 }
 
+// ===================== @功能 =====================
+function addRecentUser(username, displayName, avatar) {
+    // 檢查用戶是否已經存在
+    const existingIndex = recentUsers.findIndex(user => user.username === username);
+    
+    if (existingIndex >= 0) {
+        // 如果存在，移到最前面
+        const user = recentUsers.splice(existingIndex, 1)[0];
+        recentUsers.unshift(user);
+    } else {
+        // 如果不存在，添加到最前面
+        recentUsers.unshift({
+            username: username,
+            displayName: displayName || username,
+            avatar: avatar || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
+        });
+    }
+    
+    // 限制最近用戶數量
+    if (recentUsers.length > 20) {
+        recentUsers = recentUsers.slice(0, 20);
+    }
+}
+
+function showMentionAutocomplete(query) {
+    mentionQuery = query.toLowerCase();
+    mentionAutocomplete.innerHTML = '';
+    
+    if (!mentionQuery) {
+        hideMentionAutocomplete();
+        return;
+    }
+    
+    // 過濾匹配的用戶
+    const matchedUsers = recentUsers.filter(user => 
+        user.username.toLowerCase().includes(mentionQuery) || 
+        user.displayName.toLowerCase().includes(mentionQuery)
+    );
+    
+    if (matchedUsers.length === 0) {
+        hideMentionAutocomplete();
+        return;
+    }
+    
+    // 顯示匹配的用戶
+    matchedUsers.forEach((user, index) => {
+        const item = document.createElement('div');
+        item.className = 'mention-item';
+        item.innerHTML = `
+            <img src="${user.avatar}" alt="${user.username}">
+            <div>
+                <div class="username">${user.displayName}</div>
+                <div class="display-name">@${user.username}</div>
+            </div>
+        `;
+        
+        item.addEventListener('click', () => {
+            selectMention(user);
+        });
+        
+        mentionAutocomplete.appendChild(item);
+    });
+    
+    mentionAutocomplete.style.display = 'block';
+    mentionActive = true;
+    mentionIndex = -1;
+}
+
+function hideMentionAutocomplete() {
+    mentionAutocomplete.style.display = 'none';
+    mentionActive = false;
+    mentionIndex = -1;
+}
+
+function selectMention(user) {
+    const currentValue = input.value;
+    const atIndex = currentValue.lastIndexOf('@');
+    
+    if (atIndex >= 0) {
+        // 替換@後面的內容為用戶名
+        const newValue = currentValue.substring(0, atIndex) + `@${user.username} `;
+        input.value = newValue;
+        
+        // 重新聚焦並將光標放在末尾
+        input.focus();
+        input.setSelectionRange(newValue.length, newValue.length);
+    }
+    
+    hideMentionAutocomplete();
+}
+
+function navigateMentions(direction) {
+    if (!mentionActive) return;
+    
+    const items = mentionAutocomplete.querySelectorAll('.mention-item');
+    if (items.length === 0) return;
+    
+    // 移除當前選中的樣式
+    items.forEach(item => item.classList.remove('active'));
+    
+    // 計算新的索引
+    mentionIndex += direction;
+    
+    if (mentionIndex < 0) {
+        mentionIndex = items.length - 1;
+    } else if (mentionIndex >= items.length) {
+        mentionIndex = 0;
+    }
+    
+    // 添加選中樣式
+    items[mentionIndex].classList.add('active');
+}
+
+function handleMentionKeydown(e) {
+    if (!mentionActive) return;
+    
+    switch (e.key) {
+        case 'ArrowUp':
+            e.preventDefault();
+            navigateMentions(-1);
+            break;
+        case 'ArrowDown':
+            e.preventDefault();
+            navigateMentions(1);
+            break;
+        case 'Enter':
+            e.preventDefault();
+            const activeItem = mentionAutocomplete.querySelector('.mention-item.active');
+            if (activeItem) {
+                const index = Array.from(mentionAutocomplete.querySelectorAll('.mention-item')).indexOf(activeItem);
+                const matchedUsers = recentUsers.filter(user => 
+                    user.username.toLowerCase().includes(mentionQuery) || 
+                    user.displayName.toLowerCase().includes(mentionQuery)
+                );
+                if (matchedUsers[index]) {
+                    selectMention(matchedUsers[index]);
+                }
+            }
+            break;
+        case 'Escape':
+            hideMentionAutocomplete();
+            break;
+    }
+}
+
+function handleInputChange(e) {
+    const value = input.value;
+    const cursorPos = input.selectionStart;
+    
+    // 檢查光標前是否有@符號
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+    
+    // 檢查@符號前是否有空格或是在開頭
+    if (lastAtPos >= 0 && (lastAtPos === 0 || /\s/.test(value[lastAtPos - 1]))) {
+        const query = textBeforeCursor.substring(lastAtPos + 1);
+        showMentionAutocomplete(query);
+    } else {
+        hideMentionAutocomplete();
+    }
+}
+
+// 檢查訊息是否提及當前用戶
+function checkMention(messageText, tags) {
+    if (!username || username === 'justinfan666') return false;
+    
+    // 使用正則表達式檢查是否提及當前用戶
+    const mentionRegex = new RegExp(`@${username}\\b`, 'i');
+    return mentionRegex.test(messageText);
+}
+
 // ===================== 表情系統 =====================
 function loadEmojiSets() {
     fetch("https://chicktv.github.io/tv/showset.txt").then(r=>r.json()).then(setarray=>{
@@ -1329,6 +1583,16 @@ function connectChat() {
 
     client.on('message', async (ch, tags, message, self) => {
         try {
+            // 添加用戶到最近用戶列表
+            addRecentUser(
+                tags.username, 
+                tags['display-name'], 
+                tags['user-avatar'] || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
+            );
+
+            // 檢查是否提及當前用戶
+            const isMentioned = checkMention(message, tags);
+            
             // 修改這裡：檢查是否為回覆訊息（包含自己發送的回覆）
             const isReply = tags['reply-parent-msg-id'] || 
                           (self && replyingTo); // 如果是自己發的且正在回覆中
@@ -1340,7 +1604,7 @@ function connectChat() {
                 const replyParentMsgBody = tags['reply-parent-msg-body'] || (replyingTo ? replyingTo.message : '');
                 
                 const replyContainer = document.createElement('div');
-                replyContainer.className = 'msg-with-reply';
+                replyContainer.className = `msg-with-reply ${isMentioned ? 'mentioned-message' : ''}`;
                 replyContainer.id = `msg-${tags.id || 'temp-' + Date.now()}`;
                 
                 const replyHeader = document.createElement('div');
@@ -1422,7 +1686,7 @@ function connectChat() {
                 }
             } else {
                 const div = document.createElement('div');
-                div.className = 'msg';
+                div.className = `msg ${isMentioned ? 'mentioned-message' : ''}`;
                 div.id = `msg-${tags.id}`;
 
                 const msgContent = document.createElement('div');
@@ -1560,7 +1824,20 @@ function send() {
 
 
 document.getElementById('sendBtn').onclick = send;
-input.addEventListener('keypress', e => { if(e.key==='Enter') send(); });
+input.addEventListener('keypress', e => { 
+    if(e.key==='Enter') send(); 
+});
+
+// 添加@功能的事件监听
+input.addEventListener('input', handleInputChange);
+input.addEventListener('keydown', handleMentionKeydown);
+
+// 点击其他地方时隐藏@列表
+document.addEventListener('click', (e) => {
+    if (!mentionAutocomplete.contains(e.target) && e.target !== input) {
+        hideMentionAutocomplete();
+    }
+});
 
 cancelReplyBtn.onclick = cancelReply;
 </script>
