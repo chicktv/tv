@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>Twitch 聊天室 - 带回复功能</title>
+<title>chickchat</title>
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -1550,9 +1550,9 @@ function connectChat() {
             const isReply = tags['reply-parent-msg-id'];
             addRecentUser(tags);
             
-            // 更徹底地過濾回覆指令
+            // 只有在是回覆訊息且包含回覆指令時才過濾
             let displayMessage = message;
-            if (message.includes('@reply-parent-msg-id=')) {
+            if (isReply && message.includes('@reply-parent-msg-id=')) {
                 // 使用正則表達式完全移除回覆指令
                 displayMessage = message.replace(/@reply-parent-msg-id=[a-f0-9-]+\s*/i, '');
             }
@@ -1562,15 +1562,17 @@ function connectChat() {
                 replyContainer.className = 'msg-with-reply';
                 replyContainer.id = `msg-${tags.id}`;
                 
+                // 顯示回覆標頭
                 const replyHeader = document.createElement('div');
                 replyHeader.className = 'reply-header';
                 replyHeader.innerHTML = `
                     <span class="reply-icon">↩</span>
-                     <span>回覆</span>
+                    <span>回覆</span>
                     <span class="reply-username">${tags['reply-parent-display-name'] || tags['reply-parent-user-login']}</span>
                 `;
                 replyContainer.appendChild(replyHeader);
                 
+                // 顯示被回覆的原始訊息
                 const replyOriginal = document.createElement('div');
                 replyOriginal.className = 'reply-original';
                 replyOriginal.innerHTML = `
