@@ -1773,15 +1773,20 @@ function reconnectChat() {
     connectChat();
 }
 
+// ===================== 修復回覆功能 =====================
 function send() {
     const msg = input.value.trim();
     if (msg && oauthToken && client?.readyState() === 'OPEN') {
         if (replyingTo) {
-            client.reply(channel, msg, replyingTo.id).then(() => {
+            // 在 tmi.js 中，回覆功能需要使用特殊的格式
+            // 我們將使用 Twitch 的回覆格式：@reply-parent-msg-id=<message-id>
+            const replyMsg = `@reply-parent-msg-id=${replyingTo.id} ${msg}`;
+            client.say(channel, replyMsg).then(() => {
                 input.value = '';
                 cancelReply();
             }).catch(err => {
                 console.error('回覆發送失敗:', err);
+                // 如果回覆失敗，嘗試發送普通訊息
                 client.say(channel, msg).then(() => {
                     input.value = '';
                     cancelReply();
