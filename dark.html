@@ -39,6 +39,7 @@
         background: #0e0e10;
         border-radius: 4px;
         padding: 8px 12px;
+        position: relative;
     }
 
     .chat-input {
@@ -183,6 +184,9 @@
     width: 300px;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
     display: none;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
 }
 
 .autocomplete-item {
@@ -734,7 +738,7 @@ img, video, iframe {
 <script>
 // ===================== 重要設定 =====================
 const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-const channel = "whitewing940920";
+const channel = "69nocondom";
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
 const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -964,9 +968,16 @@ function loginSuccess() {
     document.getElementById('sendBtn').disabled = false;
 	input.placeholder = "傳送訊息";
     loginBtn.style.display = 'none';
-    userInfo.style.display = 'none';
+    userInfo.style.display = 'flex';
     userAvatarEl.src = userAvatar;
     userNameEl.textContent = userDisplayName;
+    
+    // 將自己加入最近使用者列表
+    addRecentUser({
+        username: username,
+        'display-name': userDisplayName,
+        color: '#9147ff'
+    });
     
     reconnectChat();
 }
@@ -1110,8 +1121,6 @@ function processMentions(text) {
     });
 }
 
-
-
 // ===================== 訊息處理 =====================
 async function processMessage(text) {
     // 先解碼 HTML 實體
@@ -1228,7 +1237,10 @@ async function processMessage(text) {
         
         return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
     });
+    
+    // 處理 @ 提及
     html = processMentions(html);
+    
     return html;
 }
 
@@ -1583,7 +1595,7 @@ function connectChat() {
         try {
             const isReply = tags['reply-parent-msg-id'];
             // 添加用戶到最近列表
-             addRecentUser(tags);
+            addRecentUser(tags);
             if (isReply) {
                 const replyContainer = document.createElement('div');
                 replyContainer.className = 'msg-with-reply';
