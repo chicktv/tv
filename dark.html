@@ -233,14 +233,12 @@ img, video, iframe {
     }
 
     
-    .message-text {
-        display: inline;
+     .message-text {
         line-height: 1.4;
-        vertical-align: top;
-        padding-top: 0px;
         word-break: break-word;
         overflow-wrap: break-word;
         white-space: normal;
+        display: inline;
     }
 	
 
@@ -417,13 +415,11 @@ img, video, iframe {
         color: #adadb8;
         font-size: 12px;
         cursor: pointer;
-        padding: 2px 6px;
-        margin-left: 8px;
+        padding: 4px 6px;
         transition: all 0.2s;
         border-radius: 3px;
-        flex-shrink: 0;
         white-space: nowrap;
-        align-self: flex-start; /* 確保按鈕在頂部對齊 */
+        flex-shrink: 0;
     }
     
     .reply-btn:hover {
@@ -591,17 +587,19 @@ img, video, iframe {
     
     /* 修正訊息內容布局 - 使用 table 佈局而不是 flex */
     .msg-content {
-        display: table;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
         width: 100%;
-        table-layout: fixed;
         line-height: 1.4;
     }
     
-    .msg-with-reply .msg-content {
+     .msg-with-reply .msg-content {
         padding: 8px 12px;
-        display: table;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
         width: 100%;
-        table-layout: fixed;
     }
     
     .msg-with-reply:hover .reply-btn {
@@ -610,26 +608,23 @@ img, video, iframe {
     
     /* 使用 table-cell 佈局確保正確對齊 */
     .name-container {
-        display: table-cell;
-        vertical-align: top;
+        flex-shrink: 0;
         white-space: nowrap;
-        width: 1%; /* 讓寬度自動調整 */
-        padding-right: 6px;
+        display: flex;
+        align-items: flex-start;
     }
     
     .text-container {
-        display: table-cell;
-        vertical-align: top;
-        width: auto;
+        flex: 1;
+        min-width: 0; /* 重要：允許文字容器收縮 */
         word-break: break-word;
         overflow-wrap: break-word;
     }
     
-    .button-container {
-        display: table-cell;
-        vertical-align: top;
-        width: 1%; /* 讓寬度自動調整 */
+     .button-container {
+        flex-shrink: 0;
         white-space: nowrap;
+        margin-left: auto;
         padding-left: 8px;
     }
 </style>
