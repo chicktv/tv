@@ -170,7 +170,7 @@
     #pastebtn {
       position: relative;
       display: flex;
-      gap: 4px;
+      gap: 0px;
       margin-top: 8px;
     }
     .sk_botton {
@@ -719,6 +719,10 @@
     
     <div id="chat-container">
         <div id="chat"></div>
+		 <div id="pastebtn">
+            <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
+            <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
+        </div>
         <div id="replyIndicator" class="reply-indicator" style="display: none;">
             <span>回覆給 <span id="replyTargetName"></span></span>
             <button class="cancel-reply" id="cancelReplyBtn">取消</button>
@@ -743,10 +747,7 @@
             </div>
         </div>
         
-        <div id="pastebtn">
-            <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
-            <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
-        </div>
+       
         
         <button id="loginBtn">Twitch 登入</button>
     </div>
@@ -766,7 +767,7 @@
     <script>
     // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const channel = "69nocondom";
+    const channel = "whitewing940920";
 
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -998,7 +999,7 @@
         document.getElementById('sendBtn').disabled = false;
         input.placeholder = "傳送訊息";
         loginBtn.style.display = 'none';
-        userInfo.style.display = 'flex';
+        userInfo.style.display = 'none';
         userAvatarEl.src = userAvatar;
         userNameEl.textContent = userDisplayName;
         
@@ -1516,37 +1517,43 @@
     }
 
     function renderTabContent(name) {
-        const content = document.getElementById('emojiContent');
-        content.innerHTML = '';
+    const content = document.getElementById('emojiContent');
+    content.innerHTML = '';
 
-        if (name === "BTTV") {
-            content.innerHTML += `
-                <div class="bttv-input">
-                    <input type="text" id="bttvUrl" placeholder="輸入圖片網址">
-                    <button onclick="addBTTV()">儲存</button>
-                    <button onclick="isDeleteMode=!isDeleteMode;renderEmojiPanel()" style="background:${isDeleteMode?'#666':'#c42b1c'}">
-                        ${isDeleteMode?'取消刪除':'開啟刪除'}
-                    </button>
-                </div>`;
-        }
-
-        emojiLists[name].emojis.forEach(emoji => {
-            const div = document.createElement('div');
-            div.className = 'emoji-item';
-            div.innerHTML = `<img src="${emoji.src}" title="${emoji.dis||emoji.alt}">`;
-            if (name==="BTTV" && isDeleteMode) {
-                div.innerHTML += `<div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${emoji.src}')">X</div>`;
-            }
-            div.onclick = () => {
-                if (name!=="BTTV" || !isDeleteMode) {
-                    input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
-                    input.focus();
-                    document.getElementById('emojiPanel').style.display = 'none';
-                }
-            };
-            content.appendChild(div);
-        });
+    if (name === "BTTV") {
+        content.innerHTML += `
+            <div class="bttv-input">
+                <input type="text" id="bttvUrl" placeholder="輸入圖片網址">
+                <button onclick="addBTTV()">儲存</button>
+                <button onclick="isDeleteMode=!isDeleteMode;renderEmojiPanel()" style="background:${isDeleteMode?'#666':'#c42b1c'}">
+                    ${isDeleteMode?'取消刪除':'開啟刪除'}
+                </button>
+            </div>`;
     }
+
+    emojiLists[name].emojis.forEach(emoji => {
+        const div = document.createElement('div');
+        div.className = 'emoji-item';
+        div.innerHTML = `<img src="${emoji.src}" title="${emoji.dis||emoji.alt}">`;
+        if (name==="BTTV" && isDeleteMode) {
+            div.innerHTML += `<div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${emoji.src}')">X</div>`;
+        }
+        div.onclick = () => {
+            if (name!=="BTTV" || !isDeleteMode) {
+                // 修改這裡：如果是 BTTV 圖片，插入 [s]網址[e] 格式
+                if (name === "BTTV") {
+                    input.value += (input.value ? ' ' : '') + `[s]${emoji.src}[e]`;
+                } else {
+                    // 其他表情集保持原來的行為
+                    input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
+                }
+                input.focus();
+                document.getElementById('emojiPanel').style.display = 'none';
+            }
+        };
+        content.appendChild(div);
+    });
+}
 
     window.addBTTV = () => {
         const url = document.getElementById('bttvUrl').value.trim();
