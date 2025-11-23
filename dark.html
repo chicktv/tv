@@ -1316,37 +1316,54 @@
         return link;
     }
 
-    // ===================== 智能貼上功能 =====================
-    // 參考您的代碼實現智能貼上功能
+     // ===================== 智能貼上功能 =====================
+    // 参考您的代码实现
     function handlePaste(event) {
+        // 获取粘贴的内容
+        const clipboardData = event.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text');
+        
+        // 延迟执行以确保粘贴完成
         setTimeout(function() {
             const currentInput = input.value;
-            pasteFunction(currentInput);
-        }, 0);
+            checkAndAddClosingTag(currentInput, pastedText);
+        }, 10);
     }
 
-    function pasteFunction(orgtext) {
+    function checkAndAddClosingTag(currentInput, pastedText) {
         let addback = "";
         
-        // 檢查輸入框結尾是否有特定的開始標籤
-        if (orgtext.substr(-4) === "[s] ") {
+        // 检查是否需要添加结束标签
+        if (currentInput.endsWith("[s] ")) {
             addback = " [e]";
-        } else if (orgtext.substr(-4) === "[y] ") {
+        } else if (currentInput.endsWith("[y] ")) {
             addback = " [t]";
-        } else if (orgtext.substr(-4) === "[p] ") {
+        } else if (currentInput.endsWith("[p] ")) {
             addback = " [i]";
         }
         
         if (addback !== "") {
-            setTimeout(function() {
-                const currentInput = input.value;
+            // 确保粘贴的内容是URL
+            if (isValidUrl(pastedText)) {
                 const newText = currentInput + addback;
                 input.value = newText;
                 
-                // 將光標移動到新文本的末尾
-                input.focus();
-                input.setSelectionRange(newText.length, newText.length);
-            }, 100);
+                // 将光标移动到新文本的末尾
+                setTimeout(() => {
+                    input.focus();
+                    input.setSelectionRange(newText.length, newText.length);
+                }, 50);
+            }
+        }
+    }
+
+    // URL验证函数
+    function isValidUrl(string) {
+        try {
+            const url = new URL(string);
+            return url.protocol === "http:" || url.protocol === "https:";
+        } catch (_) {
+            return false;
         }
     }
 
@@ -1364,13 +1381,15 @@
         }
         
         // 插入 [s] 並加上空格以便貼上
-        input.value += '[s] ';
+        const currentValue = input.value;
+        const newValue = currentValue + (currentValue ? ' ' : '') + '[s] ';
+        input.value = newValue;
         
         // 聚焦到輸入框
         input.focus();
         
         // 將光標移動到 [s] 後面
-        const cursorPos = input.value.length;
+        const cursorPos = newValue.length;
         input.setSelectionRange(cursorPos, cursorPos);
         
         // 確保貼上處理器已初始化
@@ -1384,13 +1403,15 @@
         }
         
         // 插入 [y] 並加上空格以便貼上
-        input.value += '[y] ';
+        const currentValue = input.value;
+        const newValue = currentValue + (currentValue ? ' ' : '') + '[y] ';
+        input.value = newValue;
         
         // 聚焦到輸入框
         input.focus();
         
         // 將光標移動到 [y] 後面
-        const cursorPos = input.value.length;
+        const cursorPos = newValue.length;
         input.setSelectionRange(cursorPos, cursorPos);
         
         // 確保貼上處理器已初始化
@@ -1404,16 +1425,28 @@
         }
         
         // 插入 [p] 並加上空格以便貼上
-        input.value += '[p] ';
+        const currentValue = input.value;
+        const newValue = currentValue + (currentValue ? ' ' : '') + '[p] ';
+        input.value = newValue;
         
         // 聚焦到輸入框
         input.focus();
         
         // 將光標移動到 [p] 後面
-        const cursorPos = input.value.length;
+        const cursorPos = newValue.length;
         input.setSelectionRange(cursorPos, cursorPos);
         
         // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+    // 页面加载时初始化粘贴处理器
+    window.addEventListener('load', function() {
+        initPasteHandler();
+    });
+
+    // 输入框获得焦点时也确保粘贴处理器工作
+    input.addEventListener('focus', function() {
         initPasteHandler();
     });
 
