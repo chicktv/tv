@@ -16,24 +16,23 @@
     }
     
     #chat {
-    height: calc(79vh - 50px); /* 減去回覆指示器的高度 */
-    overflow-y: auto;
-    white-space: wrap; 
-    background: #0e0e10;
-    padding: 12px;
-    border-radius: 0;
-    margin-bottom: 12px;
-    border: 1px solid #26262c;
-    font-size: 14px;
-    scroll-behavior: smooth;
-}
+        height: 79vh;
+        overflow-y: auto;
+		white-space: wrap; 
+        background: #0e0e10;
+        padding: 12px;
+        border-radius: 0;
+        margin-bottom: 12px;
+        border: 1px solid #26262c;
+        font-size: 14px;
+        scroll-behavior: smooth;
+    }
 	
 	 .chat-input-container {
-    position: relative;
-    background: #1f1f23;
-    padding: 12px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
+        background: #1f1f23;
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
     .chat-input-wrapper {
         display: flex;
@@ -138,12 +137,10 @@
     }
 	
 	#pastebtn {
-	margin: 0px;
-    padding: 0px;
-    border: 0px;
-    vertical-align: baseline;
-
-}
+      position: relative;
+      display: flex;
+      gap: 4px;
+    }
     .sk_botton {
       position: absolute;
       bottom: 100%;
@@ -433,22 +430,15 @@ img, video, iframe {
     }
     
     .reply-indicator {
-    position: absolute;
-    top: -50px; /* 調整這個值來控制距離輸入框的距離 */
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    background: #1f1f23;
-    padding: 6px 10px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    font-size: 12px;
-    color: #adadb8;
-    z-index: 10;
-    border: 1px solid #26262c;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
+        display: flex;
+        align-items: center;
+        background: #1f1f23;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #adadb8;
+    }
     
     .reply-indicator .cancel-reply {
         margin-left: auto;
@@ -467,21 +457,14 @@ img, video, iframe {
     }
     
     .reply-preview {
-    position: absolute;
-    top: -90px; /* 調整這個值，使其在回覆指示器上方 */
-    left: 0;
-    right: 0;
-    background: #1f1f23;
-    padding: 8px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    border-left: 3px solid #9147ff;
-    font-size: 12px;
-    color: #adadb8;
-    z-index: 15;
-    border: 1px solid #26262c;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
+        background: #1f1f23;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        border-left: 3px solid #9147ff;
+        font-size: 12px;
+        color: #adadb8;
+    }
     
     .reply-preview .replying-to {
         font-weight: bold;
@@ -727,40 +710,32 @@ img, video, iframe {
 </div>
 
 <div id="chat"></div>
-<div class="chat-input-container">
-    <!-- 回覆預覽 -->
-    <div id="replyPreview" class="reply-preview" style="display: none;"></div>
-    
-    <!-- 回覆指示器 -->
-    <div id="replyIndicator" class="reply-indicator" style="display: none;">
+<div id="replyIndicator" class="reply-indicator" style="display: none;">
         <span>回覆給 <span id="replyTargetName"></span></span>
         <button class="cancel-reply" id="cancelReplyBtn">取消</button>
     </div>
-    
-    <!-- 貼上按鈕 -->
-    <span id="pastebtn" ><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button>
-        <button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button>
-        
-    </span>
-    
-    <!-- 輸入框和按鈕 -->
-    <div class="chat-input-wrapper">
-        <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
-        <div class="mention-autocomplete" id="mentionAutocomplete"></div>
-        <div class="chat-buttons">
-            <button class="chat-button" id="emojiBtn" title="表情">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                </svg>
-            </button>
-            <button class="chat-button" id="sendBtn" disabled title="送出訊息">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
-                </svg>
-            </button>
+<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button></span>
+<div id="inputArea">
+
+
+	<div class="chat-input-container">
+        <div class="chat-input-wrapper">
+            <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
+            <div class="mention-autocomplete" id="mentionAutocomplete"></div>
+            <div class="chat-buttons">
+                <button class="chat-button" id="emojiBtn" title="表情">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                    </svg>
+                </button>
+                <button class="chat-button" id="sendBtn" disabled title="送出訊息">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
-    </div>
-    <button id="loginBtn">Twitch 登入</button>
+        <button id="loginBtn">Twitch 登入</button>
 </div>
 
 <!-- 自訂表情面板 -->
@@ -1283,10 +1258,8 @@ function setupReply(messageId, username, messageText) {
     preview.innerHTML = `
         回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 25)}
     `;
-    preview.style.display = 'block';
     
-    // 將預覽插入到輸入容器中
-    document.querySelector('.chat-input-container').insertBefore(preview, replyIndicator);
+    replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
 }
 
 function cancelReply() {
@@ -1295,7 +1268,7 @@ function cancelReply() {
     
     const preview = document.getElementById('replyPreview');
     if (preview) {
-        preview.style.display = 'none';
+        preview.remove();
     }
 }
 
