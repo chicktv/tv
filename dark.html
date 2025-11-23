@@ -1542,7 +1542,7 @@
             if (name!=="BTTV" || !isDeleteMode) {
                 // 修改這裡：如果是 BTTV 圖片，插入 [s]網址[e] 格式
                 if (name === "BTTV") {
-                    input.value += (input.value ? ' ' : '') + `[s]${emoji.src}[e]`;
+                    input.value += (input.value ? ' ' : '') + `[s] ${emoji.src} [e]`;
                 } else {
                     // 其他表情集保持原來的行為
                     input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
