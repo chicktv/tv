@@ -18,6 +18,7 @@
     --twitch-scrollbar: #3a3a3d;
     --twitch-scrollbar-hover: #53535f;
     --twitch-mention: #9147ff;
+    --twitch-reply: #00c7ac;
     --twitch-broadcaster: #e91916;
     --twitch-moderator: #00c7ac;
     --twitch-vip: #bf94ff;
@@ -214,7 +215,32 @@ body {
     color: var(--twitch-text-primary);
 }
 
+/* ========== 提及消息样式 ========== */
+.mentioned-message {
+    background: rgba(145, 71, 255, 0.1);
+    border-left: 3px solid var(--twitch-mention);
+    padding-left: 8px;
+    margin: 6px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.mentioned-message:hover {
+    background: rgba(145, 71, 255, 0.15);
+}
+
 /* ========== 回覆消息样式 ========== */
+.reply-message {
+    background: rgba(0, 199, 172, 0.1);
+    border-left: 3px solid var(--twitch-reply);
+    padding-left: 8px;
+    margin: 6px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.reply-message:hover {
+    background: rgba(0, 199, 172, 0.15);
+}
+
 .reply-context {
     font-size: 11px;
     color: var(--twitch-text-secondary);
@@ -226,13 +252,13 @@ body {
 
 .reply-icon {
     margin-right: 4px;
-    color: var(--twitch-accent);
+    color: var(--twitch-reply);
     font-size: 10px;
 }
 
 .reply-username {
     font-weight: bold;
-    color: var(--twitch-accent);
+    color: var(--twitch-reply);
     margin-right: 6px;
 }
 
@@ -242,6 +268,35 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     flex: 1;
+}
+
+/* 回覆指示器样式 */
+#reply-indicator {
+    display: flex;
+    align-items: center;
+    background: var(--twitch-bg-secondary);
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--twitch-text-secondary);
+    border-left: 3px solid var(--twitch-reply);
+}
+
+#cancel-reply-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--twitch-text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+#cancel-reply-btn:hover {
+    background: var(--twitch-scrollbar);
+    color: var(--twitch-text-primary);
 }
 
 /* ========== 输入区域 ========== */
@@ -293,6 +348,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s;
 }
 
 .chat-button:hover {
@@ -313,7 +369,7 @@ body {
 /* ========== 快速按钮区域 ========== */
 #quick-buttons {
     display: flex;
-    gap: 0px;
+    gap: 8px;
     margin-top: 8px;
 }
 
@@ -349,34 +405,6 @@ body {
 
 #login-btn:hover {
     background: var(--twitch-accent-hover);
-}
-
-/* ========== 回覆指示器 ========== */
-#reply-indicator {
-    display: flex;
-    align-items: center;
-    background: var(--twitch-bg-secondary);
-    padding: 6px 10px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    font-size: 12px;
-    color: var(--twitch-text-secondary);
-}
-
-#cancel-reply-btn {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--twitch-text-secondary);
-    cursor: pointer;
-    font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 3px;
-}
-
-#cancel-reply-btn:hover {
-    background: var(--twitch-scrollbar);
-    color: var(--twitch-text-primary);
 }
 
 /* ========== 提及自动完成 ========== */
@@ -462,8 +490,8 @@ body {
 
 /* ========== 表情符号样式 ========== */
 .emoji {
-    max-width: 130px;
-    max-height: 130px;
+    max-width: 90px;
+    max-height: 90px;
     vertical-align: middle;
     margin: 0 2px;
 }
@@ -644,11 +672,7 @@ a:hover {
     <div id="chat-container">
         <!-- 聊天区域 -->
         <div id="chat"></div>
-        <!-- 快速按钮 -->
-        <div id="quick-buttons">
-            <button id="paste-photo" class="quick-button">圖片</button>
-            <button id="paste-video" class="quick-button">影片</button>
-        </div>
+        
         <!-- 回覆指示器 -->
         <div id="reply-indicator" style="display: none;">
             <span>回覆給 <span id="reply-target-name"></span></span>
@@ -675,7 +699,11 @@ a:hover {
             </div>
         </div>
         
-        
+        <!-- 快速按钮 -->
+        <div id="quick-buttons">
+            <button id="paste-photo" class="quick-button">圖片</button>
+            <button id="paste-video" class="quick-button">影片</button>
+        </div>
         
         <!-- 登录按钮 -->
         <button id="login-btn">Twitch 登入</button>
@@ -748,10 +776,16 @@ a:hover {
     let messageCount = 0;
     const MAX_MESSAGES = 100;
 
+    // 表情面板拖拽状态
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
     // 初始化
     document.addEventListener('DOMContentLoaded', function() {
         setupEventListeners();
         checkLogin();
+        loadBadgeMap();
     });
 
     // 設置事件監聽器
@@ -767,14 +801,30 @@ a:hover {
         sendBtn.addEventListener('click', sendMessage);
         loginBtn.addEventListener('click', loginWithPopup);
         logoutBtn.addEventListener('click', logout);
-        emojiBtn.addEventListener('click', toggleEmojiPanel);
-        emojiCloseBtn.addEventListener('click', () => emojiPanel.style.display = 'none');
-        pastePhotoBtn.addEventListener('click', () => pasteTemplate('[s] 網址 [e]'));
-        pasteVideoBtn.addEventListener('click', () => pasteTemplate('[y] 網址 [t]'));
+        
+        // 表情按钮事件
+        emojiBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleEmojiPanel();
+        });
+        
+        emojiCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            emojiPanel.style.display = 'none';
+        });
+        
+        pastePhotoBtn.addEventListener('click', function() {
+            pasteTemplate('[s] 網址 [e]');
+        });
+        
+        pasteVideoBtn.addEventListener('click', function() {
+            pasteTemplate('[y] 網址 [t]');
+        });
+        
         cancelReplyBtn.addEventListener('click', cancelReply);
         
         // 點擊外部關閉表情面板和提及列表
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', function(e) {
             if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
                 emojiPanel.style.display = 'none';
             }
@@ -899,7 +949,7 @@ a:hover {
 
         client.on('connected', () => {
             isConnected = true;
-            status.textContent = `已連線${oauthToken?'（已登入）':''}`;
+            status.textContent = `已連線至 ${channel}${oauthToken?'（已登入）':''}`;
             loadEmojiSets();
         });
 
@@ -915,14 +965,22 @@ a:hover {
                 // 檢查是否提及當前用戶
                 const isMentioned = checkMention(message, tags);
                 
+                // 檢查是否為回覆訊息
+                const isReply = tags['reply-parent-msg-id'];
+                
                 // 創建消息元素
                 const messageEl = document.createElement('div');
-                messageEl.className = 'message';
-                messageEl.id = `msg-${tags.id}`;
                 
-                if (isMentioned) {
-                    messageEl.classList.add('mentioned');
+                // 根據消息類型設置不同的樣式
+                if (isReply) {
+                    messageEl.className = 'message reply-message';
+                } else if (isMentioned) {
+                    messageEl.className = 'message mentioned-message';
+                } else {
+                    messageEl.className = 'message';
                 }
+                
+                messageEl.id = `msg-${tags.id}`;
                 
                 // 解析徽章
                 const badges = parseBadges(tags.badges);
@@ -943,8 +1001,21 @@ a:hover {
                 // 處理消息內容
                 const messageHtml = await processMessage(message);
                 
+                // 如果是回覆消息，添加回覆上下文
+                let replyContextHtml = '';
+                if (isReply && tags['reply-parent-display-name'] && tags['reply-parent-msg-body']) {
+                    replyContextHtml = `
+                        <div class="reply-context">
+                            <span class="reply-icon">↩</span>
+                            <span class="reply-username">${escapeHtml(tags['reply-parent-display-name'])}</span>
+                            <span class="reply-preview">${truncateMessage(tags['reply-parent-msg-body'], 50)}</span>
+                        </div>
+                    `;
+                }
+                
                 // 創建消息HTML
                 messageEl.innerHTML = `
+                    ${replyContextHtml}
                     <div class="message-content">
                         <div class="badges">${badgesHtml}</div>
                         <span class="username ${usernameClass}" style="color: ${tags.color || '#9147ff'}">${escapeHtml(tags['display-name'] || tags.username)}:</span>
@@ -1180,6 +1251,11 @@ a:hover {
         const endPos = startPos + 2;
         chatInput.focus();
         chatInput.setSelectionRange(startPos, endPos);
+    }
+
+    function truncateMessage(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
     }
 
     // ===================== 徽章功能 =====================
@@ -1528,35 +1604,42 @@ a:hover {
     };
 
     function toggleEmojiPanel() {
-        emojiPanel.style.display = emojiPanel.style.display === 'flex' ? 'none' : 'flex';
         if (emojiPanel.style.display === 'flex') {
+            emojiPanel.style.display = 'none';
+        } else {
+            emojiPanel.style.display = 'flex';
+            // 确保表情面板在视图中
             emojiPanel.style.left = '50%';
             emojiPanel.style.top = '50%';
-            emojiPanel.style.transform = 'translate(-50%,-50%)';
+            emojiPanel.style.transform = 'translate(-50%, -50%)';
             renderEmojiPanel();
         }
     }
 
     function setupEmojiPanelDrag() {
-        let dragging = false, offsetX, offsetY;
-        document.querySelector('.emoji-header').addEventListener('mousedown', e => {
+        const emojiHeader = document.querySelector('.emoji-header');
+        
+        emojiHeader.addEventListener('mousedown', function(e) {
             if (e.target === emojiCloseBtn) return;
             
-            dragging = true;
-            offsetX = e.clientX - emojiPanel.offsetLeft;
-            offsetY = e.clientY - emojiPanel.offsetTop;
+            isDragging = true;
+            dragOffsetX = e.clientX - emojiPanel.offsetLeft;
+            dragOffsetY = e.clientY - emojiPanel.offsetTop;
+            
+            // 防止文本选中
+            e.preventDefault();
         });
         
-        document.addEventListener('mousemove', e => {
-            if(dragging){
-                emojiPanel.style.left = (e.clientX - offsetX) + 'px';
-                emojiPanel.style.top = (e.clientY - offsetY) + 'px';
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                emojiPanel.style.left = (e.clientX - dragOffsetX) + 'px';
+                emojiPanel.style.top = (e.clientY - dragOffsetY) + 'px';
                 emojiPanel.style.transform = 'none';
             }
         });
         
-        document.addEventListener('mouseup', () => {
-            dragging = false;
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
         });
     }
     </script>
