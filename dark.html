@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>chickchat</title>
 <style>
-     /* ========== Twitch Dark Theme ========== */
+    /* ========== Twitch Dark Theme ========== */
     body {
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         background: #0e0e10;
@@ -79,7 +79,7 @@
     
     #input-container {
         background: #1f1f23;
-        padding: 12px 16px;
+        padding: 1px 1px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
@@ -88,7 +88,7 @@
         align-items: center;
         background: #0e0e10;
         border-radius: 4px;
-        padding: 8px 12px;
+        padding: 5px 5px;
         position: relative;
     }
 
@@ -99,6 +99,7 @@
         color: #efeff1;
         font-size: 14px;
         outline: none;
+        flex-wrap: wrap;
     }
 
     .chat-input::placeholder {
@@ -327,10 +328,12 @@
         background: #18181b;
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 5px;
+        align-content: flex-start;
     }
     
     .emoji-item {
+		position: relative;
          width: 40px;
         height: 40px;
         border-radius: 4px;
@@ -369,7 +372,7 @@
         display: flex;
         gap: 6px;
         margin-bottom: 10px;
-		height: 30px;
+		
     }
     
     .bttv-input input {
@@ -749,7 +752,6 @@
 </style>
 </head>
 <body>
-    <!-- HTML结构保持不变 -->
     <div id="status">載入中...</div>
     
     <div id="userInfo" style="display:none;">
@@ -764,7 +766,6 @@
 		 <div id="pastebtn">
             <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
             <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
-            
         </div>
         <div id="replyIndicator" class="reply-indicator" style="display: none;">
             <span>回覆給 <span id="replyTargetName"></span></span>
@@ -789,6 +790,8 @@
                 </button>
             </div>
         </div>
+        
+       
         
         <button id="loginBtn">Twitch 登入</button>
     </div>
@@ -1316,51 +1319,6 @@
         return link;
     }
 
-  // ===================== 智能貼上功能 =====================
-    // 更可靠的实现
-    function handlePaste(event) {
-        // 阻止默认粘贴行为
-        event.preventDefault();
-        
-        // 获取粘贴的内容
-        const clipboardData = event.clipboardData || window.clipboardData;
-        const pastedText = clipboardData.getData('text');
-        
-        // 获取当前输入框的值和光标位置
-        const currentValue = input.value;
-        const startPos = input.selectionStart;
-        const endPos = input.selectionEnd;
-        
-        // 插入粘贴的文本
-        const newValue = currentValue.substring(0, startPos) + pastedText + currentValue.substring(endPos);
-        
-        // 检查是否需要添加结束标签
-        let finalValue = newValue;
-        if (currentValue.substring(0, startPos).endsWith("[s] ")) {
-            finalValue = newValue + " [e]";
-        } else if (currentValue.substring(0, startPos).endsWith("[y] ")) {
-            finalValue = newValue + " [t]";
-        } else if (currentValue.substring(0, startPos).endsWith("[p] ")) {
-            finalValue = newValue + " [i]";
-        }
-        
-        // 设置新的输入框值
-        input.value = finalValue;
-        
-        // 将光标移动到新文本的末尾
-        const newCursorPos = finalValue.length;
-        setTimeout(() => {
-            input.focus();
-            input.setSelectionRange(newCursorPos, newCursorPos);
-        }, 10);
-    }
-
-    // 初始化貼上事件監聽
-    function initPasteHandler() {
-        input.removeEventListener('paste', handlePaste);
-        input.addEventListener('paste', handlePaste);
-    }
-
     // ===================== 貼上按鈕功能 =====================
     document.getElementById('pastephoto').addEventListener('click', function() {
         if (input.disabled) {
@@ -1368,23 +1326,14 @@
             return;
         }
         
-        // 插入 [s] 並加上空格
-        const currentValue = input.value;
-        const cursorPos = input.selectionStart;
+        const template = '[s] 網址 [e]';
+        input.value += template;
         
-        // 在光标位置插入 [s] 
-        const newValue = currentValue.substring(0, cursorPos) + '[s] ' + currentValue.substring(cursorPos);
-        input.value = newValue;
+        const startPos = input.value.indexOf('網址');
+        const endPos = startPos + 2;
         
-        // 聚焦到輸入框並將光標移動到 [s] 後面
-        const newCursorPos = cursorPos + 4; // [s] 的长度是4
-        setTimeout(() => {
-            input.focus();
-            input.setSelectionRange(newCursorPos, newCursorPos);
-        }, 10);
-        
-        // 確保貼上處理器已初始化
-        initPasteHandler();
+        input.focus();
+        input.setSelectionRange(startPos, endPos);
     });
 
     document.getElementById('pastevideo').addEventListener('click', function() {
@@ -1393,36 +1342,14 @@
             return;
         }
         
-        // 插入 [y] 並加上空格
-        const currentValue = input.value;
-        const cursorPos = input.selectionStart;
+        const template = '[y] 網址 [t]';
+        input.value += template;
         
-        // 在光标位置插入 [y] 
-        const newValue = currentValue.substring(0, cursorPos) + '[y] ' + currentValue.substring(cursorPos);
-        input.value = newValue;
+        const startPos = input.value.indexOf('網址');
+        const endPos = startPos + 2;
         
-        // 聚焦到輸入框並將光標移動到 [y] 後面
-        const newCursorPos = cursorPos + 4; // [y] 的长度是4
-        setTimeout(() => {
-            input.focus();
-            input.setSelectionRange(newCursorPos, newCursorPos);
-        }, 10);
-        
-        // 確保貼上處理器已初始化
-        initPasteHandler();
-    });
-
-        
-    
-
-    // 页面加载时初始化粘贴处理器
-    window.addEventListener('load', function() {
-        initPasteHandler();
-    });
-
-    // 输入框获得焦点时也确保粘贴处理器工作
-    input.addEventListener('focus', function() {
-        initPasteHandler();
+        input.focus();
+        input.setSelectionRange(startPos, endPos);
     });
 
     // ===================== 回覆功能 =====================
@@ -2069,9 +1996,16 @@
     });
 
     cancelReplyBtn.onclick = cancelReply;
-
-    // 初始化貼上處理器
-    initPasteHandler();
     </script>
 </body>
+
 </html>
+
+
+
+
+
+
+
+
+
