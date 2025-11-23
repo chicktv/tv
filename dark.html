@@ -18,7 +18,6 @@
     --twitch-scrollbar: #3a3a3d;
     --twitch-scrollbar-hover: #53535f;
     --twitch-mention: #9147ff;
-    --twitch-reply: #00c7ac;
     --twitch-broadcaster: #e91916;
     --twitch-moderator: #00c7ac;
     --twitch-vip: #bf94ff;
@@ -230,15 +229,7 @@ body {
 
 /* ========== 回覆消息样式 ========== */
 .reply-message {
-    background: rgba(0, 199, 172, 0.1);
-    border-left: 3px solid var(--twitch-reply);
-    padding-left: 8px;
     margin: 6px 0;
-    border-radius: 0 4px 4px 0;
-}
-
-.reply-message:hover {
-    background: rgba(0, 199, 172, 0.15);
 }
 
 .reply-context {
@@ -252,13 +243,13 @@ body {
 
 .reply-icon {
     margin-right: 4px;
-    color: var(--twitch-reply);
+    color: var(--twitch-text-secondary);
     font-size: 10px;
 }
 
 .reply-username {
     font-weight: bold;
-    color: var(--twitch-reply);
+    color: var(--twitch-accent);
     margin-right: 6px;
 }
 
@@ -280,7 +271,7 @@ body {
     margin-bottom: 8px;
     font-size: 12px;
     color: var(--twitch-text-secondary);
-    border-left: 3px solid var(--twitch-reply);
+    border-left: 3px solid var(--twitch-accent);
 }
 
 #cancel-reply-btn {
@@ -723,7 +714,7 @@ a:hover {
     <script>
     // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const channel = "whitewing940920";
+    const channel = "69nocondom";
 
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -1063,8 +1054,15 @@ a:hover {
         const msg = chatInput.value.trim();
         if (msg && oauthToken && client?.readyState() === 'OPEN') {
             if (replyingTo) {
+                // 保存当前的回复信息
+                const currentReply = {...replyingTo};
+                
                 client.reply(channel, msg, replyingTo.id).then(() => {
                     chatInput.value = '';
+                    
+                    // 立即在聊天中显示自己的回复消息
+                    displayOwnReplyMessage(currentReply, msg);
+                    
                     cancelReply();
                 }).catch(err => {
                     console.error('回覆發送失敗:', err);
@@ -1080,6 +1078,45 @@ a:hover {
                 });
             }
         }
+    }
+
+    // 显示自己的回复消息
+    function displayOwnReplyMessage(replyInfo, message) {
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message reply-message';
+        messageEl.id = `msg-temp-${Date.now()}`;
+        
+        // 创建回复上下文
+        const replyContextHtml = `
+            <div class="reply-context">
+                <span class="reply-icon">↩</span>
+                <span class="reply-username">${escapeHtml(replyInfo.username)}</span>
+                <span class="reply-preview">${truncateMessage(replyInfo.message, 50)}</span>
+            </div>
+        `;
+        
+        // 处理消息内容
+        const messageHtml = escapeHtml(message);
+        
+        // 创建消息HTML
+        messageEl.innerHTML = `
+            ${replyContextHtml}
+            <div class="message-content">
+                <div class="badges"></div>
+                <span class="username" style="color: #9147ff">${escapeHtml(userDisplayName)}:</span>
+                <span class="message-text">${messageHtml}</span>
+                <div class="message-actions"></div>
+            </div>
+        `;
+        
+        // 添加到聊天區域
+        chat.appendChild(messageEl);
+        
+        // 限制消息數量
+        limitMessages();
+        
+        // 滾動到底部
+        scrollToBottom();
     }
 
     // ===================== 消息處理 =====================
