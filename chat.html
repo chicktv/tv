@@ -369,6 +369,7 @@
         display: flex;
         gap: 6px;
         margin-bottom: 10px;
+		height: 30px;
     }
     
     .bttv-input input {
@@ -1626,7 +1627,7 @@
                 <input type="text" id="bttvUrl" placeholder="輸入圖片網址">
                 <button onclick="addBTTV()">儲存</button>
                 <button onclick="isDeleteMode=!isDeleteMode;renderEmojiPanel()" style="background:${isDeleteMode?'#666':'#c42b1c'}">
-                    ${isDeleteMode?'取消刪除':'開啟刪除'}
+                    ${isDeleteMode?'取消':'刪除'}
                 </button>
             </div>`;
     }
@@ -1996,6 +1997,7 @@
 </body>
 
 </html>
+
 
 
 
