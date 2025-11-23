@@ -361,14 +361,14 @@
         display: block;
     }
     
-    .bttv-input {
+    .-input {
         width: 100%;
         display: flex;
         gap: 6px;
         margin-bottom: 10px;
     }
     
-    .bttv-input input {
+    .-input input {
         flex: 1;
         padding: 8px;
         background: #1f1f23;
@@ -377,7 +377,7 @@
         border-radius: 4px;
     }
     
-    .bttv-input input:focus {
+    .-input input:focus {
         outline: none;
         border-color: #9147ff;
     }
@@ -1587,7 +1587,7 @@
         const saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
         emojiLists["BTTV"] = {
             emojis: saved.map(url=>({alt:url.split('/').pop().split('?')[0], src:url, dis:url})),
-            image: "https://cdn.betterttv.net/assets/logo.png"
+            image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3"
         };
         renderEmojiPanel();
     }
@@ -1993,3 +1993,4 @@
 </body>
 
 </html>
+
