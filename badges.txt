@@ -7,7 +7,7 @@
   "founder/1": "https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d3/1",
   "subscriber/1": "https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/1",
   "share-the-love/1": "https://static-cdn.jtvnw.net/badges/v1/2de71f4f-b152-4308-a426-127a4cf8003a/1",
-  "glitchcon2020/1": "https://static-cdn.jtvnw.net/badges/v1/1d4b03b9-51ea-42c9-8f29-698e3c85be3d/1",
+  "glitchCon2020/1": "https://static-cdn.jtvnw.net/badges/v1/1d4b03b9-51ea-42c9-8f29-698e3c85be3d/1",
   "raging-wolf-helm/1": "https://static-cdn.jtvnw.net/badges/v1/3ff668be-59a3-4e3e-96af-e6b2908b3171/1",
   "twitch-recap-2023/1": "https://static-cdn.jtvnw.net/badges/v1/4d9e9812-ba9b-48a6-8690-13f3f338ee65/1",
   "low/1": "https://static-cdn.jtvnw.net/badges/v1/58d48669-bfee-46e7-a83c-b65a30783400/1",
@@ -21,7 +21,17 @@
   "rplace-2023/1": "https://static-cdn.jtvnw.net/badges/v1/e33e0c67-c380-4241-828a-099c46e51c66/1",
   "fright-fest-2025/1": "https://static-cdn.jtvnw.net/badges/v1/2ef2cd27-2210-4640-bbf8-69b5c4d9e302/1",
   "bits-charity/1": "https://static-cdn.jtvnw.net/badges/v1/a539dc18-ae19-49b0-98c4-8391a594332b/1",
-  "clip-the-halls/1": "https://static-cdn.jtvnw.net/badges/v1/ce9e266a-f490-4fb2-9989-aee20036bfa5/1"
+  "clip-the-halls/1": "https://static-cdn.jtvnw.net/badges/v1/ce9e266a-f490-4fb2-9989-aee20036bfa5/1",
+  "subtember-2025/1": "https://static-cdn.jtvnw.net/badges/v1/a9c01f28-179e-486d-a4c7-2277e4f6adb4/1",
+  "survival-cup-4/1": "https://static-cdn.jtvnw.net/badges/v1/9ff55f50-2c2a-40c2-9863-158d5ac2d5fd/1",
+  "together-for-good-25---wicked-dub-badge/1": "https://static-cdn.jtvnw.net/badges/v1/9ddae219-6674-4fbc-add9-6e4e6572ea8e/1",
+  "together-for-good-25---goodest-badge/1": "https://static-cdn.jtvnw.net/badges/v1/928b8033-3777-49cb-a056-230135a08a62/1",
+  "together-for-good-25---gooder-badge/1": "https://static-cdn.jtvnw.net/badges/v1/84a37e81-9d61-4c29-970e-64a32ec040c7/1",
+  "together-for-good-25---good-badge/1": "https://static-cdn.jtvnw.net/badges/v1/192fb627-82b3-46e8-95d3-ac9feba4b1bc/1",
+  "stream-for-humanity-2-2025/1": "https://static-cdn.jtvnw.net/badges/v1/c02fbad3-aa4b-46d0-93a6-661719a19f1c/1",
+  "black-ops-7-global-launch/1": "https://static-cdn.jtvnw.net/badges/v1/e225aad6-3780-4bdc-ae38-48d3ab7dc36e/1",
+  "subtember-2024/1": "https://static-cdn.jtvnw.net/badges/v1/4149750c-9582-4515-9e22-da7d5437643b/1"
+  
+  
+  
 }
-
-
