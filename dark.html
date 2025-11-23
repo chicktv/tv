@@ -85,13 +85,14 @@
 
     .chat-input-wrapper {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         background: #0e0e10;
         border-radius: 4px;
         padding: 5px 5px;
         position: relative;
     }
 
+    /* 修改輸入框為 textarea 並調整樣式 */
     .chat-input {
         flex: 1;
         background: transparent;
@@ -100,6 +101,12 @@
         font-size: 14px;
         outline: none;
         flex-wrap: wrap;
+        resize: none;
+        min-height: 40px;
+        max-height: 120px;
+        font-family: inherit;
+        line-height: 1.4;
+        padding: 8px 0;
     }
 
     .chat-input::placeholder {
@@ -109,6 +116,7 @@
     .chat-buttons {
         display: flex;
         gap: 8px;
+        margin-top: 5px;
     }
 
     .chat-button {
@@ -775,7 +783,7 @@
     
     <div id="input-container">
         <div class="chat-input-wrapper">
-            <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
+            <textarea id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled rows="1"></textarea>
             <div class="mention-autocomplete" id="mentionAutocomplete"></div>
             <div class="chat-buttons">
                 <button class="chat-button" id="emojiBtn" title="表情">
@@ -1329,6 +1337,9 @@
         const template = '[s] 網址 [e]';
         input.value += template;
         
+        // 調整 textarea 高度
+        adjustTextareaHeight();
+        
         const startPos = input.value.indexOf('網址');
         const endPos = startPos + 2;
         
@@ -1344,6 +1355,9 @@
         
         const template = '[y] 網址 [t]';
         input.value += template;
+        
+        // 調整 textarea 高度
+        adjustTextareaHeight();
         
         const startPos = input.value.indexOf('網址');
         const endPos = startPos + 2;
@@ -1477,6 +1491,9 @@
             const newValue = currentValue.substring(0, atIndex) + `@${user.username} `;
             input.value = newValue;
             
+            // 調整 textarea 高度
+            adjustTextareaHeight();
+            
             // 重新聚焦並將光標放在末尾
             input.focus();
             input.setSelectionRange(newValue.length, newValue.length);
@@ -1554,6 +1571,15 @@
         } else {
             hideMentionAutocomplete();
         }
+        
+        // 調整 textarea 高度
+        adjustTextareaHeight();
+    }
+
+    // 調整 textarea 高度以適應內容
+    function adjustTextareaHeight() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     }
 
     // 檢查訊息是否提及當前用戶
@@ -1651,6 +1677,8 @@
                     // 其他表情集保持原來的行為
                     input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
                 }
+                // 調整 textarea 高度
+                adjustTextareaHeight();
                 input.focus();
                 document.getElementById('emojiPanel').style.display = 'none';
             }
@@ -1953,6 +1981,9 @@
                 
                 client.reply(channel, msg, replyingTo.id).then(() => {
                     input.value = '';
+                    // 重置 textarea 高度
+                    adjustTextareaHeight();
+                    
                     // 不在這裡立即清除 replyingTo，讓訊息處理器使用
                     
                     // 安全機制：如果3秒後 replyingTo 還在，強制清除
@@ -1968,20 +1999,45 @@
                     // 回覆失敗時改為發送普通訊息
                     client.say(channel, msg).then(() => {
                         input.value = '';
+                        // 重置 textarea 高度
+                        adjustTextareaHeight();
                         cancelReply();
                     });
                 });
             } else {
                 client.say(channel, msg).then(() => {
                     input.value = '';
+                    // 重置 textarea 高度
+                    adjustTextareaHeight();
                 });
             }
         }
     }
 
     document.getElementById('sendBtn').onclick = send;
-    input.addEventListener('keypress', e => { 
-        if(e.key==='Enter') send(); 
+    
+    // 修改 Enter 鍵行為：Enter 發送，Ctrl+Enter 換行
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            if (e.ctrlKey) {
+                // Ctrl+Enter 換行
+                const cursorPos = input.selectionStart;
+                const textBefore = input.value.substring(0, cursorPos);
+                const textAfter = input.value.substring(cursorPos);
+                
+                input.value = textBefore + '\n' + textAfter;
+                input.selectionStart = input.selectionEnd = cursorPos + 1;
+                
+                // 調整 textarea 高度
+                adjustTextareaHeight();
+                
+                e.preventDefault();
+            } else {
+                // 只有 Enter 發送訊息
+                e.preventDefault();
+                send();
+            }
+        }
     });
 
     // 添加@功能的事件监听
@@ -2000,12 +2056,3 @@
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
