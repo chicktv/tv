@@ -16,28 +16,24 @@
     }
     
     #chat {
-        height: 79vh;
-        overflow-y: auto;
-		white-space: wrap; 
-        background: #0e0e10;
-        padding: 12px;
-        border-radius: 0;
-        margin-bottom: 12px;
-        border: 1px solid #26262c;
-        font-size: 14px;
-        scroll-behavior: smooth;
-    }
-	
-	#replyIndicator {
-         z-index: 99999;
-		position: fixed;
-    }
+    height: calc(79vh - 50px); /* 減去回覆指示器的高度 */
+    overflow-y: auto;
+    white-space: wrap; 
+    background: #0e0e10;
+    padding: 12px;
+    border-radius: 0;
+    margin-bottom: 12px;
+    border: 1px solid #26262c;
+    font-size: 14px;
+    scroll-behavior: smooth;
+}
 	
 	 .chat-input-container {
-        background: #1f1f23;
-        padding: 12px 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    position: relative;
+    background: #1f1f23;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
 
     .chat-input-wrapper {
         display: flex;
@@ -142,10 +138,12 @@
     }
 	
 	#pastebtn {
-      position: relative;
-      display: flex;
-      gap: 4px;
-    }
+	margin: 0px;
+    padding: 0px;
+    border: 0px;
+    vertical-align: baseline;
+
+}
     .sk_botton {
       position: absolute;
       bottom: 100%;
@@ -435,15 +433,22 @@ img, video, iframe {
     }
     
     .reply-indicator {
-        display: flex;
-        align-items: center;
-        background: #1f1f23;
-        padding: 6px 10px;
-        border-radius: 4px;
-        margin-bottom: 8px;
-        font-size: 12px;
-        color: #adadb8;
-    }
+    position: absolute;
+    top: -50px; /* 調整這個值來控制距離輸入框的距離 */
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    background: #1f1f23;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #adadb8;
+    z-index: 10;
+    border: 1px solid #26262c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
     
     .reply-indicator .cancel-reply {
         margin-left: auto;
@@ -462,14 +467,21 @@ img, video, iframe {
     }
     
     .reply-preview {
-        background: #1f1f23;
-        padding: 8px;
-        border-radius: 4px;
-        margin-bottom: 8px;
-        border-left: 3px solid #9147ff;
-        font-size: 12px;
-        color: #adadb8;
-    }
+    position: absolute;
+    top: -90px; /* 調整這個值，使其在回覆指示器上方 */
+    left: 0;
+    right: 0;
+    background: #1f1f23;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border-left: 3px solid #9147ff;
+    font-size: 12px;
+    color: #adadb8;
+    z-index: 15;
+    border: 1px solid #26262c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
     
     .reply-preview .replying-to {
         font-weight: bold;
@@ -715,32 +727,40 @@ img, video, iframe {
 </div>
 
 <div id="chat"></div>
-<div id="replyIndicator" class="reply-indicator" style="display: none;">
+<div class="chat-input-container">
+    <!-- 回覆預覽 -->
+    <div id="replyPreview" class="reply-preview" style="display: none;"></div>
+    
+    <!-- 回覆指示器 -->
+    <div id="replyIndicator" class="reply-indicator" style="display: none;">
         <span>回覆給 <span id="replyTargetName"></span></span>
         <button class="cancel-reply" id="cancelReplyBtn">取消</button>
     </div>
-<span id="pastebtn"><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button><button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button></span>
-<div id="inputArea">
-
-
-	<div class="chat-input-container">
-        <div class="chat-input-wrapper">
-            <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
-            <div class="mention-autocomplete" id="mentionAutocomplete"></div>
-            <div class="chat-buttons">
-                <button class="chat-button" id="emojiBtn" title="表情">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                    </svg>
-                </button>
-                <button class="chat-button" id="sendBtn" disabled title="送出訊息">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
-                    </svg>
-                </button>
-            </div>
+    
+    <!-- 貼上按鈕 -->
+    <span id="pastebtn" ><button id="pastephoto" data-name="photo" type="button" class="sk_botton sktoptag quikelink sktopappend" style="left: 0px; top: -17px; height: 17px;">圖片</button>
+        <button id="pastevideo" type="button" class="sk_botton sktoptag quikelink sktopappend" data-name="video" style="left: 32px; top: -17px; height: 17px;">影片</button>
+        
+    </span>
+    
+    <!-- 輸入框和按鈕 -->
+    <div class="chat-input-wrapper">
+        <input type="text" id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled>
+        <div class="mention-autocomplete" id="mentionAutocomplete"></div>
+        <div class="chat-buttons">
+            <button class="chat-button" id="emojiBtn" title="表情">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                </svg>
+            </button>
+            <button class="chat-button" id="sendBtn" disabled title="送出訊息">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
+                </svg>
+            </button>
         </div>
-        <button id="loginBtn">Twitch 登入</button>
+    </div>
+    <button id="loginBtn">Twitch 登入</button>
 </div>
 
 <!-- 自訂表情面板 -->
@@ -1028,6 +1048,7 @@ window.addEventListener('load', async function() {
 });
 
 // ===================== 訊息處理 =====================
+// ===================== 訊息處理 =====================
 async function processMessage(text) {
     // 先解碼 HTML 實體
     function decodeHtmlEntities(text) {
@@ -1069,72 +1090,96 @@ async function processMessage(text) {
         }
     }
 
-    // 處理圖片和影片格式 [s]網址[e]
-    const sTagMatches = html.match(/\[s\]\s*((?:https?:\/\/[^\s\[\]]+?))\s*\[e\]/gi);
-    if (sTagMatches) {
-        for (const match of sTagMatches) {
-            const urlMatch = match.match(/\[s\]\s*((?:https?:\/\/[^\s\[\]]+?))\s*\[e\]/i);
-            if (urlMatch && urlMatch[1]) {
-                const url = urlMatch[1];
-                if (!isValidUrl(url)) {
-                    continue;
-                }
-                
-                let replacement;
-                
-                // 檢查是否包含 .mp4
-                if (url.toLowerCase().includes('.mp4')) {
-                    // 使用 video 標籤
-                    replacement = `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
-                            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
-                            </video>`;
-                } else {
-                    // 否則使用 img 標籤
-                    replacement = `<br><img src="${escapeHtml(url)}" class="zero-width-image" loading="lazy" 
-                            onerror="this.style.display='none'; this.nextElementSibling && this.nextElementSibling.style.display='inline'" 
-                            onclick="window.open('${escapeHtml(url)}','_blank')">`;
-                }
-                
-                html = html.replace(match, replacement);
-            }
+    // 修正：處理圖片和影片格式 [s]網址[e] 和 [s]網址
+    // 使用更精確的正則表達式來匹配完整的網址
+    const sTagRegex = /\[s\](.*?)(?:\[e\]|$)/gi;
+    let sTagMatch;
+    
+    // 使用 while 循環來處理所有匹配
+    while ((sTagMatch = sTagRegex.exec(html)) !== null) {
+        const fullMatch = sTagMatch[0];
+        let urlContent = sTagMatch[1].trim();
+        
+        // 如果 URL 內容包含空格，只取第一個單詞（通常是完整的 URL）
+        if (urlContent.includes(' ')) {
+            urlContent = urlContent.split(' ')[0];
         }
+        
+        // 清理 URL，移除多餘的空白和標籤
+        urlContent = urlContent.replace(/^\s+|\s+$/g, '');
+        
+        if (!isValidUrl(urlContent)) {
+            console.log('無效的 URL:', urlContent);
+            continue;
+        }
+        
+        let replacement;
+        
+        // 檢查是否包含 .mp4
+        if (urlContent.toLowerCase().includes('.mp4')) {
+            // 使用 video 標籤
+            replacement = `<br><video src="${escapeHtml(urlContent)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
+                    <a href="${escapeHtml(urlContent)}" target="_blank" rel="noopener noreferrer">${escapeHtml(urlContent)}</a>
+                    </video>`;
+        } else {
+            // 否則使用 img 標籤
+            replacement = `<br><img src="${escapeHtml(urlContent)}" class="zero-width-image" loading="lazy" 
+                    onerror="this.style.display='none'; this.nextElementSibling && this.nextElementSibling.style.display='inline'" 
+                    onclick="window.open('${escapeHtml(urlContent)}','_blank')">`;
+        }
+        
+        // 只替換第一個匹配項，避免重複替換
+        html = html.replace(fullMatch, replacement);
+        
+        // 重置正則表達式的 lastIndex 以避免無限循環
+        sTagRegex.lastIndex = 0;
+        break;
     }
 
     // 處理影片格式 [y]網址[t]
-    const yTagMatches = html.match(/\[y\]\s*((?:https?:\/\/[^\s\[\]]+?))\s*\[t\]/gi);
-    if (yTagMatches) {
-        for (const match of yTagMatches) {
-            const urlMatch = match.match(/\[y\]\s*((?:https?:\/\/[^\s\[\]]+?))\s*\[t\]/i);
-            if (urlMatch && urlMatch[1]) {
-                const url = urlMatch[1];
-                if (!isValidUrl(url)) {
-                    continue;
-                }
-                
-                let replacement;
-                
-                // 檢查是否為 YouTube 影片
-                const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&[^&\s]*)?/);
-                if (youtubeMatch) {
-                    const id = escapeHtml(youtubeMatch[1]);
-                    replacement = `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
-                } else if (url.toLowerCase().includes('.mp4')) {
-                    // 如果不是 YouTube 但包含 .mp4，使用 video 標籤
-                    replacement = `<br><video src="${escapeHtml(url)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
-                            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>
-                            </video>`;
-                } else {
-                    // 既不是 YouTube 也不是 .mp4，顯示為連結
-                    replacement = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
-                }
-                
-                html = html.replace(match, replacement);
-            }
+    const yTagRegex = /\[y\](.*?)\[t\]/gi;
+    let yTagMatch;
+    
+    while ((yTagMatch = yTagRegex.exec(html)) !== null) {
+        const fullMatch = yTagMatch[0];
+        let urlContent = yTagMatch[1].trim();
+        
+        // 如果 URL 內容包含空格，只取第一個單詞
+        if (urlContent.includes(' ')) {
+            urlContent = urlContent.split(' ')[0];
         }
+        
+        urlContent = urlContent.replace(/^\s+|\s+$/g, '');
+        
+        if (!isValidUrl(urlContent)) {
+            console.log('無效的 YouTube URL:', urlContent);
+            continue;
+        }
+        
+        let replacement;
+        
+        // 檢查是否為 YouTube 影片
+        const youtubeMatch = urlContent.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&[^&\s]*)?/);
+        if (youtubeMatch) {
+            const id = escapeHtml(youtubeMatch[1]);
+            replacement = `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
+        } else if (urlContent.toLowerCase().includes('.mp4')) {
+            // 如果不是 YouTube 但包含 .mp4，使用 video 標籤
+            replacement = `<br><video src="${escapeHtml(urlContent)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
+                    <a href="${escapeHtml(urlContent)}" target="_blank" rel="noopener noreferrer">${escapeHtml(urlContent)}</a>
+                    </video>`;
+        } else {
+            // 既不是 YouTube 也不是 .mp4，顯示為連結
+            replacement = `<a href="${escapeHtml(urlContent)}" target="_blank" rel="noopener noreferrer">${escapeHtml(urlContent)}</a>`;
+        }
+        
+        html = html.replace(fullMatch, replacement);
+        yTagRegex.lastIndex = 0;
+        break;
     }
 
-    // 移除殘留的標籤字符
-    html = html.replace(/\[s\]|\[e\]|\[y\]|\[t\]/gi, '');
+    // 移除殘留的標籤字符（只移除未被處理的標籤）
+    html = html.replace(/(?<!<img[^>]*|<\/?video|<\/?iframe|<\/?a[^>]*)\[s\]|\[e\]|\[y\]|\[t\](?!>)/gi, '');
 
     // 處理其他普通網址（轉為超連結）
     html = html.replace(/(https?:\/\/[^\s<>"'\]\[]+)/g, url => {
@@ -1238,8 +1283,10 @@ function setupReply(messageId, username, messageText) {
     preview.innerHTML = `
         回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 25)}
     `;
+    preview.style.display = 'block';
     
-    replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
+    // 將預覽插入到輸入容器中
+    document.querySelector('.chat-input-container').insertBefore(preview, replyIndicator);
 }
 
 function cancelReply() {
@@ -1248,7 +1295,7 @@ function cancelReply() {
     
     const preview = document.getElementById('replyPreview');
     if (preview) {
-        preview.remove();
+        preview.style.display = 'none';
     }
 }
 
