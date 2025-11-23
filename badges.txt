@@ -30,7 +30,8 @@
   "together-for-good-25---good-badge/1": "https://static-cdn.jtvnw.net/badges/v1/192fb627-82b3-46e8-95d3-ac9feba4b1bc/1",
   "stream-for-humanity-2-2025/1": "https://static-cdn.jtvnw.net/badges/v1/c02fbad3-aa4b-46d0-93a6-661719a19f1c/1",
   "black-ops-7-global-launch/1": "https://static-cdn.jtvnw.net/badges/v1/e225aad6-3780-4bdc-ae38-48d3ab7dc36e/1",
-  "subtember-2024/1": "https://static-cdn.jtvnw.net/badges/v1/4149750c-9582-4515-9e22-da7d5437643b/1"
+  "subtember-2024/1": "https://static-cdn.jtvnw.net/badges/v1/4149750c-9582-4515-9e22-da7d5437643b/1",
+  "gp-explorer-3": "https://static-cdn.jtvnw.net/badges/v1/1e3b6965-2224-44d1-a67a-6d186c1fb17d/1"
   
   
   
