@@ -4,8 +4,748 @@
 <meta charset="UTF-8">
 <title>chickchat</title>
 <style>
-    /* 所有现有的CSS样式保持不变 */
-    /* ... */
+     /* ========== Twitch Dark Theme ========== */
+    body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background: #0e0e10;
+        color: #efeff1;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        line-height: 1.4;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #status {
+        margin: 8px 12px;
+        font-weight: 500;
+        color: #bf94ff;
+        font-size: 10px;
+    }
+    
+    #userInfo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 12px 8px;
+        font-size: 13px;
+    }
+    
+    #userInfo img {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+    }
+    
+    #logoutBtn {
+        margin-left: auto;
+        background: #e91916;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+    }
+    
+    #logoutBtn:hover {
+        background: #c51614;
+    }
+    
+    #chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #0e0e10;
+        position: relative;
+    }
+    
+    #chat {
+        flex: 1;
+        overflow-y: auto;
+        white-space: wrap; 
+        background: #0e0e10;
+        padding: 12px;
+        border-radius: 0;
+        border: 1px solid #26262c;
+        font-size: 14px;
+        scroll-behavior: smooth;
+    }
+    
+    #input-container {
+        background: #1f1f23;
+        padding: 12px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: #0e0e10;
+        border-radius: 4px;
+        padding: 8px 12px;
+        position: relative;
+    }
+
+    .chat-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #efeff1;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .chat-input::placeholder {
+        color: #adadb8;
+    }
+
+    .chat-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .chat-button {
+        background: transparent;
+        border: none;
+        color: #adadb8;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .chat-button:hover {
+        background: #3a3a3d;
+    }
+    
+    #loginBtn {
+        padding: 8px 16px;
+        background: #9147ff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        margin-top: 8px;
+    }
+    
+    #loginBtn:hover {
+        background: #772ce8;
+    }
+    
+    #loginBtn:disabled {
+        background: #464649;
+        cursor: not-allowed;
+    }
+    
+    .msg {
+        margin: 4px 0;
+        word-wrap: break-word;
+        padding: 2px 0;
+        position: relative;
+    }
+    
+    .msg:hover .reply-btn {
+        opacity: 1;
+    }
+    
+    .name {
+        font-weight: bold;
+        margin-right: 6px;
+        color: inherit;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    /* 快速按鈕 */
+    #pastebtn {
+      position: relative;
+      display: flex;
+      gap: 0px;
+      margin-top: 8px;
+    }
+    .sk_botton {
+      position: relative;
+      padding: 0 8px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-right: 4px;
+    }
+    
+    .sk_botton:hover {
+      background: #444;
+    }
+
+    /* 連結和媒體樣式 */
+    a {
+        color: #bf94ff;
+        text-decoration: none;
+    }
+    
+    a:hover {
+        text-decoration: underline;
+    }
+    
+    /* 確保所有媒體元素都有相同的大小 */
+    img.zero-width-image, 
+    video.zero-width-image, 
+    iframe.zero-width-image, 
+    .zero-width-image {
+        max-width: 250px !important;
+        max-height: 200px !important;
+        border-radius: 6px !important;
+        object-fit: fill !important;
+        background: #000 !important;
+        flex-shrink: 0 !important;
+        vertical-align: top !important;
+        align-self: flex-start !important;
+        padding: 0px !important;
+    }
+
+    /* 另外確保普通的 img, video, iframe 也有相同的大小 */
+    img, video, iframe {
+        max-width: 250px !important;
+        max-height: 200px !important;
+        border-radius: 6px !important;
+        object-fit: fill !important;
+        background: #000 !important;
+        flex-shrink: 0 !important;
+        vertical-align: top !important;
+        align-self: flex-start !important;
+        padding: 0px !important;
+    }
+    
+    video {
+        background: #000;
+    }
+    
+    iframe {
+        border: none;
+    }
+
+    .message-text {
+        line-height: 1.4;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        display: inline;
+    }
+
+    /* 表情面板樣式 */
+    .emoji-panel {
+        position: fixed;
+        background: #18181b;
+        border: 1px solid #26262c;
+        border-radius: 4px;
+        z-index: 999999;
+        width: 380px;
+        height: 460px;
+        display: none;
+        box-shadow: 0 0 30px rgba(0,0,0,0.9);
+        color: white;
+        flex-direction: column;
+        font-size: 13px;
+    }
+    
+    .emoji-header {
+        background: #9147ff;
+        padding: 12px;
+        text-align: center;
+        cursor: move;
+        font-weight: 600;
+        border-radius: 4px 4px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .emoji-close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+    }
+    
+    .emoji-close-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .emoji-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        background: #1f1f23;
+        padding: 8px;
+        gap: 5px;
+        overflow-x: auto;
+        border-bottom: 1px solid #26262c;
+    }
+    
+    .emoji-tab {
+        width: 36px;
+        height: 36px;
+        background: #3a3a3d;
+        border-radius: 4px;
+        cursor: pointer;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+    
+    .emoji-tab.active {
+        outline: 2px solid #9147ff;
+    }
+    
+    .emoji-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        background: #18181b;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .emoji-item {
+         width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .emoji-item img {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .delete-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #e91916;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 12px;
+        line-height: 20px;
+        text-align: center;
+        cursor: pointer;
+        display: none;
+    }
+    
+    .emoji-item:hover .delete-btn {
+        display: block;
+    }
+    
+    .bttv-input {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+		height: 30px;
+    }
+    
+    .bttv-input input {
+        flex: 1;
+        padding: 8px;
+        background: #1f1f23;
+        color: white;
+        border: 1px solid #3a3a3d;
+        border-radius: 4px;
+    }
+    
+    .bttv-input input:focus {
+        outline: none;
+        border-color: #9147ff;
+    }
+    
+    /* 捲軸樣式 */
+    #chat::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #chat::-webkit-scrollbar-track {
+        background: #1f1f23;
+    }
+    
+    #chat::-webkit-scrollbar-thumb {
+        background: #3a3a3d;
+        border-radius: 4px;
+    }
+    
+    #chat::-webkit-scrollbar-thumb:hover {
+        background: #53535f;
+    }
+    
+    .emoji-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .emoji-content::-webkit-scrollbar-track {
+        background: #1f1f23;
+    }
+    
+    .emoji-content::-webkit-scrollbar-thumb {
+        background: #3a3a3d;
+        border-radius: 3px;
+    }
+    
+    /* 回覆功能樣式 */
+    .reply-btn {
+        opacity: 0;
+        background: none;
+        border: none;
+        color: #adadb8;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 4px 6px;
+        transition: all 0.2s;
+        border-radius: 3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .reply-btn:hover {
+        background: #3a3a3d;
+        color: #efeff1;
+    }
+    
+    .reply-indicator {
+        display: flex;
+        align-items: center;
+        background: #1f1f23;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #adadb8;
+    }
+    
+    .reply-indicator .cancel-reply {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: #adadb8;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    
+    .reply-indicator .cancel-reply:hover {
+        background: #3a3a3d;
+        color: #efeff1;
+    }
+    
+    .reply-preview {
+        background: #1f1f23;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        border-left: 3px solid #9147ff;
+        font-size: 12px;
+        color: #adadb8;
+    }
+    
+    .reply-preview .replying-to {
+        font-weight: bold;
+        color: #9147ff;
+    }
+    
+    /* 改進的回覆訊息樣式 */
+    .reply-context {
+        font-size: 11px;
+        color: #adadb8;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .reply-context .reply-icon {
+        margin-right: 4px;
+        color: #9147ff;
+    }
+    
+    .reply-context .replying-to {
+        font-weight: bold;
+        color: #9147ff;
+    }
+    
+    .reply-message {
+        background: #1f1f23;
+        border-left: 2px solid #9147ff;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        border-radius: 0 4px 4px 0;
+        font-size: 12px;
+        color: #adadb8;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .reply-message .reply-avatar {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 6px;
+        flex-shrink: 0;
+    }
+    
+    .reply-message .reply-content {
+        flex: 1;
+        overflow: hidden;
+    }
+    
+    .reply-message .reply-username {
+        font-weight: bold;
+        color: #9147ff;
+        margin-right: 6px;
+        font-size:14px;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .reply-message .reply-text {
+        color: #adadb8;
+        word-break: break-word;
+        line-height: 1.3;
+    }
+    
+    .reply-message .reply-arrow {
+        color: #9147ff;
+        margin-right: 6px;
+        font-size: 10px;
+    }
+    
+    .reply-container {
+        margin-bottom: 8px;
+    }
+    
+    /* 改進的完整回覆訊息容器 */
+    .msg-with-reply {
+        background: rgba(30, 30, 35, 0.7);
+        border-radius: 8px;
+        margin: 8px 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .reply-header {
+        display: flex;
+        align-items: center;
+        padding: 6px 12px;
+        background: rgba(31, 31, 35, 0.8);
+        display:none;
+        font-size: 11px;
+        color: #bf94ff;
+    }
+    
+    .reply-header .reply-icon {
+        margin-right: 6px;
+        font-size: 10px;
+    }
+    
+    .reply-header .reply-username {
+        font-weight: bold;
+        margin-right: 0px;
+    }
+    
+    .reply-original {
+        padding: 8px 12px;
+        background: rgba(31, 31, 35, 0.8);
+        margin: 0;
+        font-size: 12px;
+        color: #adadb8;
+        max-height: 60px;
+        overflow: hidden;
+        line-height: 1.3;
+    }
+    
+    .reply-original .original-username {
+        font-weight: bold;
+        color: #9147ff;
+        margin-right: 6px;
+    }
+    
+    /* 修正訊息內容布局 - 使用 table 佈局而不是 flex */
+    .msg-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        width: 100%;
+        line-height: 1.4;
+    }
+    
+     .msg-with-reply .msg-content {
+        padding: 8px 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        width: 100%;
+    }
+    
+    .msg-with-reply:hover .reply-btn {
+        opacity: 1;
+    }
+    
+    /* 使用 table-cell 佈局確保正確對齊 */
+    .name-container {
+        flex-shrink: 0;
+        white-space: nowrap;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .text-container {
+        flex: 1;
+        min-width: 0; /* 重要：允許文字容器收縮 */
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    
+     .button-container {
+        flex-shrink: 0;
+        white-space: nowrap;
+        margin-left: auto;
+        padding-left: 8px;
+    }
+
+    /* @功能樣式 */
+    .mention-autocomplete {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #18181b;
+        border: 1px solid #26262c;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        display: none;
+    }
+    
+    .mention-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #26262c;
+    }
+    
+    .mention-item:last-child {
+        border-bottom: none;
+    }
+    
+    .mention-item:hover, .mention-item.active {
+        background: #9147ff;
+        color: white;
+    }
+    
+    .mention-item img {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    
+    .mention-item .username {
+        font-weight: bold;
+    }
+    
+    .mention-item .display-name {
+        color: #adadb8;
+    }
+    
+    .mention-item:hover .display-name, .mention-item.active .display-name {
+        color: white;
+    }
+    
+    /* @提及視覺反饋樣式 */
+    .mention-highlight {
+        background-color: #9147ff;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    /* 被提及的訊息容器樣式 */
+    .mentioned-message .msg-content {
+        padding: 0;
+    }
+    
+    /* 徽章樣式 */
+    .badge {
+        width: 18px;
+        height: 18px;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+    
+    /* ========== 新添加：捲動到底部按鈕 ========== */
+    #scrollToBottomBtn {
+        position: absolute;
+        bottom: 80px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        background: rgba(145, 71, 255, 0.8);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+        font-size: 20px;
+    }
+    
+    #scrollToBottomBtn:hover {
+        background: rgba(145, 71, 255, 1);
+        transform: scale(1.1);
+    }
+    
+    #scrollToBottomBtn:active {
+        transform: scale(0.95);
+    }
+    
+    #scrollToBottomBtn svg {
+        width: 24px;
+        height: 24px;
+    }
 </style>
 </head>
 <body>
@@ -24,6 +764,7 @@
 		 <div id="pastebtn">
             <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
             <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
+            <button id="pastepreview" type="button" class="sk_botton" data-name="preview">預覽</button>
         </div>
         <div id="replyIndicator" class="reply-indicator" style="display: none;">
             <span>回覆給 <span id="replyTargetName"></span></span>
@@ -124,9 +865,6 @@
     // 訊息計數器
     let messageCount = 0;
     const MAX_MESSAGES = 100;
-
-    // 貼上狀態追蹤
-    let isWaitingForPaste = false;
 
     //防止 XSS
     function escapeHtml(text) {
@@ -578,6 +1316,46 @@
         return link;
     }
 
+    // ===================== 智能貼上功能 =====================
+    // 參考您的代碼實現智能貼上功能
+    function handlePaste(event) {
+        setTimeout(function() {
+            const currentInput = input.value;
+            pasteFunction(currentInput);
+        }, 0);
+    }
+
+    function pasteFunction(orgtext) {
+        let addback = "";
+        
+        // 檢查輸入框結尾是否有特定的開始標籤
+        if (orgtext.substr(-4) === "[s] ") {
+            addback = " [e]";
+        } else if (orgtext.substr(-4) === "[y] ") {
+            addback = " [t]";
+        } else if (orgtext.substr(-4) === "[p] ") {
+            addback = " [i]";
+        }
+        
+        if (addback !== "") {
+            setTimeout(function() {
+                const currentInput = input.value;
+                const newText = currentInput + addback;
+                input.value = newText;
+                
+                // 將光標移動到新文本的末尾
+                input.focus();
+                input.setSelectionRange(newText.length, newText.length);
+            }, 100);
+        }
+    }
+
+    // 初始化貼上事件監聽
+    function initPasteHandler() {
+        input.removeEventListener('paste', handlePaste);
+        input.addEventListener('paste', handlePaste);
+    }
+
     // ===================== 貼上按鈕功能 =====================
     document.getElementById('pastephoto').addEventListener('click', function() {
         if (input.disabled) {
@@ -585,9 +1363,8 @@
             return;
         }
         
-        // 插入 [s] 並設置等待貼上狀態
-        input.value += '[s]';
-        isWaitingForPaste = true;
+        // 插入 [s] 並加上空格以便貼上
+        input.value += '[s] ';
         
         // 聚焦到輸入框
         input.focus();
@@ -595,6 +1372,9 @@
         // 將光標移動到 [s] 後面
         const cursorPos = input.value.length;
         input.setSelectionRange(cursorPos, cursorPos);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
     });
 
     document.getElementById('pastevideo').addEventListener('click', function() {
@@ -603,69 +1383,38 @@
             return;
         }
         
-        const template = '[y] 網址 [t]';
-        input.value += template;
+        // 插入 [y] 並加上空格以便貼上
+        input.value += '[y] ';
         
-        const startPos = input.value.indexOf('網址');
-        const endPos = startPos + 2;
-        
+        // 聚焦到輸入框
         input.focus();
-        input.setSelectionRange(startPos, endPos);
+        
+        // 將光標移動到 [y] 後面
+        const cursorPos = input.value.length;
+        input.setSelectionRange(cursorPos, cursorPos);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
     });
 
-    // 監聽貼上事件
-    input.addEventListener('paste', function(e) {
-        // 如果正在等待貼上，處理貼上內容
-        if (isWaitingForPaste) {
-            // 讓貼上事件正常執行
-            setTimeout(() => {
-                // 獲取貼上的內容
-                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                
-                // 檢查是否貼上了網址
-                if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
-                    // 在貼上內容後自動添加 [e]
-                    const currentValue = input.value;
-                    const sIndex = currentValue.lastIndexOf('[s]');
-                    
-                    if (sIndex !== -1) {
-                        // 找到 [s] 的位置，在當前值後面插入 [e]
-                        const newValue = currentValue + ' [e]';
-                        input.value = newValue;
-                        
-                        // 重置等待狀態
-                        isWaitingForPaste = false;
-                        
-                        // 將光標移動到 [e] 後面
-                        const cursorPos = newValue.length;
-                        input.setSelectionRange(cursorPos, cursorPos);
-                    }
-                }
-            }, 10);
+    document.getElementById('pastepreview').addEventListener('click', function() {
+        if (input.disabled) {
+            alert('請先登入後再使用此功能');
+            return;
         }
-    });
-
-    // 監聽輸入事件，如果用戶手動輸入網址後按空格，也自動添加 [e]
-    input.addEventListener('input', function(e) {
-        if (isWaitingForPaste) {
-            const currentValue = input.value;
-            const sIndex = currentValue.lastIndexOf('[s]');
-            
-            if (sIndex !== -1) {
-                // 檢查 [s] 後面是否有內容並且最後一個字符是空格
-                const contentAfterS = currentValue.substring(sIndex + 3).trim();
-                
-                if (contentAfterS && (currentValue.endsWith(' ') || e.data === ' ')) {
-                    // 如果內容以空格結束，自動添加 [e]
-                    input.value = currentValue + '[e]';
-                    isWaitingForPaste = false;
-                    
-                    // 將光標移動到 [e] 後面
-                    const cursorPos = input.value.length;
-                    input.setSelectionRange(cursorPos, cursorPos);
-                }
-            }
-        }
+        
+        // 插入 [p] 並加上空格以便貼上
+        input.value += '[p] ';
+        
+        // 聚焦到輸入框
+        input.focus();
+        
+        // 將光標移動到 [p] 後面
+        const cursorPos = input.value.length;
+        input.setSelectionRange(cursorPos, cursorPos);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
     });
 
     // ===================== 回覆功能 =====================
@@ -1312,6 +2061,9 @@
     });
 
     cancelReplyBtn.onclick = cancelReply;
+
+    // 初始化貼上處理器
+    initPasteHandler();
     </script>
 </body>
 </html>
