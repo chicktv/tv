@@ -107,6 +107,7 @@
         font-family: inherit;
         line-height: 1.4;
         padding: 8px 0;
+		border-radius: 1rem;
     }
 
     .chat-input::placeholder {
@@ -774,6 +775,11 @@
 		 <div id="pastebtn">
             <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
             <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
+			   <button class="chat-button" id="emojiBtn" title="表情">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                    </svg>
+                </button>
         </div>
         <div id="replyIndicator" class="reply-indicator" style="display: none;">
             <span>回覆給 <span id="replyTargetName"></span></span>
@@ -786,11 +792,7 @@
             <textarea id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled rows="1"></textarea>
             <div class="mention-autocomplete" id="mentionAutocomplete"></div>
             <div class="chat-buttons">
-                <button class="chat-button" id="emojiBtn" title="表情">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                    </svg>
-                </button>
+              
                 <button class="chat-button" id="sendBtn" disabled title="送出訊息">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
