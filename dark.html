@@ -764,7 +764,7 @@
 		 <div id="pastebtn">
             <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
             <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
-            <button id="pastepreview" type="button" class="sk_botton" data-name="preview">預覽</button>
+           
         </div>
         <div id="replyIndicator" class="reply-indicator" style="display: none;">
             <span>回覆給 <span id="replyTargetName"></span></span>
@@ -1316,55 +1316,43 @@
         return link;
     }
 
-     // ===================== 智能貼上功能 =====================
-    // 参考您的代码实现
+  // ===================== 智能貼上功能 =====================
+    // 更可靠的实现
     function handlePaste(event) {
+        // 阻止默认粘贴行为
+        event.preventDefault();
+        
         // 获取粘贴的内容
         const clipboardData = event.clipboardData || window.clipboardData;
         const pastedText = clipboardData.getData('text');
         
-        // 延迟执行以确保粘贴完成
-        setTimeout(function() {
-            const currentInput = input.value;
-            checkAndAddClosingTag(currentInput, pastedText);
-        }, 10);
-    }
-
-    function checkAndAddClosingTag(currentInput, pastedText) {
-        let addback = "";
+        // 获取当前输入框的值和光标位置
+        const currentValue = input.value;
+        const startPos = input.selectionStart;
+        const endPos = input.selectionEnd;
+        
+        // 插入粘贴的文本
+        const newValue = currentValue.substring(0, startPos) + pastedText + currentValue.substring(endPos);
         
         // 检查是否需要添加结束标签
-        if (currentInput.endsWith("[s] ")) {
-            addback = " [e]";
-        } else if (currentInput.endsWith("[y] ")) {
-            addback = " [t]";
-        } else if (currentInput.endsWith("[p] ")) {
-            addback = " [i]";
+        let finalValue = newValue;
+        if (currentValue.substring(0, startPos).endsWith("[s] ")) {
+            finalValue = newValue + " [e]";
+        } else if (currentValue.substring(0, startPos).endsWith("[y] ")) {
+            finalValue = newValue + " [t]";
+        } else if (currentValue.substring(0, startPos).endsWith("[p] ")) {
+            finalValue = newValue + " [i]";
         }
         
-        if (addback !== "") {
-            // 确保粘贴的内容是URL
-            if (isValidUrl(pastedText)) {
-                const newText = currentInput + addback;
-                input.value = newText;
-                
-                // 将光标移动到新文本的末尾
-                setTimeout(() => {
-                    input.focus();
-                    input.setSelectionRange(newText.length, newText.length);
-                }, 50);
-            }
-        }
-    }
-
-    // URL验证函数
-    function isValidUrl(string) {
-        try {
-            const url = new URL(string);
-            return url.protocol === "http:" || url.protocol === "https:";
-        } catch (_) {
-            return false;
-        }
+        // 设置新的输入框值
+        input.value = finalValue;
+        
+        // 将光标移动到新文本的末尾
+        const newCursorPos = finalValue.length;
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
     }
 
     // 初始化貼上事件監聽
@@ -1380,17 +1368,20 @@
             return;
         }
         
-        // 插入 [s] 並加上空格以便貼上
+        // 插入 [s] 並加上空格
         const currentValue = input.value;
-        const newValue = currentValue + (currentValue ? ' ' : '') + '[s] ';
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [s] 
+        const newValue = currentValue.substring(0, cursorPos) + '[s] ' + currentValue.substring(cursorPos);
         input.value = newValue;
         
-        // 聚焦到輸入框
-        input.focus();
-        
-        // 將光標移動到 [s] 後面
-        const cursorPos = newValue.length;
-        input.setSelectionRange(cursorPos, cursorPos);
+        // 聚焦到輸入框並將光標移動到 [s] 後面
+        const newCursorPos = cursorPos + 4; // [s] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
         
         // 確保貼上處理器已初始化
         initPasteHandler();
@@ -1402,17 +1393,20 @@
             return;
         }
         
-        // 插入 [y] 並加上空格以便貼上
+        // 插入 [y] 並加上空格
         const currentValue = input.value;
-        const newValue = currentValue + (currentValue ? ' ' : '') + '[y] ';
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [y] 
+        const newValue = currentValue.substring(0, cursorPos) + '[y] ' + currentValue.substring(cursorPos);
         input.value = newValue;
         
-        // 聚焦到輸入框
-        input.focus();
-        
-        // 將光標移動到 [y] 後面
-        const cursorPos = newValue.length;
-        input.setSelectionRange(cursorPos, cursorPos);
+        // 聚焦到輸入框並將光標移動到 [y] 後面
+        const newCursorPos = cursorPos + 4; // [y] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
         
         // 確保貼上處理器已初始化
         initPasteHandler();
@@ -1424,17 +1418,20 @@
             return;
         }
         
-        // 插入 [p] 並加上空格以便貼上
+        // 插入 [p] 並加上空格
         const currentValue = input.value;
-        const newValue = currentValue + (currentValue ? ' ' : '') + '[p] ';
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [p] 
+        const newValue = currentValue.substring(0, cursorPos) + '[p] ' + currentValue.substring(cursorPos);
         input.value = newValue;
         
-        // 聚焦到輸入框
-        input.focus();
-        
-        // 將光標移動到 [p] 後面
-        const cursorPos = newValue.length;
-        input.setSelectionRange(cursorPos, cursorPos);
+        // 聚焦到輸入框並將光標移動到 [p] 後面
+        const newCursorPos = cursorPos + 4; // [p] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
         
         // 確保貼上處理器已初始化
         initPasteHandler();
