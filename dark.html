@@ -182,6 +182,50 @@
     text-align: center;
 }
 	
+	/* 音訊喇叭圖標樣式 */
+.audio-icon {
+    display: inline-block;
+    background: #9147ff;
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    text-align: center;
+    line-height: 32px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 2px;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.audio-icon:hover {
+    background: #772ce8;
+    transform: scale(1.1);
+}
+
+.audio-icon.playing {
+    background: #e91916;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* 隱藏的音訊元素 */
+.hidden-audio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+	
+	
     #loginBtn {
         padding: 8px 16px;
         background: #9147ff;
@@ -869,7 +913,7 @@
     <script>
   // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const channel = "69nocondom";
+    const channel = "whitewing940920";
 
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -1323,68 +1367,119 @@ async function processMessage(text) {
         return replacement;
     });
 	
-	 // ===================== 處理音訊格式 [a]網址[o] =====================
-    html = html.replace(/\[a\](.*?)(?:\[o\]|$)/gi, (match, urlContent) => {
-        let content = urlContent.trim();
+// ===================== 處理音訊格式 [a]網址[o] =====================
+html = html.replace(/\[a\](.*?)(?:\[o\]|$)/gi, (match, urlContent) => {
+    let content = urlContent.trim();
+    
+    // 如果 URL 內容包含空格，只取第一個單詞（通常是完整的 URL）
+    if (content.includes(' ')) {
+        content = content.split(' ')[0];
+    }
+    
+    content = content.replace(/^\s+|\s+$/g, '');
+    
+    if (!isValidUrl(content)) {
+        console.log('無效的音訊 URL:', content);
+        return match;
+    }
+    
+    // 檢查是否為音訊檔案
+    if (!isAudioFile(content)) {
+        console.log('非音訊檔案:', content);
+        return `<a href="${escapeHtml(content)}" target="_blank" rel="noopener noreferrer">${escapeHtml(content)}</a>`;
+    }
+    
+    // 創建唯一的ID
+    const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
+    const iconId = 'icon-' + audioId;
+    
+    // 返回喇叭圖標和隱藏的音訊元素
+    const audioElement = `
+        <span class="audio-icon" id="${iconId}" title="點擊播放音訊 (最多15秒)" data-audio-url="${escapeHtml(content)}">
+            🔈
+        </span>
+        <audio id="${audioId}" class="hidden-audio" preload="none">
+            <source src="${escapeHtml(content)}" type="audio/mpeg">
+        </audio>
+    `;
+    
+    // 在元素插入到DOM後，添加點擊事件
+    setTimeout(() => {
+        const iconElement = document.getElementById(iconId);
+        const audioElem = document.getElementById(audioId);
         
-        // 如果 URL 內容包含空格，只取第一個單詞（通常是完整的 URL）
-        if (content.includes(' ')) {
-            content = content.split(' ')[0];
-        }
-        
-        content = content.replace(/^\s+|\s+$/g, '');
-        
-        if (!isValidUrl(content)) {
-            console.log('無效的音訊 URL:', content);
-            return match;
-        }
-        
-        // 檢查是否為音訊檔案（常見的音訊格式）
-        const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.webm'];
-        const isAudioFile = audioExtensions.some(ext => 
-            content.toLowerCase().includes(ext)
-        );
-        
-        if (!isAudioFile) {
-            console.log('非音訊檔案:', content);
-            return `<a href="${escapeHtml(content)}" target="_blank" rel="noopener noreferrer">${escapeHtml(content)}</a>`;
-        }
-        
-        // 創建音訊播放器
-        const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
-        const audioPlayer = `
-            <div class="audio-player">
-                <audio id="${audioId}" controls preload="none" style="width: 100%; height: 40px;">
-                    <source src="${escapeHtml(content)}" type="audio/mpeg">
-                    您的瀏覽器不支援音訊元素。
-                </audio>
-                <div class="audio-info">點擊播放 (最多15秒)</div>
-            </div>
-        `;
-        
-        // 在音訊元素插入到DOM後，添加時間限制功能
-        setTimeout(() => {
-            const audioElement = document.getElementById(audioId);
-            if (audioElement) {
-                // 限制播放時間為15秒
-                audioElement.addEventListener('timeupdate', function() {
-                    if (this.currentTime > 15) {
-                        this.pause();
-                        this.currentTime = 0;
-                    }
-                });
+        if (iconElement && audioElem) {
+            let isPlaying = false;
+            
+            iconElement.addEventListener('click', function() {
+                if (!isPlaying) {
+                    // 開始播放
+                    isPlaying = true;
+                    iconElement.classList.add('playing');
+                    iconElement.innerHTML = '🔊'; // 切換為播放中的圖標
+                    iconElement.title = '播放中...點擊停止';
+                    
+                    audioElem.play().catch(error => {
+                        console.error('音訊播放失敗:', error);
+                        resetAudioState();
+                        iconElement.title = '播放失敗';
+                        iconElement.innerHTML = '❌';
+                    });
+                    
+                    // 監聽時間更新來限制15秒
+                    const timeUpdateHandler = function() {
+                        if (this.currentTime > 15) {
+                            this.pause();
+                            resetAudioState();
+                        }
+                    };
+                    
+                    audioElem.addEventListener('timeupdate', timeUpdateHandler);
+                    audioElem.addEventListener('ended', resetAudioState);
+                    audioElem.addEventListener('pause', resetAudioState);
+                    
+                } else {
+                    // 停止播放
+                    audioElem.pause();
+                    resetAudioState();
+                }
                 
-                // 用戶點擊後才載入音訊（節省頻寬）
-                audioElement.addEventListener('play', function() {
-                    if (this.readyState < 3) {
-                        this.load();
-                    }
-                });
-            }
-        }, 100);
-        
-        return audioPlayer;
-    });
+                function resetAudioState() {
+                    isPlaying = false;
+                    audioElem.currentTime = 0;
+                    iconElement.classList.remove('playing');
+                    iconElement.innerHTML = '🔈'; // 恢復為靜音圖標
+                    iconElement.title = '點擊播放音訊 (最多15秒)';
+                }
+            });
+            
+            // 處理音訊載入錯誤
+            audioElem.addEventListener('error', function() {
+                console.error('音訊載入失敗:', content);
+                iconElement.style.background = '#666';
+                iconElement.title = '音訊載入失敗';
+                iconElement.innerHTML = '❌';
+            });
+        }
+    }, 100);
+    
+    return audioElement;
+});
+
+// 檢測是否為音訊檔案的函數
+function isAudioFile(url) {
+    const audioPatterns = [
+        /\.mp3(\?.*)?$/i,
+        /\.wav(\?.*)?$/i,
+        /\.ogg(\?.*)?$/i,
+        /\.m4a(\?.*)?$/i,
+        /\.aac(\?.*)?$/i,
+        /\.webm(\?.*)?$/i,
+        /\.flac(\?.*)?$/i
+    ];
+    
+    return audioPatterns.some(pattern => pattern.test(url));
+}
 
 	
 
