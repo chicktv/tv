@@ -2382,7 +2382,7 @@ function isValidUrl(url) {
 
         client.on('connected', () => {
             isConnected = true;
-            status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
+            status.textContent = `已連線${channel} ${oauthToken?'（已登入）':''}`;
             loadEmojiSets();
         });
 
