@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>chickchat</title>
+<style>
+    /* ========== Twitch Dark Theme ========== */
+    body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background: #0e0e10;
+        color: #efeff1;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        line-height: 1.4;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #status {
+        margin: 8px 12px;
+        font-weight: 500;
+        color: #bf94ff;
+        font-size: 10px;
+    }
+    
+    #userInfo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 12px 8px;
+        font-size: 13px;
+    }
+    
+    #userInfo img {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+    }
+    
+    #logoutBtn {
+        margin-left: auto;
+        background: #e91916;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+    }
+    
+    #logoutBtn:hover {
+        background: #c51614;
+    }
+    
+    #chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #0e0e10;
+        position: relative;
+    }
+    
+    #chat {
+        flex: 1;
+        overflow-y: auto;
+        white-space: wrap; 
+        background: #0e0e10;
+        padding: 12px;
+        border-radius: 0;
+        border: 1px solid #26262c;
+        font-size: 14px;
+        scroll-behavior: smooth;
+    }
+    
+    #input-container {
+        background: #1f1f23;
+        padding: 1px 1px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* 字數計數器樣式 */
+.char-counter {
+    position: absolute;
+    right: 40px;
+    bottom: 5px;
+    font-size: 12px;
+    color: #adadb8;
+    pointer-events: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.char-counter.over-limit {
+    color: #e91916;
+    font-weight: bold;
+}
+
+.char-counter.near-limit {
+    color: #ffd400;
+}
+
+/* 調整輸入框容器位置 */
+.chat-input-wrapper {
+    display: flex;
+    align-items: flex-start;
+    background: #0e0e10;
+    border-radius: 4px;
+    padding: 5px 5px;
+    position: relative;
+}
+
+    /* 修改輸入框為 textarea 並調整樣式 */
+    .chat-input {
+        flex: 1;
+        background: transparent;
+        
+        color: #efeff1;
+        font-size: 14px;
+        outline: none;
+        flex-wrap: wrap;
+        resize: none;
+        min-height: 40px;
+        max-height: 120px;
+        font-family: inherit;
+        line-height: 1.4;
+        padding: 8px 0;
+		border-radius: 1rem;
+    }
+
+    .chat-input::placeholder {
+        color: #adadb8;
+    }
+
+    .chat-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 5px;
+    }
+
+    .chat-button {
+        background: transparent;
+        border: none;
+        color: #9147ff;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .chat-button:hover {
+        background: #3a3a3d;
+    }
+    
+    #loginBtn {
+        padding: 8px 16px;
+        background: #9147ff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        margin-top: 8px;
+    }
+    
+    #loginBtn:hover {
+        background: #772ce8;
+    }
+    
+    #loginBtn:disabled {
+        background: #464649;
+        cursor: not-allowed;
+    }
+    
+    .msg {
+        margin: 4px 0;
+        word-wrap: break-word;
+        padding: 2px 0;
+        position: relative;
+    }
+    
+    .msg:hover .reply-btn {
+        opacity: 1;
+    }
+    
+    .name {
+        font-weight: bold;
+        margin-right: 6px;
+        color: inherit;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    /* 快速按鈕 */
+    #pastebtn {
+      position: relative;
+      display: flex;
+      gap: 0px;
+      margin-top: 8px;
+    }
+    .sk_botton {
+      position: relative;
+      padding: 0 8px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-right: 4px;
+    }
+    
+    .sk_botton:hover {
+      background: #444;
+    }
+
+    /* 連結和媒體樣式 */
+    a {
+        color: #bf94ff;
+        text-decoration: none;
+    }
+    
+    a:hover {
+        text-decoration: underline;
+    }
+    
+    /* 確保所有媒體元素都有相同的大小 */
+    img.zero-width-image, 
+    video.zero-width-image, 
+    iframe.zero-width-image, 
+    .zero-width-image {
+        max-width: 250px !important;
+        max-height: 200px !important;
+        border-radius: 6px !important;
+        object-fit: fill !important;
+        background: #000 !important;
+        flex-shrink: 0 !important;
+        vertical-align: top !important;
+        align-self: flex-start !important;
+        padding: 0px !important;
+    }
+
+    /* 另外確保普通的 img, video, iframe 也有相同的大小 */
+    img, video, iframe {
+        max-width: 150px !important;
+        max-height: 150px !important;
+        border-radius: 6px !important;
+        object-fit: fill !important;
+        background: #000 !important;
+        flex-shrink: 0 !important;
+        vertical-align: top !important;
+        align-self: flex-start !important;
+        padding: 0px !important;
+    }
+    
+    video {
+        background: #000;
+    }
+    
+    iframe {
+        border: none;
+    }
+
+    .message-text {
+        line-height: 1.4;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        display: inline;
+    }
+
+    /* 表情面板樣式 */
+    .emoji-panel {
+        position: fixed;
+        background: #18181b;
+        border: 1px solid #26262c;
+        border-radius: 4px;
+        z-index: 999999;
+        width: 380px;
+        height: 460px;
+        display: none;
+        box-shadow: 0 0 30px rgba(0,0,0,0.9);
+        color: white;
+        flex-direction: column;
+        font-size: 13px;
+    }
+    
+    .emoji-header {
+        background: #9147ff;
+        padding: 12px;
+        text-align: center;
+        cursor: move;
+        font-weight: 600;
+        border-radius: 4px 4px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .emoji-close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+    }
+    
+    .emoji-close-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .emoji-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        background: #1f1f23;
+        padding: 8px;
+        gap: 5px;
+        overflow-x: auto;
+        border-bottom: 1px solid #26262c;
+    }
+    
+    .emoji-tab {
+        width: 36px;
+        height: 36px;
+        background: #3a3a3d;
+        border-radius: 4px;
+        cursor: pointer;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+    
+    .emoji-tab.active {
+        outline: 2px solid #9147ff;
+    }
+    
+    .emoji-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        background: #18181b;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        align-content: flex-start;
+    }
+    
+    .emoji-item {
+		position: relative;
+         width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .emoji-item img {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .delete-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #e91916;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 12px;
+        line-height: 20px;
+        text-align: center;
+        cursor: pointer;
+        display: none;
+    }
+    
+    .emoji-item:hover .delete-btn {
+        display: block;
+    }
+    
+    .bttv-input {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+		
+    }
+    
+    .bttv-input input {
+        flex: 1;
+        padding: 8px;
+        background: #1f1f23;
+        color: white;
+        border: 1px solid #3a3a3d;
+        border-radius: 4px;
+    }
+    
+    .bttv-input input:focus {
+        outline: none;
+        border-color: #9147ff;
+    }
+    
+    /* 捲軸樣式 */
+    #chat::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #chat::-webkit-scrollbar-track {
+        background: #1f1f23;
+    }
+    
+    #chat::-webkit-scrollbar-thumb {
+        background: #3a3a3d;
+        border-radius: 4px;
+    }
+    
+    #chat::-webkit-scrollbar-thumb:hover {
+        background: #53535f;
+    }
+    
+    .emoji-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .emoji-content::-webkit-scrollbar-track {
+        background: #1f1f23;
+    }
+    
+    .emoji-content::-webkit-scrollbar-thumb {
+        background: #3a3a3d;
+        border-radius: 3px;
+    }
+    
+    /* 回覆功能樣式 */
+    .reply-btn {
+        opacity: 0;
+        background: none;
+        border: none;
+        color: #adadb8;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 4px 6px;
+        transition: all 0.2s;
+        border-radius: 3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .reply-btn:hover {
+        background: #3a3a3d;
+        color: #efeff1;
+    }
+    
+    .reply-indicator {
+        display: flex;
+        align-items: center;
+        background: #1f1f23;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #adadb8;
+    }
+    
+    .reply-indicator .cancel-reply {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: #adadb8;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    
+    .reply-indicator .cancel-reply:hover {
+        background: #3a3a3d;
+        color: #efeff1;
+    }
+    
+    .reply-preview {
+        background: #1f1f23;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        border-left: 3px solid #9147ff;
+        font-size: 12px;
+        color: #adadb8;
+    }
+    
+    .reply-preview .replying-to {
+        font-weight: bold;
+        color: #9147ff;
+    }
+    
+    /* 改進的回覆訊息樣式 */
+    .reply-context {
+        font-size: 11px;
+        color: #adadb8;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .reply-context .reply-icon {
+        margin-right: 4px;
+        color: #9147ff;
+    }
+    
+    .reply-context .replying-to {
+        font-weight: bold;
+        color: #9147ff;
+    }
+    
+    .reply-message {
+        background: #1f1f23;
+        border-left: 2px solid #9147ff;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        border-radius: 0 4px 4px 0;
+        font-size: 12px;
+        color: #adadb8;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .reply-message .reply-avatar {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 6px;
+        flex-shrink: 0;
+    }
+    
+    .reply-message .reply-content {
+        flex: 1;
+        overflow: hidden;
+    }
+    
+    .reply-message .reply-username {
+        font-weight: bold;
+        color: #9147ff;
+        margin-right: 6px;
+        font-size:14px;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .reply-message .reply-text {
+        color: #adadb8;
+        word-break: break-word;
+        line-height: 1.3;
+    }
+    
+    .reply-message .reply-arrow {
+        color: #9147ff;
+        margin-right: 6px;
+        font-size: 10px;
+    }
+    
+    .reply-container {
+        margin-bottom: 8px;
+    }
+    
+    /* 改進的完整回覆訊息容器 */
+    .msg-with-reply {
+        background: rgba(30, 30, 35, 0.7);
+        border-radius: 8px;
+        margin: 8px 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .reply-header {
+        display: flex;
+        align-items: center;
+        padding: 6px 12px;
+        background: rgba(31, 31, 35, 0.8);
+        display:none;
+        font-size: 11px;
+        color: #bf94ff;
+    }
+    
+    .reply-header .reply-icon {
+        margin-right: 6px;
+        font-size: 10px;
+    }
+    
+    .reply-header .reply-username {
+        font-weight: bold;
+        margin-right: 0px;
+    }
+    
+    .reply-original {
+        padding: 8px 12px;
+        background: rgba(31, 31, 35, 0.8);
+        margin: 0;
+        font-size: 12px;
+        color: #adadb8;
+        max-height: 60px;
+        overflow: hidden;
+        line-height: 1.3;
+    }
+    
+    .reply-original .original-username {
+        font-weight: bold;
+        color: #9147ff;
+        margin-right: 6px;
+    }
+    
+    /* 修正訊息內容布局 - 使用 table 佈局而不是 flex */
+    .msg-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        width: 100%;
+        line-height: 1.4;
+    }
+    
+     .msg-with-reply .msg-content {
+        padding: 8px 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        width: 100%;
+    }
+    
+    .msg-with-reply:hover .reply-btn {
+        opacity: 1;
+    }
+    
+    /* 使用 table-cell 佈局確保正確對齊 */
+    .name-container {
+        flex-shrink: 0;
+        white-space: nowrap;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .text-container {
+        flex: 1;
+        min-width: 0; /* 重要：允許文字容器收縮 */
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    
+     .button-container {
+        flex-shrink: 0;
+        white-space: nowrap;
+        margin-left: auto;
+        padding-left: 8px;
+    }
+
+    /* @功能樣式 */
+    .mention-autocomplete {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #18181b;
+        border: 1px solid #26262c;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        display: none;
+    }
+    
+    .mention-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #26262c;
+    }
+    
+    .mention-item:last-child {
+        border-bottom: none;
+    }
+    
+    .mention-item:hover, .mention-item.active {
+        background: #9147ff;
+        color: white;
+    }
+    
+    .mention-item img {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    
+    .mention-item .username {
+        font-weight: bold;
+    }
+    
+    .mention-item .display-name {
+        color: #adadb8;
+    }
+    
+    .mention-item:hover .display-name, .mention-item.active .display-name {
+        color: white;
+    }
+    
+    /* @提及視覺反饋樣式 */
+    .mention-highlight {
+        background-color: #9147ff;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    /* 被提及的訊息容器樣式 */
+    .mentioned-message .msg-content {
+        padding: 0;
+    }
+    
+    /* 徽章樣式 */
+    .badge {
+        width: 18px;
+        height: 18px;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+    
+    /* ========== 新添加：捲動到底部按鈕 ========== */
+    #scrollToBottomBtn {
+        position: absolute;
+        bottom: 80px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        background: rgba(145, 71, 255, 0.8);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+        font-size: 20px;
+    }
+    
+    #scrollToBottomBtn:hover {
+        background: rgba(145, 71, 255, 1);
+        transform: scale(1.1);
+    }
+    
+    #scrollToBottomBtn:active {
+        transform: scale(0.95);
+    }
+    
+    #scrollToBottomBtn svg {
+        width: 24px;
+        height: 24px;
+    }
+</style>
+</head>
+<body>
+    <div id="status">載入中...</div>
+    
+    <div id="userInfo" style="display:none;">
+        <img id="userAvatar" src="" alt="頭像">
+        <span id="userName"></span>
+        <button id="logoutBtn">登出</button>
+    </div>
+    
+    <div id="chat-container">
+        <div id="chat"></div>
+        <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
+		 <div id="pastebtn">
+            <button id="pastephoto" data-name="photo" type="button" class="sk_botton">圖片</button>
+            <button id="pastevideo" type="button" class="sk_botton" data-name="video">影片</button>
+			   <button class="chat-button" id="emojiBtn" title="表情">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                    </svg>
+                </button>
+        </div>
+        <div id="replyIndicator" class="reply-indicator" style="display: none;">
+            <span>回覆給 <span id="replyTargetName"></span></span>
+            <button class="cancel-reply" id="cancelReplyBtn">取消</button>
+        </div>
+    </div>
+    
+    <div id="input-container">
+        <div class="chat-input-wrapper">
+            <textarea id="msgInput" class="chat-input" placeholder="登入後即可發言..." autocomplete="off" disabled rows="1"></textarea>
+            <div class="mention-autocomplete" id="mentionAutocomplete"></div>
+			<div id="charCounter" class="char-counter">0/500</div>
+            <div class="chat-buttons">
+              
+                <button class="chat-button" id="sendBtn" disabled title="送出訊息">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.2 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.6-2.03.49-2.23z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+       
+        
+        <button id="loginBtn">Twitch 登入</button>
+    </div>
+
+    <!-- 自訂表情面板 -->
+    <div id="emojiPanel" class="emoji-panel">
+        <div class="emoji-header">
+            自訂表情面板（拖曳移動）
+            <button class="emoji-close-btn" id="emojiCloseBtn" title="關閉">×</button>
+        </div>
+        <div class="emoji-tabs" id="emojiTabs"></div>
+        <div class="emoji-content" id="emojiContent"></div>
+    </div>
+
+    <script src="https://chicktv.github.io/tv/tmi.min.js"></script>
+
+    <script>
+  // ===================== 重要設定 =====================
+    const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
+    const channel = "whitewing940920";
+
+    const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
+    const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
+
+    // ===================== 全域變數 =====================
+    let oauthToken = '';
+    let username = 'justinfan666';
+    let userDisplayName = '';
+    let userAvatar = '';
+    let client = null;
+    let isConnected = false;
+
+    // 捲動控制變數
+    let autoScroll = true;
+    let userScrolling = false;
+    let scrollTimeout = null;
+
+    const status   = document.getElementById('status');
+    const chat     = document.getElementById('chat');
+    const input    = document.getElementById('msgInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userInfo = document.getElementById('userInfo');
+    const userAvatarEl = document.getElementById('userAvatar');
+    const userNameEl   = document.getElementById('userName');
+    const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+
+    // 回覆功能變數
+    let replyingTo = null;
+    const replyIndicator = document.getElementById('replyIndicator');
+    const replyTargetName = document.getElementById('replyTargetName');
+    const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+
+    // 表情系統
+    let emojiLists = {};
+    let altToEmojiMap = {};
+    let isDeleteMode = false;
+
+    // 徽章映射
+    let badgeMap = {};
+
+    // @功能變數
+    let recentUsers = []; // 存儲最近發言的用戶
+    let mentionAutocomplete = document.getElementById('mentionAutocomplete');
+    let mentionActive = false;
+    let mentionIndex = -1;
+    let mentionQuery = '';
+
+    // 正則
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const twitterImageRegex = /https?:\/\/pbs\.twimg\.com\/media\/[^?]+\?format=(jpg|jpeg|png|gif|webp)/i;
+    const mp4Regex = /\.mp4(?:[/?].*)?$/i;
+
+    // 訊息計數器
+    let messageCount = 0;
+    const MAX_MESSAGES = 100;
+
+    //防止 XSS
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ===================== 捲動控制功能 =====================
+    function checkScrollPosition() {
+        // 檢查用戶是否在底部（距離底部小於50px視為在底部）
+        const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
+        
+        if (isAtBottom) {
+            // 用戶在底部，啟用自動滾動
+            autoScroll = true;
+            hideScrollButton();
+        } else {
+            // 用戶不在底部，暫停自動滾動
+            autoScroll = false;
+            showScrollButton();
+        }
+    }
+
+    function showScrollButton() {
+        scrollToBottomBtn.style.display = 'flex';
+    }
+
+    function hideScrollButton() {
+        scrollToBottomBtn.style.display = 'none';
+    }
+
+    function scrollToBottom() {
+        chat.scrollTop = chat.scrollHeight;
+        autoScroll = true;
+        hideScrollButton();
+        
+        // 確保滾動到最底部
+        setTimeout(() => {
+            chat.scrollTop = chat.scrollHeight;
+        }, 50);
+    }
+
+    // 監聽捲動事件
+    chat.addEventListener('scroll', () => {
+        // 清除之前的計時器
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
+        
+        // 設置新的計時器，在停止滾動後檢查位置
+        scrollTimeout = setTimeout(() => {
+            checkScrollPosition();
+        }, 150);
+    });
+
+    // 點擊滾動按鈕
+    scrollToBottomBtn.addEventListener('click', scrollToBottom);
+
+    // ===================== 徽章功能 =====================
+    // 載入徽章映射https://www.streamdatabase.com/twitch/global-badges
+    async function loadBadgeMap() {
+        try {
+            const response = await fetch('https://chicktv.github.io/tv/badges.txt');
+            const data = await response.json();
+            badgeMap = data;
+            console.log('徽章映射載入成功');
+        } catch (error) {
+            console.error('載入徽章映射失敗:', error);
+            // 如果載入失敗，使用預設的徽章URL格式
+            badgeMap = {};
+        }
+    }
+
+    function parseBadges(badgesData) {
+        if (!badgesData) return [];
+        
+        const badges = [];
+        
+        try {
+            // 處理不同格式的徽章數據
+            let badgePairs = [];
+            
+            if (typeof badgesData === 'string') {
+                // 如果是字串格式：'broadcaster/1,moderator/1'
+                badgePairs = badgesData.split(',');
+            } else if (typeof badgesData === 'object') {
+                // 如果是物件格式：{broadcaster: '1', moderator: '1'}
+                badgePairs = Object.entries(badgesData).map(([name, version]) => `${name}/${version}`);
+            }
+            
+            for (const pair of badgePairs) {
+                const [name, version] = pair.split('/');
+                if (name && version) {
+                    // 從映射中獲取徽章URL，如果沒有則使用預設格式
+                    const badgeKey = `${name}/${version}`;
+                    let badgeUrl;
+                    
+                    if (badgeMap[badgeKey]) {
+                        badgeUrl = badgeMap[badgeKey];
+                    } else {
+                        // 如果映射中沒有，使用預設的Twitch徽章URL格式
+                        badgeUrl = `https://static-cdn.jtvnw.net/badges/v1/${name}/${version}`;
+                    }
+                    
+                    badges.push({
+                        name: name,
+                        displayName: name.charAt(0).toUpperCase() + name.slice(1), // 首字母大寫
+                        url: badgeUrl,
+                        version: version
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('解析徽章時發生錯誤:', error, badgesData);
+            return [];
+        }
+        
+        return badges;
+    }
+
+    function renderBadges(badges) {
+        if (!badges || badges.length === 0) return '';
+        
+        return badges.map(badge => 
+            `<img src="${badge.url}" class="badge" title="${badge.displayName}" alt="${badge.displayName}" onerror="this.style.display='none'">`
+        ).join('');
+    }
+
+    // ===================== 強制滾動解決方案 =====================
+    function forceScrollToBottom() {
+        // 只有在啟用自動滾動時才滾動
+        if (autoScroll) {
+            chat.scrollTop = chat.scrollHeight;
+            
+            const maxAttempts = 10;
+            let attempts = 0;
+            
+            const scrollInterval = setInterval(() => {
+                chat.scrollTop = chat.scrollHeight;
+                attempts++;
+                
+                if (attempts >= maxAttempts) {
+                    clearInterval(scrollInterval);
+                }
+            }, 100);
+        }
+    }
+
+    // ===================== 訊息限制功能 =====================
+    function limitMessages() {
+        // 獲取所有訊息元素
+        const messages = chat.querySelectorAll('.msg, .msg-with-reply');
+        
+        // 如果訊息數量超過限制，移除最舊的訊息
+        if (messages.length > MAX_MESSAGES) {
+            const messagesToRemove = messages.length - MAX_MESSAGES;
+            for (let i = 0; i < messagesToRemove; i++) {
+                if (messages[i]) {
+                    messages[i].remove();
+                }
+            }
+        }
+    }
+
+    // ===================== 登入系統 - 彈出視窗方案 =====================
+    function checkLogin() {
+        const saved = localStorage.getItem('twitch_token');
+        if (saved) {
+            oauthToken = saved;
+            fetchUserInfo(saved.replace('oauth:', ''));
+        } else {
+            connectChat();
+        }
+    }
+
+    function loginWithPopup() {
+        if (CLIENT_ID.includes('請填入')) {
+            alert('請先填入 CLIENT_ID！\n前往 https://twitchapps.com/tmi/ 點「Connect with Twitch」取得');
+            return;
+        }
+        
+        const width = 600;
+        const height = 700;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+        
+        const popup = window.open(
+            AUTH_URL,
+            'Twitch Login',
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+        );
+        
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            alert('彈出視窗被阻擋了！請允許彈出視窗，或使用其他瀏覽器。');
+            return;
+        }
+        
+        const checkPopup = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkPopup);
+                const token = localStorage.getItem('twitch_token');
+                if (token) {
+                    oauthToken = token;
+                    fetchUserInfo(token.replace('oauth:', ''));
+                }
+            }
+        }, 500);
+    }
+
+    async function fetchUserInfo(token) {
+        try {
+            const res = await fetch('https://api.twitch.tv/helix/users', {
+                headers: { 'Client-ID': CLIENT_ID, 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (data.data?.[0]) {
+                username = data.data[0].login;
+                userDisplayName = data.data[0].display_name;
+                userAvatar = data.data[0].profile_image_url;
+                loginSuccess();
+            }
+        } catch (e) {
+            console.error('取得用戶資訊失敗:', e);
+            alert('登入失敗，請重新登入');
+            logout();
+        }
+    }
+
+    function loginSuccess() {
+        status.textContent = `已登入成功：${userDisplayName}，可以發言囉！`;
+        input.disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        input.placeholder = "傳送訊息";
+        loginBtn.style.display = 'none';
+        userInfo.style.display = 'none';
+        userAvatarEl.src = userAvatar;
+        userNameEl.textContent = userDisplayName;
+        
+        reconnectChat();
+    }
+
+    function logout() {
+        localStorage.removeItem('twitch_token');
+        location.reload();
+    }
+
+    loginBtn.onclick = loginWithPopup;
+    logoutBtn.onclick = logout;
+
+    window.addEventListener('load', async function() {
+        // 先載入徽章映射
+        await loadBadgeMap();
+		 // 初始化字數計數器
+        updateCharCounter();
+    
+	
+        
+        if (location.hash.includes('access_token=')) {
+            const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
+            if (token) {
+                oauthToken = 'oauth:' + token;
+                localStorage.setItem('twitch_token', oauthToken);
+                
+                if (window.opener) {
+                    window.close();
+                } else {
+                    history.replaceState(null, null, location.pathname);
+                    fetchUserInfo(token);
+                }
+            }
+        } else {
+            checkLogin();
+        }
+    });
+
+// ===================== 修正的訊息處理函數 =====================
+async function processMessage(text) {
+    // 先解碼 HTML 實體
+    function decodeHtmlEntities(text) {
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        return textarea.value;
+    }
+    
+    let decodedText = decodeHtmlEntities(text);
+    let html = decodedText;
+
+    // 驗證 URL 是否安全的函數
+    function isValidUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            // 只允許 http 和 https 協議
+            return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+        } catch {
+            return false;
+        }
+    }
+
+    // 處理@提及高亮 - 在處理其他內容之前
+    if (username && username !== 'justinfan666') {
+        // 修復：同時檢查使用者名稱和顯示名稱
+        const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
+        html = html.replace(mentionRegex, `<span class="mention-highlight">@${username}</span>`);
+        
+        // 新增：檢查顯示名稱的提及
+        if (userDisplayName && userDisplayName !== username) {
+            const displayNameMentionRegex = new RegExp(`@${escapeRegExp(userDisplayName)}(?=$|\\s|[\\.,!\\?\\)\\(])`, 'gi');
+            html = html.replace(displayNameMentionRegex, `<span class="mention-highlight">@${userDisplayName}</span>`);
+        }
+    }
+
+    // 先處理表情符號 - 在 HTML 轉義之前
+    for (const [alt, data] of Object.entries(altToEmojiMap)) {
+        try {
+            // 使用正則表達式跳脫函數
+            const escapedAlt = escapeRegExp(alt);
+            // 使用單詞邊界來匹配表情符號
+            const regex = new RegExp(`(^|\\s)(${escapedAlt})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
+            html = html.replace(regex, `$1<img src="${escapeHtml(data.src)}" style="max-width:50px;max-height:50px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
+        } catch (error) {
+            console.warn('表情符號處理錯誤:', alt, error);
+        }
+    }
+
+    // ===================== 修正的 [s] 標籤處理 =====================
+    // 使用全局替換而不是單次匹配
+    html = html.replace(/\[s\](.*?)(?:\[e\]|$)/gi, (match, urlContent) => {
+        let content = urlContent.trim();
+        
+        // 如果 URL 內容包含空格，只取第一個單詞（通常是完整的 URL）
+        if (content.includes(' ')) {
+            content = content.split(' ')[0];
+        }
+        
+        // 清理 URL，移除多餘的空白和標籤
+        content = content.replace(/^\s+|\s+$/g, '');
+        
+        if (!isValidUrl(content)) {
+            console.log('無效的 URL:', content);
+            return match; // 返回原始匹配，不進行替換
+        }
+        
+        let replacement;
+        
+        // 檢查是否包含 .mp4
+        if (content.toLowerCase().includes('.mp4')) {
+            // 使用 video 標籤
+            replacement = `<br><video src="${escapeHtml(content)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
+                    <a href="${escapeHtml(content)}" target="_blank" rel="noopener noreferrer">${escapeHtml(content)}</a>
+                    </video>`;
+        } else {
+            // 否則使用 img 標籤
+            replacement = `<br><img src="${escapeHtml(content)}" class="zero-width-image" loading="lazy" 
+                    onerror="this.style.display='none'; this.nextElementSibling && this.nextElementSibling.style.display='inline'" 
+                    onclick="window.open('${escapeHtml(content)}','_blank')">`;
+        }
+        
+        return replacement;
+    });
+
+    // ===================== 修正的 [y] 標籤處理 =====================
+    html = html.replace(/\[y\](.*?)\[t\]/gi, (match, urlContent) => {
+        let content = urlContent.trim();
+        
+        // 如果 URL 內容包含空格，只取第一個單詞
+        if (content.includes(' ')) {
+            content = content.split(' ')[0];
+        }
+        
+        content = content.replace(/^\s+|\s+$/g, '');
+        
+        if (!isValidUrl(content)) {
+            console.log('無效的 YouTube URL:', content);
+            return match; // 返回原始匹配，不進行替換
+        }
+        
+        let replacement;
+        
+        // 檢查是否為 YouTube 影片
+        const youtubeMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&[^&\s]*)?/);
+        if (youtubeMatch) {
+            const id = escapeHtml(youtubeMatch[1]);
+            replacement = `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
+        } else if (content.toLowerCase().includes('.mp4')) {
+            // 如果不是 YouTube 但包含 .mp4，使用 video 標籤
+            replacement = `<br><video src="${escapeHtml(content)}" controls autoplay muted loop class="zero-width-image" loading="lazy">
+                    <a href="${escapeHtml(content)}" target="_blank" rel="noopener noreferrer">${escapeHtml(content)}</a>
+                    </video>`;
+        } else {
+            // 既不是 YouTube 也不是 .mp4，顯示為連結
+            replacement = `<a href="${escapeHtml(content)}" target="_blank" rel="noopener noreferrer">${escapeHtml(content)}</a>`;
+        }
+        
+        return replacement;
+    });
+
+    // 移除殘留的標籤字符（只移除未被處理的標籤）
+    html = html.replace(/(?<!<img[^>]*|<\/?video|<\/?iframe|<\/?a[^>]*)\[s\]|\[e\]|\[y\]|\[t\](?!>)/gi, '');
+
+    // 處理其他普通網址（轉為超連結）
+    html = html.replace(/(https?:\/\/[^\s<>"'\]\[]+)/g, url => {
+        if (!isValidUrl(url)) {
+            return escapeHtml(url);
+        }
+        
+        // 跳過已經被處理過的網址
+        if (html.includes(`src="${url}"`) || html.includes(`href="${url}"`)) {
+            return url;
+        }
+        
+        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+    });
+
+    return html;
+}
+
+    // 正則表達式跳脫函數
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // HTML 跳脫函數
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // 新增：創建備用連結的函數
+    function createFallbackLink(url) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = url;
+        link.style.color = '#bf94ff';
+        link.style.textDecoration = 'none';
+        link.style.wordBreak = 'break-all';
+        return link;
+    }
+	
+	 // 初始化貼上事件監聽
+    function initPasteHandler() {
+        input.removeEventListener('paste', handlePaste);
+        input.addEventListener('paste', handlePaste);
+    }
+
+   // ===================== 智能貼上功能 =====================
+    // 更可靠的实现
+    function handlePaste(event) {
+        // 阻止默认粘贴行为
+        event.preventDefault();
+        
+        // 获取粘贴的内容
+        const clipboardData = event.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text');
+        
+        // 获取当前输入框的值和光标位置
+        const currentValue = input.value;
+        const startPos = input.selectionStart;
+        const endPos = input.selectionEnd;
+        
+        // 插入粘贴的文本
+        const newValue = currentValue.substring(0, startPos) + pastedText + currentValue.substring(endPos);
+        
+        // 检查是否需要添加结束标签
+        let finalValue = newValue;
+        if (currentValue.substring(0, startPos).endsWith("[s] ")) {
+            finalValue = newValue + " [e]";
+        } else if (currentValue.substring(0, startPos).endsWith("[y] ")) {
+            finalValue = newValue + " [t]";
+        } else if (currentValue.substring(0, startPos).endsWith("[p] ")) {
+            finalValue = newValue + " [i]";
+        }
+        
+        // 设置新的输入框值
+        input.value = finalValue;
+        
+        // 将光标移动到新文本的末尾
+        const newCursorPos = finalValue.length;
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+    }
+
+    // 初始化貼上事件監聽
+    function initPasteHandler() {
+        input.removeEventListener('paste', handlePaste);
+        input.addEventListener('paste', handlePaste);
+    }
+
+    // ===================== 貼上按鈕功能 =====================
+    document.getElementById('pastephoto').addEventListener('click', function() {
+        if (input.disabled) {
+            alert('請先登入後再使用此功能');
+            return;
+        }
+        
+        // 插入 [s] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [s] 
+        const newValue = currentValue.substring(0, cursorPos) + '[s] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
+        
+        // 聚焦到輸入框並將光標移動到 [s] 後面
+        const newCursorPos = cursorPos + 4; // [s] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+    document.getElementById('pastevideo').addEventListener('click', function() {
+        if (input.disabled) {
+            alert('請先登入後再使用此功能');
+            return;
+        }
+        
+        // 插入 [y] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [y] 
+        const newValue = currentValue.substring(0, cursorPos) + '[y] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
+        
+        // 聚焦到輸入框並將光標移動到 [y] 後面
+        const newCursorPos = cursorPos + 4; // [y] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+        
+    
+
+    // 页面加载时初始化粘贴处理器
+    window.addEventListener('load', function() {
+        initPasteHandler();
+    });
+
+    // 输入框获得焦点时也确保粘贴处理器工作
+    input.addEventListener('focus', function() {
+        initPasteHandler();
+    });
+
+    // ===================== 回覆功能 =====================
+    function setupReply(messageId, username, messageText) {
+        replyingTo = {
+            id: messageId,
+            username: username,
+            message: messageText
+        };
+        
+        replyTargetName.textContent = username;
+        replyIndicator.style.display = 'flex';
+        input.focus();
+        
+        const existingPreview = document.getElementById('replyPreview');
+        if (existingPreview) {
+            existingPreview.remove();
+        }
+        
+        const preview = document.createElement('div');
+        preview.id = 'replyPreview';
+        preview.className = 'reply-preview';
+        preview.innerHTML = `
+            回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 25)}
+        `;
+        
+        replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
+    }
+
+    function cancelReply() {
+        replyingTo = null;
+        replyIndicator.style.display = 'none';
+        
+        const preview = document.getElementById('replyPreview');
+        if (preview) {
+            preview.remove();
+        }
+    }
+
+    function truncateMessage(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+
+    // ===================== @功能 =====================
+    function addRecentUser(username, displayName, avatar) {
+        // 檢查用戶是否已經存在
+        const existingIndex = recentUsers.findIndex(user => user.username === username);
+        
+        if (existingIndex >= 0) {
+            // 如果存在，移到最前面
+            const user = recentUsers.splice(existingIndex, 1)[0];
+            recentUsers.unshift(user);
+        } else {
+            // 如果不存在，添加到最前面
+            recentUsers.unshift({
+                username: username,
+                displayName: displayName || username,
+                avatar: avatar || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
+            });
+        }
+        
+        // 限制最近用戶數量
+        if (recentUsers.length > 20) {
+            recentUsers = recentUsers.slice(0, 20);
+        }
+    }
+
+    function showMentionAutocomplete(query) {
+        mentionQuery = query.toLowerCase();
+        mentionAutocomplete.innerHTML = '';
+        
+        if (!mentionQuery) {
+            hideMentionAutocomplete();
+            return;
+        }
+        
+        // 過濾匹配的用戶
+        const matchedUsers = recentUsers.filter(user => 
+            user.username.toLowerCase().includes(mentionQuery) || 
+            user.displayName.toLowerCase().includes(mentionQuery)
+        );
+        
+        if (matchedUsers.length === 0) {
+            hideMentionAutocomplete();
+            return;
+        }
+        
+        // 顯示匹配的用戶
+        matchedUsers.forEach((user, index) => {
+            const item = document.createElement('div');
+            item.className = 'mention-item';
+            item.innerHTML = `
+                <img src="${user.avatar}" alt="${user.username}">
+                <div>
+                    <div class="username">${user.displayName}</div>
+                    <div class="display-name">@${user.username}</div>
+                </div>
+            `;
+            
+            item.addEventListener('click', () => {
+                selectMention(user);
+            });
+            
+            mentionAutocomplete.appendChild(item);
+        });
+        
+        mentionAutocomplete.style.display = 'block';
+        mentionActive = true;
+        mentionIndex = -1;
+    }
+
+    function hideMentionAutocomplete() {
+        mentionAutocomplete.style.display = 'none';
+        mentionActive = false;
+        mentionIndex = -1;
+    }
+
+    function selectMention(user) {
+        const currentValue = input.value;
+        const atIndex = currentValue.lastIndexOf('@');
+        
+        if (atIndex >= 0) {
+            // 替換@後面的內容為用戶名
+            const newValue = currentValue.substring(0, atIndex) + `@${user.username} `;
+            input.value = newValue;
+            
+            // 調整 textarea 高度
+            adjustTextareaHeight();
+            
+            // 重新聚焦並將光標放在末尾
+            input.focus();
+            input.setSelectionRange(newValue.length, newValue.length);
+        }
+        
+        hideMentionAutocomplete();
+    }
+
+    function navigateMentions(direction) {
+        if (!mentionActive) return;
+        
+        const items = mentionAutocomplete.querySelectorAll('.mention-item');
+        if (items.length === 0) return;
+        
+        // 移除當前選中的樣式
+        items.forEach(item => item.classList.remove('active'));
+        
+        // 計算新的索引
+        mentionIndex += direction;
+        
+        if (mentionIndex < 0) {
+            mentionIndex = items.length - 1;
+        } else if (mentionIndex >= items.length) {
+            mentionIndex = 0;
+        }
+        
+        // 添加選中樣式
+        items[mentionIndex].classList.add('active');
+    }
+
+    function handleMentionKeydown(e) {
+        if (!mentionActive) return;
+        
+        switch (e.key) {
+            case 'ArrowUp':
+                e.preventDefault();
+                navigateMentions(-1);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                navigateMentions(1);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                const activeItem = mentionAutocomplete.querySelector('.mention-item.active');
+                if (activeItem) {
+                    const index = Array.from(mentionAutocomplete.querySelectorAll('.mention-item')).indexOf(activeItem);
+                    const matchedUsers = recentUsers.filter(user => 
+                        user.username.toLowerCase().includes(mentionQuery) || 
+                        user.displayName.toLowerCase().includes(mentionQuery)
+                    );
+                    if (matchedUsers[index]) {
+                        selectMention(matchedUsers[index]);
+                    }
+                }
+                break;
+            case 'Escape':
+                hideMentionAutocomplete();
+                break;
+        }
+    }
+
+   function handleInputChange(e) {
+    const value = input.value;
+    const cursorPos = input.selectionStart;
+    
+    // 檢查光標前是否有@符號
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+    
+    // 檢查@符號前是否有空格或是在開頭
+    if (lastAtPos >= 0 && (lastAtPos === 0 || /\s/.test(value[lastAtPos - 1]))) {
+        const query = textBeforeCursor.substring(lastAtPos + 1);
+        showMentionAutocomplete(query);
+    } else {
+        hideMentionAutocomplete();
+    }
+    
+    // 調整 textarea 高度
+    adjustTextareaHeight();
+    
+    // 更新字數計數器
+    updateCharCounter();
+}
+
+    // 調整 textarea 高度以適應內容
+    function adjustTextareaHeight() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    }
+
+    // 檢查訊息是否提及當前用戶 - 修復：同時檢查使用者名稱和顯示名稱
+    function checkMention(messageText, tags) {
+        if (!username || username === 'justinfan666') return false;
+        
+        // 使用正則表達式檢查是否提及當前用戶的使用者名稱
+        const usernameMentionRegex = new RegExp(`@${username}\\b`, 'i');
+        if (usernameMentionRegex.test(messageText)) {
+            return true;
+        }
+        
+        // 新增：檢查是否提及當前用戶的顯示名稱
+        if (userDisplayName && userDisplayName !== username) {
+            const displayNameMentionRegex = new RegExp(`@${escapeRegExp(userDisplayName)}(?=$|\\s|[\\.,!\\?\\)\\(])`, 'i');
+            if (displayNameMentionRegex.test(messageText)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // ===================== 表情系統 =====================
+    function loadEmojiSets() {
+        fetch("https://chicktv.github.io/tv/showset.txt").then(r=>r.json()).then(setarray=>{
+            setarray.set.forEach(list=>{
+                emojiLists[list.name] = {emojis:[], image:list.image||''};
+                fetch(`https://chicktv.github.io/tv/${list.name}.txt`).then(r=>r.json()).then(data=>{
+                    data[list.name].forEach(icon=>{
+                        if(icon.alt && icon.src){
+                            emojiLists[list.name].emojis.push({alt:icon.alt, src:icon.src, dis:icon.dis||icon.alt});
+                            altToEmojiMap[icon.alt] = {src:icon.src, width:'32', height:'32'};
+                        }
+                    });
+                    renderEmojiPanel();
+                });
+            });
+        });
+
+        fetch("https://chicktv.github.io/tv/skuser_icon.txt").then(r=>r.json()).then(icons=>{
+            emojiLists["本台"] = {emojis:[], image:"https://chicktv.github.io/tv/chick.jpg"};
+            icons.forEach(i=>{
+                emojiLists["本台"].emojis.push({alt:i.alt, src:i.src, dis:i.alt});
+                altToEmojiMap[i.alt] = {src:i.src, width:'32', height:'32'};
+            });
+            renderEmojiPanel();
+        });
+
+        const saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
+        emojiLists["BTTV"] = {
+            emojis: saved.map(url=>({alt:url.split('/').pop().split('?')[0], src:url, dis:url})),
+            image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3"
+        };
+        renderEmojiPanel();
+    }
+
+    function renderEmojiPanel() {
+        const tabs = document.getElementById('emojiTabs');
+        const content = document.getElementById('emojiContent');
+        tabs.innerHTML = ''; content.innerHTML = '';
+
+        Object.keys(emojiLists).forEach((name, i) => {
+            const tab = document.createElement('div');
+            tab.className = 'emoji-tab';
+            tab.style.backgroundImage = `url(${emojiLists[name].image || 'https://via.placeholder.com/36?text=' + name[0]})`;
+            tab.title = name;
+            tab.onclick = () => {
+                document.querySelectorAll('.emoji-tab').forEach(t=>t.classList.remove('active'));
+                tab.classList.add('active');
+                renderTabContent(name);
+            };
+            if (i===0) tab.classList.add('active');
+            tabs.appendChild(tab);
+        });
+        renderTabContent(Object.keys(emojiLists)[0] || 'BTTV');
+    }
+
+    function renderTabContent(name) {
+    const content = document.getElementById('emojiContent');
+    content.innerHTML = '';
+
+    if (name === "BTTV") {
+        content.innerHTML += `
+            <div class="bttv-input">
+                <input type="text" id="bttvUrl" placeholder="輸入圖片網址">
+                <button onclick="addBTTV()">儲存</button>
+                <button onclick="isDeleteMode=!isDeleteMode;renderEmojiPanel()" style="background:${isDeleteMode?'#666':'#c42b1c'}">
+                    ${isDeleteMode?'取消':'刪除'}
+                </button>
+            </div>`;
+    }
+
+    emojiLists[name].emojis.forEach(emoji => {
+        const div = document.createElement('div');
+        div.className = 'emoji-item';
+        div.innerHTML = `<img src="${emoji.src}" title="${emoji.dis||emoji.alt}">`;
+        if (name==="BTTV" && isDeleteMode) {
+            div.innerHTML += `<div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${emoji.src}')">X</div>`;
+        }
+        div.onclick = () => {
+            if (name!=="BTTV" || !isDeleteMode) {
+                // 修改這裡：如果是 BTTV 圖片，插入 [s]網址[e] 格式
+                if (name === "BTTV") {
+                    input.value += (input.value ? ' ' : '') + `[s] ${emoji.src} [e]`;
+                } else {
+                    // 其他表情集保持原來的行為
+                    input.value += (input.value ? ' ' : '') + (emoji.alt || emoji.src);
+                }
+                // 調整 textarea 高度
+                adjustTextareaHeight();
+                input.focus();
+                document.getElementById('emojiPanel').style.display = 'none';
+            }
+        };
+        content.appendChild(div);
+    });
+}
+
+    window.addBTTV = () => {
+        const url = document.getElementById('bttvUrl').value.trim();
+        if (!url) return;
+        const saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
+        if (!saved.includes(url)) {
+            saved.push(url);
+            localStorage.setItem('myBTTV', JSON.stringify(saved));
+            emojiLists["BTTV"].emojis.push({alt:url.split('/').pop().split('?')[0], src:url});
+            renderEmojiPanel();
+        }
+        document.getElementById('bttvUrl').value = '';
+    };
+
+    window.deleteBTTV = (url) => {
+        let saved = JSON.parse(localStorage.getItem('myBTTV')||'[]');
+        saved = saved.filter(u=>u!==url);
+        localStorage.setItem('myBTTV', JSON.stringify(saved));
+        emojiLists["BTTV"].emojis = emojiLists["BTTV"].emojis.filter(e=>e.src!==url);
+        renderEmojiPanel();
+    };
+
+    // 表情面板拖曳
+    let dragging = false, offsetX, offsetY;
+    document.querySelector('.emoji-header')?.addEventListener('mousedown', e=>{
+        if (e.target === document.getElementById('emojiCloseBtn')) return;
+        
+        dragging = true;
+        const p = document.getElementById('emojiPanel');
+        offsetX = e.clientX - p.offsetLeft;
+        offsetY = e.clientY - p.offsetTop;
+    });
+    document.addEventListener('mousemove', e=>{
+        if(dragging){
+            const p = document.getElementById('emojiPanel');
+            p.style.left = (e.clientX - offsetX) + 'px';
+            p.style.top = (e.clientY - offsetY) + 'px';
+        }
+    });
+    document.addEventListener('mouseup', ()=>{dragging=false;});
+
+    // 表情面板开关功能
+    document.getElementById('emojiBtn').onclick = () => {
+        const p = document.getElementById('emojiPanel');
+        p.style.display = p.style.display==='flex' ? 'none' : 'flex';
+        if (p.style.display==='flex') {
+            p.style.left = '50%'; p.style.top = '50%';
+            p.style.transform = 'translate(-50%,-50%)';
+            renderEmojiPanel();
+        }
+    };
+
+    document.getElementById('emojiCloseBtn').onclick = () => {
+        document.getElementById('emojiPanel').style.display = 'none';
+    };
+
+    // ===================== tmi.js 連線 =====================
+    function connectChat() {
+        if (isConnected) return;
+        
+        client = new tmi.client({
+            connection: { secure: true, reconnect: true },
+            identity: oauthToken ? { username, password: oauthToken } : undefined,
+            channels: [channel]
+        });
+
+        client.on('connected', () => {
+            isConnected = true;
+            status.textContent = `已連線 ${oauthToken?'（已登入）':''}`;
+            loadEmojiSets();
+        });
+
+        client.on('message', async (ch, tags, message, self) => {
+            try {
+                // 添加用戶到最近用戶列表
+                addRecentUser(
+                    tags.username, 
+                    tags['display-name'], 
+                    tags['user-avatar'] || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
+                );
+
+                // 檢查是否提及當前用戶
+                const isMentioned = checkMention(message, tags);
+                
+                // 修改這裡：檢查是否為回覆訊息（包含自己發送的回覆）
+                const isReply = tags['reply-parent-msg-id'] || 
+                              (self && replyingTo); // 如果是自己發的且正在回覆中
+                
+                if (isReply) {
+                    // 如果是自己發送的回覆，使用 replyingTo 中的資訊
+                    const replyParentMsgId = tags['reply-parent-msg-id'] || (replyingTo ? replyingTo.id : null);
+                    const replyParentDisplayName = tags['reply-parent-display-name'] || (replyingTo ? replyingTo.username : '');
+                    const replyParentMsgBody = tags['reply-parent-msg-body'] || (replyingTo ? replyingTo.message : '');
+                    
+                    const replyContainer = document.createElement('div');
+                    replyContainer.className = `msg-with-reply ${isMentioned ? 'mentioned-message' : ''}`;
+                    replyContainer.id = `msg-${tags.id || 'temp-' + Date.now()}`;
+                    
+                    const replyHeader = document.createElement('div');
+                    replyHeader.className = 'reply-header';
+                    replyHeader.innerHTML = `
+                        <span class="reply-icon">↩</span>
+                         <span>回覆</span>
+                        <span class="reply-username">${replyParentDisplayName}</span>
+                    `;
+                    replyContainer.appendChild(replyHeader);
+                    
+                    const replyOriginal = document.createElement('div');
+                    replyOriginal.className = 'reply-original';
+                    replyOriginal.innerHTML = `
+                        <span class="original-username">${replyParentDisplayName}:</span>
+                        ${truncateMessage(replyParentMsgBody, 100)}
+                    `;
+                    replyContainer.appendChild(replyOriginal);
+                    
+                    const msgContent = document.createElement('div');
+                    msgContent.className = 'msg-content';
+                    
+                    // 創建名稱容器
+                    const nameContainer = document.createElement('div');
+                    nameContainer.className = 'name-container';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'name';
+                    nameSpan.style.color = tags.color || '#9147ff';
+                    
+                    // 使用更安全的方式插入徽章和用户名
+                    const badges = parseBadges(tags.badges);
+                    const badgesHtml = renderBadges(badges);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username || userDisplayName) + ': ';
+                    while (tempDiv.firstChild) {
+                        nameSpan.appendChild(tempDiv.firstChild);
+                    }
+                    
+                    nameContainer.appendChild(nameSpan);
+                    msgContent.appendChild(nameContainer);
+                    
+                    // 創建文字容器
+                    const textContainer = document.createElement('div');
+                    textContainer.className = 'text-container';
+                    
+                    const msg = document.createElement('span');
+                    msg.className = 'message-text';
+                    msg.innerHTML = await processMessage(message);
+                    textContainer.appendChild(msg);
+                    
+                    msgContent.appendChild(textContainer);
+                    
+                    // 創建按鈕容器
+                    if (oauthToken && !self) {
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'button-container';
+                        
+                        const replyBtn = document.createElement('button');
+                        replyBtn.className = 'reply-btn';
+                        replyBtn.innerHTML = '↩️';
+                        replyBtn.title = '回覆此訊息';
+                        replyBtn.onclick = () => {
+                            setupReply(tags.id, tags['display-name'] || tags.username, message);
+                        };
+                        buttonContainer.appendChild(replyBtn);
+                        
+                        msgContent.appendChild(buttonContainer);
+                    }
+                    
+                    replyContainer.appendChild(msgContent);
+                    chat.appendChild(replyContainer);
+                    
+                    // 如果是自己發送的回覆，清除回覆狀態
+                    if (self && replyingTo) {
+                        setTimeout(() => {
+                            cancelReply();
+                        }, 100);
+                    }
+                } else {
+                    const div = document.createElement('div');
+                    div.className = `msg ${isMentioned ? 'mentioned-message' : ''}`;
+                    div.id = `msg-${tags.id}`;
+
+                    const msgContent = document.createElement('div');
+                    msgContent.className = 'msg-content';
+                    
+                    // 創建名稱容器
+                    const nameContainer = document.createElement('div');
+                    nameContainer.className = 'name-container';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'name';
+                    nameSpan.style.color = tags.color || '#9147ff';
+                    
+                    // 使用更安全的方式插入徽章和用户名
+                    const badges = parseBadges(tags.badges);
+                    const badgesHtml = renderBadges(badges);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
+                    while (tempDiv.firstChild) {
+                        nameSpan.appendChild(tempDiv.firstChild);
+                    }
+                    
+                    nameContainer.appendChild(nameSpan);
+                    msgContent.appendChild(nameContainer);
+                    
+                    // 創建文字容器
+                    const textContainer = document.createElement('div');
+                    textContainer.className = 'text-container';
+                    
+                    const msg = document.createElement('span');
+                    msg.className = 'message-text';
+                    msg.innerHTML = await processMessage(message);
+                    textContainer.appendChild(msg);
+                    
+                    msgContent.appendChild(textContainer);
+                    
+                    // 創建按鈕容器
+                    if (oauthToken && !self) {
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'button-container';
+                        
+                        const replyBtn = document.createElement('button');
+                        replyBtn.className = 'reply-btn';
+                        replyBtn.innerHTML = '↩️';
+                        replyBtn.title = '回覆此訊息';
+                        replyBtn.onclick = () => {
+                            setupReply(tags.id, tags['display-name'] || tags.username, message);
+                        };
+                        buttonContainer.appendChild(replyBtn);
+                        
+                        msgContent.appendChild(buttonContainer);
+                    }
+                    
+                    div.appendChild(msgContent);
+                    chat.appendChild(div);
+                }
+                
+                // 限制訊息數量為100條
+                limitMessages();
+                
+                // 只有在啟用自動滾動時才滾動到底部
+                if (autoScroll) {
+                    forceScrollToBottom();
+                }
+            } catch (error) {
+                console.error('處理訊息時發生錯誤:', error);
+                console.log('有問題的訊息資料:', { tags, message });
+                
+                // 如果出错，使用简单的方式显示消息（不带徽章）
+                const fallbackDiv = document.createElement('div');
+                fallbackDiv.className = 'msg';
+                fallbackDiv.innerHTML = `
+                    <div class="msg-content">
+                        <div class="name-container">
+                            <span class="name" style="color: ${tags.color || '#9147ff'}">
+                                ${escapeHtml(tags['display-name'] || tags.username)}: 
+                            </span>
+                        </div>
+                        <div class="text-container">
+                            <span class="message-text">${escapeHtml(message)}</span>
+                        </div>
+                    </div>
+                `;
+                chat.appendChild(fallbackDiv);
+                
+                // 限制訊息數量為100條
+                limitMessages();
+                
+                // 只有在啟用自動滾動時才滾動到底部
+                if (autoScroll) {
+                    forceScrollToBottom();
+                }
+            }
+        });
+
+        client.connect().catch(console.error);
+    }
+
+    function reconnectChat() {
+        if (client) {
+            client.disconnect();
+            isConnected = false;
+        }
+        
+        connectChat();
+    }
+
+// 獲取字數計數器元素
+const charCounter = document.getElementById('charCounter');
+
+// 字數限制功能
+function updateCharCounter() {
+    const text = input.value;
+    const count = text.length;
+    
+    // 更新計數器顯示
+    charCounter.textContent = `${count}/500`;
+    
+    // 根據字數改變樣式
+    if (count > 500) {
+        charCounter.classList.add('over-limit');
+        charCounter.classList.remove('near-limit');
+    } else if (count > 450) {
+        charCounter.classList.add('near-limit');
+        charCounter.classList.remove('over-limit');
+    } else {
+        charCounter.classList.remove('over-limit', 'near-limit');
+    }
+    
+    // 如果超過限制，禁用發送按鈕
+    if (count > 500) {
+        document.getElementById('sendBtn').disabled = true;
+        document.getElementById('sendBtn').title = '訊息長度超過500字限制';
+    } else if (input.disabled) {
+        document.getElementById('sendBtn').disabled = true;
+        document.getElementById('sendBtn').title = '請先登入';
+    } else {
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('sendBtn').title = '送出訊息';
+    }
+}
+
+// 輸入限制函數
+function limitInputLength(e) {
+    const text = input.value;
+    
+    if (text.length >= 500) {
+        // 如果已經達到500字，阻止繼續輸入（但允許刪除和特殊按鍵）
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            return;
+        }
+    }
+}
+   
+
+    // ===================== 發送訊息功能 =====================
+ function send() {
+    let msg = input.value.trim();
+    
+    // 檢查字數限制
+    if (msg.length > 500) {
+        alert('訊息長度不能超過500字！目前字數：' + msg.length);
+        // 自動截斷到500字
+        msg = msg.substring(0, 500);
+        input.value = msg;
+        updateCharCounter();
+        return;
+    }
+    
+    if (msg && oauthToken && client?.readyState() === 'OPEN') {
+        if (replyingTo) {
+            // 儲存當前的回覆目標
+            const currentReplyTarget = {...replyingTo};
+            
+            client.reply(channel, msg, replyingTo.id).then(() => {
+                input.value = '';
+                // 重置 textarea 高度
+                adjustTextareaHeight();
+                updateCharCounter(); // 更新計數器
+                
+                // 安全機制：如果3秒後 replyingTo 還在，強制清除
+                setTimeout(() => {
+                    if (replyingTo && replyingTo.id === currentReplyTarget.id) {
+                        console.log('安全機制：強制清除回覆狀態');
+                        cancelReply();
+                    }
+                }, 3000);
+                
+            }).catch(err => {
+                console.error('回覆發送失敗:', err);
+                // 回覆失敗時改為發送普通訊息
+                client.say(channel, msg).then(() => {
+                    input.value = '';
+                    // 重置 textarea 高度
+                    adjustTextareaHeight();
+                    updateCharCounter(); // 更新計數器
+                    cancelReply();
+                });
+            });
+        } else {
+            client.say(channel, msg).then(() => {
+                input.value = '';
+                // 重置 textarea 高度
+                adjustTextareaHeight();
+                updateCharCounter(); // 更新計數器
+            });
+        }
+    }
+}
+
+    document.getElementById('sendBtn').onclick = send;
+    
+    // 修改 Enter 鍵行為：Enter 發送，Ctrl+Enter 換行
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            if (e.ctrlKey) {
+                // Ctrl+Enter 換行
+                const cursorPos = input.selectionStart;
+                const textBefore = input.value.substring(0, cursorPos);
+                const textAfter = input.value.substring(cursorPos);
+                
+                input.value = textBefore + '\n' + textAfter;
+                input.selectionStart = input.selectionEnd = cursorPos + 1;
+                
+                // 調整 textarea 高度
+                adjustTextareaHeight();
+                
+                e.preventDefault();
+            } else {
+                // 只有 Enter 發送訊息
+                e.preventDefault();
+                send();
+            }
+        }
+    });
+
+    // 添加@功能的事件监听
+    input.addEventListener('input', handleInputChange);
+	input.addEventListener('keydown', limitInputLength); // 添加輸入限制
+    input.addEventListener('keydown', handleMentionKeydown);
+
+    // 点击其他地方时隐藏@列表
+    document.addEventListener('click', (e) => {
+        if (!mentionAutocomplete.contains(e.target) && e.target !== input) {
+            hideMentionAutocomplete();
+        }
+    });
+
+    cancelReplyBtn.onclick = cancelReply;
+	 // 初始化貼上處理器
+
+    initPasteHandler();
+    </script>
+</body>
+
+</html>
+
+
+
+
+
