@@ -86,12 +86,11 @@
     /* 字數計數器樣式 */
 .char-counter {
     position: absolute;
-    right: 10px;
+    right: 40px;
     bottom: 5px;
     font-size: 12px;
     color: #adadb8;
     pointer-events: none;
-    background: rgba(14, 14, 16, 0.8);
     padding: 2px 6px;
     border-radius: 4px;
 }
@@ -241,7 +240,7 @@
     video.zero-width-image, 
     iframe.zero-width-image, 
     .zero-width-image {
-        max-width: 250px !important;
+        max-width: 200px !important;
         max-height: 200px !important;
         border-radius: 6px !important;
         object-fit: fill !important;
@@ -254,7 +253,7 @@
 
     /* 另外確保普通的 img, video, iframe 也有相同的大小 */
     img, video, iframe {
-        max-width: 250px !important;
+        max-width: 200px !important;
         max-height: 200px !important;
         border-radius: 6px !important;
         object-fit: fill !important;
@@ -843,7 +842,7 @@
     <script src="https://chicktv.github.io/tv/tmi.min.js"></script>
 
     <script>
-    // ===================== 重要設定 =====================
+  // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     const channel = "whitewing940920";
 
@@ -1203,8 +1202,15 @@
 
         // 處理@提及高亮 - 在處理其他內容之前
         if (username && username !== 'justinfan666') {
+            // 修復：同時檢查使用者名稱和顯示名稱
             const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
             html = html.replace(mentionRegex, `<span class="mention-highlight">@${username}</span>`);
+            
+            // 新增：檢查顯示名稱的提及
+            if (userDisplayName && userDisplayName !== username) {
+                const displayNameMentionRegex = new RegExp(`@${escapeRegExp(userDisplayName)}(?=$|\\s|[\\.,!\\?\\)\\(])`, 'gi');
+                html = html.replace(displayNameMentionRegex, `<span class="mention-highlight">@${userDisplayName}</span>`);
+            }
         }
 
         // 先處理表情符號 - 在 HTML 轉義之前
@@ -1356,6 +1362,57 @@
         link.style.wordBreak = 'break-all';
         return link;
     }
+	
+	 // 初始化貼上事件監聽
+    function initPasteHandler() {
+        input.removeEventListener('paste', handlePaste);
+        input.addEventListener('paste', handlePaste);
+    }
+
+   // ===================== 智能貼上功能 =====================
+    // 更可靠的实现
+    function handlePaste(event) {
+        // 阻止默认粘贴行为
+        event.preventDefault();
+        
+        // 获取粘贴的内容
+        const clipboardData = event.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text');
+        
+        // 获取当前输入框的值和光标位置
+        const currentValue = input.value;
+        const startPos = input.selectionStart;
+        const endPos = input.selectionEnd;
+        
+        // 插入粘贴的文本
+        const newValue = currentValue.substring(0, startPos) + pastedText + currentValue.substring(endPos);
+        
+        // 检查是否需要添加结束标签
+        let finalValue = newValue;
+        if (currentValue.substring(0, startPos).endsWith("[s] ")) {
+            finalValue = newValue + " [e]";
+        } else if (currentValue.substring(0, startPos).endsWith("[y] ")) {
+            finalValue = newValue + " [t]";
+        } else if (currentValue.substring(0, startPos).endsWith("[p] ")) {
+            finalValue = newValue + " [i]";
+        }
+        
+        // 设置新的输入框值
+        input.value = finalValue;
+        
+        // 将光标移动到新文本的末尾
+        const newCursorPos = finalValue.length;
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+    }
+
+    // 初始化貼上事件監聽
+    function initPasteHandler() {
+        input.removeEventListener('paste', handlePaste);
+        input.addEventListener('paste', handlePaste);
+    }
 
     // ===================== 貼上按鈕功能 =====================
     document.getElementById('pastephoto').addEventListener('click', function() {
@@ -1364,17 +1421,23 @@
             return;
         }
         
-        const template = '[s] 網址 [e]';
-        input.value += template;
+        // 插入 [s] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
         
-        // 調整 textarea 高度
-        adjustTextareaHeight();
+        // 在光标位置插入 [s] 
+        const newValue = currentValue.substring(0, cursorPos) + '[s] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
         
-        const startPos = input.value.indexOf('網址');
-        const endPos = startPos + 2;
+        // 聚焦到輸入框並將光標移動到 [s] 後面
+        const newCursorPos = cursorPos + 4; // [s] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
         
-        input.focus();
-        input.setSelectionRange(startPos, endPos);
+        // 確保貼上處理器已初始化
+        initPasteHandler();
     });
 
     document.getElementById('pastevideo').addEventListener('click', function() {
@@ -1383,17 +1446,36 @@
             return;
         }
         
-        const template = '[y] 網址 [t]';
-        input.value += template;
+        // 插入 [y] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
         
-        // 調整 textarea 高度
-        adjustTextareaHeight();
+        // 在光标位置插入 [y] 
+        const newValue = currentValue.substring(0, cursorPos) + '[y] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
         
-        const startPos = input.value.indexOf('網址');
-        const endPos = startPos + 2;
+        // 聚焦到輸入框並將光標移動到 [y] 後面
+        const newCursorPos = cursorPos + 4; // [y] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
         
-        input.focus();
-        input.setSelectionRange(startPos, endPos);
+        // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+        
+    
+
+    // 页面加载时初始化粘贴处理器
+    window.addEventListener('load', function() {
+        initPasteHandler();
+    });
+
+    // 输入框获得焦点时也确保粘贴处理器工作
+    input.addEventListener('focus', function() {
+        initPasteHandler();
     });
 
     // ===================== 回覆功能 =====================
@@ -1615,13 +1697,25 @@
         input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     }
 
-    // 檢查訊息是否提及當前用戶
+    // 檢查訊息是否提及當前用戶 - 修復：同時檢查使用者名稱和顯示名稱
     function checkMention(messageText, tags) {
         if (!username || username === 'justinfan666') return false;
         
-        // 使用正則表達式檢查是否提及當前用戶
-        const mentionRegex = new RegExp(`@${username}\\b`, 'i');
-        return mentionRegex.test(messageText);
+        // 使用正則表達式檢查是否提及當前用戶的使用者名稱
+        const usernameMentionRegex = new RegExp(`@${username}\\b`, 'i');
+        if (usernameMentionRegex.test(messageText)) {
+            return true;
+        }
+        
+        // 新增：檢查是否提及當前用戶的顯示名稱
+        if (userDisplayName && userDisplayName !== username) {
+            const displayNameMentionRegex = new RegExp(`@${escapeRegExp(userDisplayName)}(?=$|\\s|[\\.,!\\?\\)\\(])`, 'i');
+            if (displayNameMentionRegex.test(messageText)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     // ===================== 表情系統 =====================
@@ -2052,6 +2146,96 @@ function limitInputLength(e) {
     }
 }
 
+
+    // ===================== 貼上按鈕功能 =====================
+    document.getElementById('pastephoto').addEventListener('click', function() {
+        if (input.disabled) {
+            alert('請先登入後再使用此功能');
+            return;
+        }
+        
+        // 插入 [s] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [s] 
+        const newValue = currentValue.substring(0, cursorPos) + '[s] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
+        
+        // 聚焦到輸入框並將光標移動到 [s] 後面
+        const newCursorPos = cursorPos + 4; // [s] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+    document.getElementById('pastevideo').addEventListener('click', function() {
+        if (input.disabled) {
+            alert('請先登入後再使用此功能');
+            return;
+        }
+        
+        // 插入 [y] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [y] 
+        const newValue = currentValue.substring(0, cursorPos) + '[y] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
+        
+        // 聚焦到輸入框並將光標移動到 [y] 後面
+        const newCursorPos = cursorPos + 4; // [y] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+      // ===================== 貼上按鈕功能 =====================
+    document.getElementById('pastephoto').addEventListener('click', function() {
+        if (input.disabled) {
+            alert('請先登入後再使用此功能');
+            return;
+        }
+        
+        // 插入 [p] 並加上空格
+        const currentValue = input.value;
+        const cursorPos = input.selectionStart;
+        
+        // 在光标位置插入 [p] 
+        const newValue = currentValue.substring(0, cursorPos) + '[p] ' + currentValue.substring(cursorPos);
+        input.value = newValue;
+        
+        // 聚焦到輸入框並將光標移動到 [p] 後面
+        const newCursorPos = cursorPos + 4; // [p] 的长度是4
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }, 10);
+        
+        // 確保貼上處理器已初始化
+        initPasteHandler();
+    });
+
+    // 页面加载时初始化粘贴处理器
+    window.addEventListener('load', function() {
+        initPasteHandler();
+    });
+
+    // 输入框获得焦点时也确保粘贴处理器工作
+    input.addEventListener('focus', function() {
+        initPasteHandler();
+    });
+
+
+
     // ===================== 發送訊息功能 =====================
  function send() {
     let msg = input.value.trim();
@@ -2146,6 +2330,9 @@ function limitInputLength(e) {
     });
 
     cancelReplyBtn.onclick = cancelReply;
+	 // 初始化貼上處理器
+
+    initPasteHandler();
     </script>
 </body>
 
