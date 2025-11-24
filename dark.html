@@ -265,6 +265,26 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.audio-item .delete-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #e91916;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    display: none;
+    z-index: 10;
+}
+
+.audio-item:hover .delete-btn {
+    display: block;
+}
 
 /* 音訊輸入表單樣式 */
 .audio-input-form {
@@ -1014,7 +1034,7 @@
     <script>
   // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const channel = "69nocondom";
+    const channel = "whitewing940920";
 
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -2222,6 +2242,7 @@ function renderTabContent(name) {
     };
 	
 	// 添加音訊
+// 添加音訊（跳過確認對話框）
 function addAudio() {
     const name = document.getElementById('audioName').value.trim();
     const url = document.getElementById('audioUrl').value.trim();
@@ -2235,13 +2256,6 @@ function addAudio() {
     if (!isValidUrl(url)) {
         alert('請輸入有效的音訊網址');
         return;
-    }
-    
-    // 檢查是否為音訊檔案
-    if (!isAudioFile(url)) {
-        if (!confirm('這個網址可能不是音訊檔案，確定要儲存嗎？')) {
-            return;
-        }
     }
     
     // 從 localStorage 讀取現有音訊
@@ -2270,8 +2284,6 @@ function addAudio() {
     
     // 重新渲染面板
     renderTabContent('音訊');
-    
-    alert('音訊已儲存！');
 }
 
 // 切換音訊刪除模式
@@ -2280,24 +2292,22 @@ function toggleAudioDeleteMode() {
     renderTabContent('音訊');
 }
 
-// 刪除音訊
+// 刪除音訊（跳過確認對話框）
 function deleteAudio(index) {
-    if (!confirm('確定要刪除這個音訊嗎？')) {
-        return;
-    }
-    
     // 從 localStorage 讀取現有音訊
     const savedAudios = JSON.parse(localStorage.getItem('myAudios') || '[]');
     
     // 移除指定索引的音訊
-    savedAudios.splice(index, 1);
-    localStorage.setItem('myAudios', JSON.stringify(savedAudios));
-    
-    // 更新音訊列表
-    audioLists["音訊"].audios = savedAudios;
-    
-    // 重新渲染面板
-    renderTabContent('音訊');
+    if (index >= 0 && index < savedAudios.length) {
+        savedAudios.splice(index, 1);
+        localStorage.setItem('myAudios', JSON.stringify(savedAudios));
+        
+        // 更新音訊列表
+        audioLists["音訊"].audios = savedAudios;
+        
+        // 重新渲染面板
+        renderTabContent('音訊');
+    }
 }
 
 // 音訊檔案檢測函數
