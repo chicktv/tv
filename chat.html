@@ -1551,9 +1551,9 @@ html = html.replace(/\[a\](.*?)(?:\[o\]|$)/gi, (match, urlContent) => {
                         iconElement.innerHTML = '❌';
                     });
                     
-                    // 監聽時間更新來限制15秒
+                    // 監聽時間更新來限制300秒
                     const timeUpdateHandler = function() {
-                        if (this.currentTime > 15) {
+                        if (this.currentTime > 300) {
                             this.pause();
                             resetAudioState();
                         }
@@ -1574,7 +1574,7 @@ html = html.replace(/\[a\](.*?)(?:\[o\]|$)/gi, (match, urlContent) => {
                     audioElem.currentTime = 0;
                     iconElement.classList.remove('playing');
                     iconElement.innerHTML = '🔈'; // 恢復為靜音圖標
-                    iconElement.title = '點擊播放音訊 (最多15秒)';
+                    iconElement.title = '點擊播放音訊 (最多300秒)';
                 }
             });
             
