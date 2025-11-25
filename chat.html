@@ -1413,7 +1413,7 @@ async function processMessage(text) {
             // 使用正則表達式跳脫函數
             const escapedAlt = escapeRegExp(alt);
             // 使用單詞邊界來匹配表情符號
-            const regex = new RegExp(`(^|\\s)(${escapedAlt})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'g');
+            const regex = new RegExp(`(^|\\s)(${escapedAlt})(?=$|\\s|[\\.,!\\?\\)\\(])`, 'gi');
             html = html.replace(regex, `$1<img src="${escapeHtml(data.src)}" style="max-width:50px;max-height:50px;cursor:pointer;" onclick="window.open('${escapeHtml(data.src)}','_blank')">`);
         } catch (error) {
             console.warn('表情符號處理錯誤:', alt, error);
