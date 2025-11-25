@@ -2076,13 +2076,56 @@ function loadEmojiSets() {
     renderEmojiPanel();
 }
 
+
 // 載入音訊資料
-function loadAudioData() {
-    const savedAudios = JSON.parse(localStorage.getItem('myAudios') || '[]');
-    audioLists["音訊"] = {
-        audios: savedAudios,
-        image: "🔊" // 使用喇叭圖標作為分頁圖標
-    };
+async function loadAudioData() {
+    try {
+        // 先從遠程 URL 加載音訊列表
+        const response = await fetch('https://chicktv.github.io/tv/audio.txt');
+        if (response.ok) {
+            const remoteAudios = await response.json();
+            
+            // 然後從 localStorage 加載用戶自定義音訊
+            const localAudios = JSON.parse(localStorage.getItem('myAudios') || '[]');
+            
+            // 合併音訊列表（避免重複）
+            const mergedAudios = mergeAudioLists(remoteAudios, localAudios);
+            
+            audioLists["音訊"] = {
+                audios: mergedAudios,
+                image: "🔊"
+            };
+            
+            console.log('音訊資料載入成功，遠端:', remoteAudios.length, '本地:', localAudios.length, '合併後:', mergedAudios.length);
+        } else {
+            throw new Error('遠端音訊列表載入失敗');
+        }
+    } catch (error) {
+        console.error('載入遠端音訊列表失敗，使用本地儲存的音訊:', error);
+        
+        // 如果遠端載入失敗，只使用本地儲存的音訊
+        const localAudios = JSON.parse(localStorage.getItem('myAudios') || '[]');
+        audioLists["音訊"] = {
+            audios: localAudios,
+            image: "🔊"
+        };
+    }
+}
+
+// 合併音訊列表（避免重複）
+function mergeAudioLists(remoteAudios, localAudios) {
+    const merged = [...remoteAudios];
+    const urlSet = new Set(remoteAudios.map(audio => audio.url));
+    
+    // 添加本地音訊，避免重複的 URL
+    localAudios.forEach(localAudio => {
+        if (!urlSet.has(localAudio.url)) {
+            merged.push(localAudio);
+            urlSet.add(localAudio.url);
+        }
+    });
+    
+    return merged;
 }
 
 
