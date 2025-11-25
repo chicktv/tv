@@ -379,6 +379,7 @@
     align-items: flex-start;
     gap: 6px;
     width: 100%;
+    flex-wrap: wrap; /* 允許換行 */
 }
     
     .msg:hover .reply-btn {
@@ -473,11 +474,9 @@
     overflow-wrap: break-word;
     white-space: normal;
     line-height: 1.4;
-    /* 確保文字從容器最左邊開始 */
-    margin: 0;
-    padding: 0;
-    /* 如果需要精確對齊，可以使用負邊距 */
-    margin-left: 0;
+    /* 關鍵：讓文字在換行時延伸到整個容器寬度 */
+    display: inline-block;
+    width: calc(100% - 100px); /* 估計名字區域的寬度，可以調整 */
 }
 
     /* 表情面板樣式 */
@@ -665,7 +664,8 @@
     border-radius: 3px;
     white-space: nowrap;
     flex-shrink: 0;
-    align-self: flex-start; /* 確保按鈕在頂部對齊 */
+    align-self: flex-start;
+}
 }
     .reply-btn:hover {
         background: #3a3a3d;
@@ -837,15 +837,16 @@
     gap: 6px;
     width: 100%;
     line-height: 1.4;
-    position: relative;
+    flex-wrap: wrap; /* 允許換行 */
 }
     
-     .msg-with-reply .msg-content {
+    .msg-with-reply .msg-content {
     padding: 8px 12px;
     display: flex;
     align-items: flex-start;
     gap: 6px;
     width: 100%;
+    flex-wrap: wrap; /* 允許換行 */
 }
     
     .msg-with-reply:hover .reply-btn {
@@ -853,13 +854,11 @@
     }
     
     /* 使用 table-cell 佈局確保正確對齊 */
-    .name-container {
+   .name-container {
     flex-shrink: 0;
     white-space: nowrap;
     display: flex;
     align-items: flex-start;
-    min-width: fit-content;
-    position: relative;
 }
     
     .text-container {
@@ -869,12 +868,12 @@
         overflow-wrap: break-word;
     }
     
-     .button-container {
+   .button-container {
     flex-shrink: 0;
     white-space: nowrap;
     margin-left: auto;
-    padding-left: 8px;
 }
+
 
 
     /* @功能樣式 */
