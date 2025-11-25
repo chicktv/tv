@@ -26,5 +26,5 @@
 {
     "name": "土撥鼠 啊~", 
     "url": "https://memes.tw/sound/download?name=f768014692eb67a4e32ac5394932819d.mp3"
-  },
+  }
 ]
