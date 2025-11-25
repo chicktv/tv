@@ -1474,7 +1474,7 @@ async function processMessage(text) {
         let replacement;
         
         // 檢查是否為 YouTube 影片
-        const youtubeMatch = content.match(/(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be.com\/\S*(?:watch|embed)(?:(?:(?=\/[-a-zA-Z0-9_]{11,}(?!\S))\/)|(?:\S*v=|v\/)))([-a-zA-Z0-9_]{11,})/);
+        const youtubeMatch = content.match(/(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be\.com\/(?:shorts\/|(?:\S*(?:watch|embed)(?:(?:(?=\/[-a-zA-Z0-9_]{11,}(?!\S))\/)|(?:\S*v=|v\/)))))([-a-zA-Z0-9_]{11,})/);
         if (youtubeMatch) {
             const id = escapeHtml(youtubeMatch[1]);
             replacement = `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
