@@ -4,7 +4,27 @@
     "url": "https://chicktv.github.io/tv/audio1.m4a"
   },
   {
-    "name": "", 
-    "url": ""
-  }
+    "name": "what?", 
+    "url": "https://memes.tw/sound/download?name=87706be3f468f34c7825b2757f946fe4.mp3"
+  },
+  {
+    "name": "吔屎啦你", 
+    "url": "https://chicktv.github.io/tv/吔屎啦你.m4a"
+  },
+  {
+    "name": "我們懷代他", 
+    "url": "https://memes.tw/sound/download?name=0adc69e63a5e0bb342d6cd4b0246b437.mp3"
+  },
+  {
+    "name": "shut up", 
+    "url": "https://memes.tw/sound/download?name=95669d2e8f797f2e8577bcf1754b65b6.mp3"
+  },
+  {
+    "name": "不同意的請舉手", 
+    "url": "https://memes.tw/sound/download?name=22b002023f61f2da4f5b426bf4d0504d.mp3"
+  },
+{
+    "name": "土撥鼠 啊~", 
+    "url": "https://memes.tw/sound/download?name=f768014692eb67a4e32ac5394932819d.mp3"
+  },
 ]
