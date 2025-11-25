@@ -367,12 +367,19 @@
         cursor: not-allowed;
     }
     
-    .msg {
-        margin: 4px 0;
-        word-wrap: break-word;
-        padding: 2px 0;
-        position: relative;
-    }
+   .msg {
+    margin: 4px 0;
+    word-wrap: break-word;
+    padding: 2px 0;
+    position: relative;
+}
+
+.msg .msg-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+}
     
     .msg:hover .reply-btn {
         opacity: 1;
@@ -460,12 +467,18 @@
     }
 
     .message-text {
-        line-height: 1.4;
-        word-break: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        display: inline;
-    }
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    /* 確保文字從容器最左邊開始 */
+    margin: 0;
+    padding: 0;
+    /* 如果需要精確對齊，可以使用負邊距 */
+    margin-left: 0;
+}
 
     /* 表情面板樣式 */
     .emoji-panel {
@@ -641,19 +654,19 @@
     
     /* 回覆功能樣式 */
     .reply-btn {
-        opacity: 0;
-        background: none;
-        border: none;
-        color: #adadb8;
-        font-size: 12px;
-        cursor: pointer;
-        padding: 4px 6px;
-        transition: all 0.2s;
-        border-radius: 3px;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    
+    opacity: 0;
+    background: none;
+    border: none;
+    color: #adadb8;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 6px;
+    transition: all 0.2s;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start; /* 確保按鈕在頂部對齊 */
+}
     .reply-btn:hover {
         background: #3a3a3d;
         color: #efeff1;
@@ -819,20 +832,21 @@
     
     /* 修正訊息內容布局 - 使用 table 佈局而不是 flex */
     .msg-content {
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
-        width: 100%;
-        line-height: 1.4;
-    }
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+    line-height: 1.4;
+    position: relative;
+}
     
      .msg-with-reply .msg-content {
-        padding: 8px 12px;
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
-        width: 100%;
-    }
+    padding: 8px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+}
     
     .msg-with-reply:hover .reply-btn {
         opacity: 1;
@@ -840,11 +854,13 @@
     
     /* 使用 table-cell 佈局確保正確對齊 */
     .name-container {
-        flex-shrink: 0;
-        white-space: nowrap;
-        display: flex;
-        align-items: flex-start;
-    }
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: flex-start;
+    min-width: fit-content;
+    position: relative;
+}
     
     .text-container {
         flex: 1;
@@ -854,11 +870,12 @@
     }
     
      .button-container {
-        flex-shrink: 0;
-        white-space: nowrap;
-        margin-left: auto;
-        padding-left: 8px;
-    }
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-left: auto;
+    padding-left: 8px;
+}
+
 
     /* @功能樣式 */
     .mention-autocomplete {
