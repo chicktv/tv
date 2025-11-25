@@ -157,6 +157,73 @@
         background: #3a3a3d;
     }
     
+	 /* @功能樣式 */
+    .mention-autocomplete {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #18181b;
+        border: 1px solid #26262c;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        display: none;
+    }
+    
+    .mention-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #26262c;
+    }
+    
+    .mention-item:last-child {
+        border-bottom: none;
+    }
+    
+    .mention-item:hover, .mention-item.active {
+        background: #9147ff;
+        color: white;
+    }
+    
+    .mention-item img {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    
+    .mention-item .username {
+        font-weight: bold;
+    }
+    
+    .mention-item .display-name {
+        color: #adadb8;
+    }
+    
+    .mention-item:hover .display-name, .mention-item.active .display-name {
+        color: white;
+    }
+    
+    /* @提及視覺反饋樣式 */
+    .mention-highlight {
+        background-color: #9147ff;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    
+    /* 被提及的訊息容器樣式 */
+    .mentioned-message .msg-content {
+        padding: 0;
+    }
+	
+	
 	/* 音訊播放器樣式 */
 .audio-player {
     max-width: 300px !important;
