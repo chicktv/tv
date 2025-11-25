@@ -1796,40 +1796,40 @@ document.getElementById('pasteaudio').addEventListener('click', function() {
 
     // ===================== 回覆功能 =====================
     function setupReply(messageId, username, messageText) {
-        replyingTo = {
-            id: messageId,
-            username: username,
-            message: messageText
-        };
-        
-        replyTargetName.textContent = username;
-        replyIndicator.style.display = 'flex';
-        input.focus();
-        
-        const existingPreview = document.getElementById('replyPreview');
-        if (existingPreview) {
-            existingPreview.remove();
-        }
-        
-        const preview = document.createElement('div');
-        preview.id = 'replyPreview';
-        preview.className = 'reply-preview';
-        preview.innerHTML = `
-            回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 25)}
-        `;
-        
-        replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
+    replyingTo = {
+        id: messageId,
+        username: username,
+        message: messageText
+    };
+    
+    replyTargetName.textContent = username;
+    replyIndicator.style.display = 'flex';
+    input.focus();
+    
+    const existingPreview = document.getElementById('replyPreview');
+    if (existingPreview) {
+        existingPreview.remove();
     }
+    
+    const preview = document.createElement('div');
+    preview.id = 'replyPreview';
+    preview.className = 'reply-preview';
+    preview.innerHTML = `
+        回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 25)}
+    `;
+    
+    replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
+}
 
-    function cancelReply() {
-        replyingTo = null;
-        replyIndicator.style.display = 'none';
-        
-        const preview = document.getElementById('replyPreview');
-        if (preview) {
-            preview.remove();
-        }
+function cancelReply() {
+    replyingTo = null;
+    replyIndicator.style.display = 'none';
+    
+    const preview = document.getElementById('replyPreview');
+    if (preview) {
+        preview.remove();
     }
+}
 
     function truncateMessage(text, maxLength) {
         if (text.length <= maxLength) return text;
@@ -2410,221 +2410,248 @@ function isValidUrl(url) {
 
     // ===================== tmi.js 連線 =====================
 
- function connectChat() {
-        if (isConnected) return;
+// ===================== 回覆功能 =====================
+function setupReply(messageId, username, messageText) {
+    replyingTo = {
+        id: messageId,
+        username: username,
+        message: messageText
+    };
+    
+    replyTargetName.textContent = username;
+    replyIndicator.style.display = 'flex';
+    input.focus();
+    
+    const existingPreview = document.getElementById('replyPreview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    const preview = document.createElement('div');
+    preview.id = 'replyPreview';
+    preview.className = 'reply-preview';
+    preview.innerHTML = `
+        回覆給 <span class="replying-to">${username}</span>: ${truncateMessage(messageText, 25)}
+    `;
+    
+    replyIndicator.parentNode.insertBefore(preview, replyIndicator.nextSibling);
+}
+
+function cancelReply() {
+    replyingTo = null;
+    replyIndicator.style.display = 'none';
+    
+    const preview = document.getElementById('replyPreview');
+    if (preview) {
+        preview.remove();
+    }
+}
+
+// 修改后的回覆訊息渲染函数
+function renderReplyMessage(tags, message, isMentioned, self) {
+    const replyContainer = document.createElement('div');
+    replyContainer.className = `msg-with-reply ${isMentioned ? 'mentioned-message' : ''}`;
+    replyContainer.id = `msg-${tags.id || 'temp-' + Date.now()}`;
+    
+    // 回覆標頭
+    const replyHeader = document.createElement('div');
+    replyHeader.className = 'reply-header';
+    replyHeader.innerHTML = `
+        <span class="reply-icon">↩</span>
+        <span>回覆</span>
+        <span class="reply-username">${tags['reply-parent-display-name'] || tags['reply-parent-user-login'] || ''}</span>
+    `;
+    replyContainer.appendChild(replyHeader);
+    
+    // 原始回覆內容
+    const replyOriginal = document.createElement('div');
+    replyOriginal.className = 'reply-original';
+    replyOriginal.innerHTML = `
+        <span class="original-username">${tags['reply-parent-display-name'] || tags['reply-parent-user-login'] || ''}:</span>
+        ${truncateMessage(tags['reply-parent-msg-body'] || '', 100)}
+    `;
+    replyContainer.appendChild(replyOriginal);
+    
+    // 當前訊息內容
+    const msgContent = document.createElement('div');
+    msgContent.className = 'msg-content';
+    
+    // 名稱容器
+    const nameContainer = document.createElement('div');
+    nameContainer.className = 'name-container';
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name';
+    nameSpan.style.color = tags.color || '#9147ff';
+    
+    // 徽章和用戶名
+    const badges = parseBadges(tags.badges);
+    const badgesHtml = renderBadges(badges);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username || userDisplayName) + ': ';
+    while (tempDiv.firstChild) {
+        nameSpan.appendChild(tempDiv.firstChild);
+    }
+    
+    nameContainer.appendChild(nameSpan);
+    msgContent.appendChild(nameContainer);
+    
+    // 訊息文字
+    const msg = document.createElement('span');
+    msg.className = 'message-text';
+    msg.innerHTML = message; // 注意：這裡的 message 應該是已經處理過的 HTML
+    msgContent.appendChild(msg);
+    
+    // 按鈕容器 - 修復：確保回覆按鈕在回覆訊息中也顯示
+    if (oauthToken && !self) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
         
-        client = new tmi.client({
-            connection: { secure: true, reconnect: true },
-            identity: oauthToken ? { username, password: oauthToken } : undefined,
-            channels: [channel]
-        });
-
-        client.on('connected', () => {
-            isConnected = true;
-            status.textContent = `已連線${channel} ${oauthToken?'（已登入）':''}`;
-            loadEmojiSets();
-        });
-
-        client.on('message', async (ch, tags, message, self) => {
-            try {
-                // 添加用戶到最近用戶列表
-                addRecentUser(
-                    tags.username, 
-                    tags['display-name'], 
-                    tags['user-avatar'] || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
-                );
-
-                // 檢查是否提及當前用戶
-                const isMentioned = checkMention(message, tags);
-                
-                // 修改這裡：檢查是否為回覆訊息（包含自己發送的回覆）
-                const isReply = tags['reply-parent-msg-id'] || 
-                              (self && replyingTo); // 如果是自己發的且正在回覆中
-                
-                if (isReply) {
-                    // 如果是自己發送的回覆，使用 replyingTo 中的資訊
-                    const replyParentMsgId = tags['reply-parent-msg-id'] || (replyingTo ? replyingTo.id : null);
-                    const replyParentDisplayName = tags['reply-parent-display-name'] || (replyingTo ? replyingTo.username : '');
-                    const replyParentMsgBody = tags['reply-parent-msg-body'] || (replyingTo ? replyingTo.message : '');
-                    
-                    const replyContainer = document.createElement('div');
-                    replyContainer.className = `msg-with-reply ${isMentioned ? 'mentioned-message' : ''}`;
-                    replyContainer.id = `msg-${tags.id || 'temp-' + Date.now()}`;
-                    
-                    const replyHeader = document.createElement('div');
-                    replyHeader.className = 'reply-header';
-                    replyHeader.innerHTML = `
-                        <span class="reply-icon">↩</span>
-                         <span>回覆</span>
-                        <span class="reply-username">${replyParentDisplayName}</span>
-                    `;
-                    replyContainer.appendChild(replyHeader);
-                    
-                    const replyOriginal = document.createElement('div');
-                    replyOriginal.className = 'reply-original';
-                    replyOriginal.innerHTML = `
-                        <span class="original-username">${replyParentDisplayName}:</span>
-                        ${truncateMessage(replyParentMsgBody, 100)}
-                    `;
-                    replyContainer.appendChild(replyOriginal);
-                    
-                    const msgContent = document.createElement('div');
-                    msgContent.className = 'msg-content';
-                    
-                    // 創建名稱容器
-                    const nameContainer = document.createElement('div');
-                    nameContainer.className = 'name-container';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'name';
-                    nameSpan.style.color = tags.color || '#9147ff';
-                    
-                    // 使用更安全的方式插入徽章和用户名
-                    const badges = parseBadges(tags.badges);
-                    const badgesHtml = renderBadges(badges);
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username || userDisplayName) + ': ';
-                    while (tempDiv.firstChild) {
-                        nameSpan.appendChild(tempDiv.firstChild);
-                    }
-                    
-                    nameContainer.appendChild(nameSpan);
-                    msgContent.appendChild(nameContainer);
-                    
-                    // 創建文字容器
-                    const textContainer = document.createElement('div');
-                    textContainer.className = 'text-container';
-                    
-                    const msg = document.createElement('span');
-                    msg.className = 'message-text';
-                    msg.innerHTML = await processMessage(message);
-                    textContainer.appendChild(msg);
-                    
-                    msgContent.appendChild(textContainer);
-                    
-                    // 創建按鈕容器
-                    if (oauthToken && !self) {
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'button-container';
+        const replyBtn = document.createElement('button');
+        replyBtn.className = 'reply-btn';
+        replyBtn.innerHTML = '↩️';
+        replyBtn.title = '回覆此訊息';
+        replyBtn.onclick = (e) => {
+            e.stopPropagation();
+            setupReply(tags.id, tags['display-name'] || tags.username, tags.message || message);
+        };
+        buttonContainer.appendChild(replyBtn);
+        
+        msgContent.appendChild(buttonContainer);
+    }
     
-    const replyBtn = document.createElement('button');
-    replyBtn.className = 'reply-btn';
-    replyBtn.innerHTML = '↩️';
-    replyBtn.title = '回覆此訊息';
-    replyBtn.onclick = () => {
-        setupReply(tags.id, tags['display-name'] || tags.username, message);
-    };
-    buttonContainer.appendChild(replyBtn);
-    
-    msgContent.appendChild(buttonContainer);
+    replyContainer.appendChild(msgContent);
+    return replyContainer;
 }
-                    
-                    replyContainer.appendChild(msgContent);
-                    chat.appendChild(replyContainer);
-                    
-                    // 如果是自己發送的回覆，清除回覆狀態
-                    if (self && replyingTo) {
-                        setTimeout(() => {
-                            cancelReply();
-                        }, 100);
-                    }
-                } else {
-                    const div = document.createElement('div');
-                    div.className = `msg ${isMentioned ? 'mentioned-message' : ''}`;
-                    div.id = `msg-${tags.id}`;
 
-                    const msgContent = document.createElement('div');
-                    msgContent.className = 'msg-content';
-                    
-                    // 創建名稱容器
-                    const nameContainer = document.createElement('div');
-                    nameContainer.className = 'name-container';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'name';
-                    nameSpan.style.color = tags.color || '#9147ff';
-                    
-                    // 使用更安全的方式插入徽章和用户名
-                    const badges = parseBadges(tags.badges);
-                    const badgesHtml = renderBadges(badges);
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
-                    while (tempDiv.firstChild) {
-                        nameSpan.appendChild(tempDiv.firstChild);
-                    }
-                    
-                    nameContainer.appendChild(nameSpan);
-                    msgContent.appendChild(nameContainer);
-                    
-                    // 創建文字容器
-                    const textContainer = document.createElement('div');
-                    textContainer.className = 'text-container';
-                    
-                    const msg = document.createElement('span');
-                    msg.className = 'message-text';
-                    msg.innerHTML = await processMessage(message);
-                    textContainer.appendChild(msg);
-                    
-                    msgContent.appendChild(textContainer);
-                    
-                    // 創建按鈕容器
-                    if (oauthToken && !self) {
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'button-container';
+// 修改后的普通訊息渲染函数
+function renderNormalMessage(tags, message, isMentioned, self) {
+    const div = document.createElement('div');
+    div.className = `msg ${isMentioned ? 'mentioned-message' : ''}`;
+    div.id = `msg-${tags.id}`;
+
+    const msgContent = document.createElement('div');
+    msgContent.className = 'msg-content';
     
-    const replyBtn = document.createElement('button');
-    replyBtn.className = 'reply-btn';
-    replyBtn.innerHTML = '↩️';
-    replyBtn.title = '回覆此訊息';
-    replyBtn.onclick = () => {
-        setupReply(tags.id, tags['display-name'] || tags.username, message);
-    };
-    buttonContainer.appendChild(replyBtn);
+    // 名稱容器
+    const nameContainer = document.createElement('div');
+    nameContainer.className = 'name-container';
     
-    msgContent.appendChild(buttonContainer);
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name';
+    nameSpan.style.color = tags.color || '#9147ff';
+    
+    // 徽章和用戶名
+    const badges = parseBadges(tags.badges);
+    const badgesHtml = renderBadges(badges);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
+    while (tempDiv.firstChild) {
+        nameSpan.appendChild(tempDiv.firstChild);
+    }
+    
+    nameContainer.appendChild(nameSpan);
+    msgContent.appendChild(nameContainer);
+    
+    // 訊息文字
+    const msg = document.createElement('span');
+    msg.className = 'message-text';
+    msg.innerHTML = message; // 注意：這裡的 message 應該是已經處理過的 HTML
+    msgContent.appendChild(msg);
+    
+    // 按鈕容器
+    if (oauthToken && !self) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
+        
+        const replyBtn = document.createElement('button');
+        replyBtn.className = 'reply-btn';
+        replyBtn.innerHTML = '↩️';
+        replyBtn.title = '回覆此訊息';
+        replyBtn.onclick = (e) => {
+            e.stopPropagation();
+            setupReply(tags.id, tags['display-name'] || tags.username, tags.message || message);
+        };
+        buttonContainer.appendChild(replyBtn);
+        
+        msgContent.appendChild(buttonContainer);
+    }
+    
+    div.appendChild(msgContent);
+    return div;
 }
-                    
-                    div.appendChild(msgContent);
-                    chat.appendChild(div);
-                }
-                
-                // 限制訊息數量為100條
-                limitMessages();
-                
-                // 只有在啟用自動滾動時才滾動到底部
-                if (autoScroll) {
-                    forceScrollToBottom();
-                }
-            } catch (error) {
-                console.error('處理訊息時發生錯誤:', error);
-                console.log('有問題的訊息資料:', { tags, message });
-                
-                // 如果出错，使用简单的方式显示消息（不带徽章）
-                const fallbackDiv = document.createElement('div');
-                fallbackDiv.className = 'msg';
-                fallbackDiv.innerHTML = `
-                    <div class="msg-content">
-                        <div class="name-container">
-                            <span class="name" style="color: ${tags.color || '#9147ff'}">
-                                ${escapeHtml(tags['display-name'] || tags.username)}: 
-                            </span>
-                        </div>
-                        <div class="text-container">
-                            <span class="message-text">${escapeHtml(message)}</span>
-                        </div>
-                    </div>
-                `;
-                chat.appendChild(fallbackDiv);
-                
-                // 限制訊息數量為100條
-                limitMessages();
-                
-                // 只有在啟用自動滾動時才滾動到底部
-                if (autoScroll) {
-                    forceScrollToBottom();
-                }
-            }
-        });
+
+// 修改后的訊息處理函數
+client.on('message', async (ch, tags, message, self) => {
+    try {
+        // 添加用戶到最近用戶列表
+        addRecentUser(
+            tags.username, 
+            tags['display-name'], 
+            tags['user-avatar'] || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png'
+        );
+
+        // 檢查是否提及當前用戶
+        const isMentioned = checkMention(message, tags);
+        
+        // 處理訊息內容
+        const processedMessage = await processMessage(message);
+        
+        let messageElement;
+        
+        // 檢查是否為回覆訊息
+        const isReply = tags['reply-parent-msg-id'] || (self && replyingTo);
+        
+        if (isReply) {
+            messageElement = renderReplyMessage(tags, processedMessage, isMentioned, self);
+        } else {
+            messageElement = renderNormalMessage(tags, processedMessage, isMentioned, self);
+        }
+        
+        chat.appendChild(messageElement);
+        
+        // 限制訊息數量為100條
+        limitMessages();
+        
+        // 只有在啟用自動滾動時才滾動到底部
+        if (autoScroll) {
+            forceScrollToBottom();
+        }
+        
+        // 如果是自己發送的回覆，清除回覆狀態
+        if (self && replyingTo) {
+            setTimeout(() => {
+                cancelReply();
+            }, 100);
+        }
+    } catch (error) {
+        console.error('處理訊息時發生錯誤:', error);
+        console.log('有問題的訊息資料:', { tags, message });
+        
+        // 錯誤處理：使用簡單的方式显示消息
+        const fallbackDiv = document.createElement('div');
+        fallbackDiv.className = 'msg';
+        fallbackDiv.innerHTML = `
+            <div class="msg-content">
+                <div class="name-container">
+                    <span class="name" style="color: ${tags.color || '#9147ff'}">
+                        ${escapeHtml(tags['display-name'] || tags.username)}: 
+                    </span>
+                </div>
+                <span class="message-text">${escapeHtml(message)}</span>
+            </div>
+        `;
+        chat.appendChild(fallbackDiv);
+        
+        // 限制訊息數量為100條
+        limitMessages();
+        
+        // 只有在啟用自動滾動時才滾動到底部
+        if (autoScroll) {
+            forceScrollToBottom();
+        }
+    }
+});
 
         client.connect().catch(console.error);
     }
