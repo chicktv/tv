@@ -2569,20 +2569,20 @@ function isValidUrl(url) {
                     
                     // 創建按鈕容器
                     if (oauthToken && !self) {
-                        const buttonContainer = document.createElement('div');
-                        buttonContainer.className = 'button-container';
-                        
-                        const replyBtn = document.createElement('button');
-                        replyBtn.className = 'reply-btn';
-                        replyBtn.innerHTML = '↩️';
-                        replyBtn.title = '回覆此訊息';
-                        replyBtn.onclick = () => {
-                            setupReply(tags.id, tags['display-name'] || tags.username, message);
-                        };
-                        buttonContainer.appendChild(replyBtn);
-                        
-                        msgContent.appendChild(buttonContainer);
-                    }
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
+    
+    const replyBtn = document.createElement('button');
+    replyBtn.className = 'reply-btn';
+    replyBtn.innerHTML = '↩️';
+    replyBtn.title = '回覆此訊息';
+    replyBtn.onclick = () => {
+        setupReply(tags.id, tags['display-name'] || tags.username, message);
+    };
+    buttonContainer.appendChild(replyBtn);
+    
+    msgContent.appendChild(buttonContainer);
+}
                     
                     div.appendChild(msgContent);
                     chat.appendChild(div);
