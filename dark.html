@@ -545,6 +545,7 @@
 
     }
 	
+	
     /* 確保名稱和文字在同一行 */
     .name {
         font-weight: bold;
@@ -814,18 +815,23 @@
     }
     
     /* 回覆功能樣式 */
-    .reply-btn {
-        opacity: 0;
-        background: none;
-        border: none;
-        color: #adadb8;
-        font-size: 12px;
-        cursor: pointer;
-        padding: 4px 6px;
-        transition: all 0.2s;
-        border-radius: 3px;
-        white-space: nowrap;
-        flex-shrink: 0;
+     .reply-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: #adadb8;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 6px;
+    transition: all 0.2s;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+.msg-with-reply:hover .reply-btn {
+        opacity: 1;
     }
     
     .reply-btn:hover {
