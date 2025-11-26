@@ -545,6 +545,42 @@
 
     }
 	
+	.msg-with-reply .button-container {
+    opacity: 1 !important;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    white-space: nowrap;
+    z-index: 1000; /* 設置為較高的 z-index 確保在最上層 */
+    background: rgba(31, 31, 35, 0.95);
+    border-radius: 4px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.msg-with-reply .reply-btn {
+    opacity: 1 !important;
+    background: #3a3a3d;
+    color: #adadb8;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    border: none;
+    transition: all 0.2s;
+    z-index: 1001; /* 按鈕本身也設置更高的 z-index */
+}
+
+.msg-with-reply .reply-btn:hover {
+    background: #53535f;
+    color: #efeff1;
+    transform: scale(1.05);
+}
+
+	
+	
 	
     /* 確保名稱和文字在同一行 */
     .name {
@@ -564,10 +600,16 @@
     
     /* 回覆訊息的調整 */
     .msg-with-reply .msg-content {
-        padding: 8px 12px;
-        display: block;
-        position: relative;
-    }
+    position: relative;
+    z-index: 1; /* 確保內容在底層 */
+    padding-right: 60px; /* 為按鈕預留空間 */
+}
+
+.msg-with-reply .reply-header,
+.msg-with-reply .reply-original {
+    position: relative;
+    z-index: 1;
+}
 
     /* 快速按鈕 */
     #pastebtn {
