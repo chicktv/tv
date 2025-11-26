@@ -564,10 +564,13 @@
     
     /* 回覆訊息的調整 */
     .msg-with-reply .msg-content {
-        padding: 8px 12px;
-        display: block;
-        position: relative;
-    }
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    width: 100%;
+    padding-right: 50px; /* 為按鈕預留空間 */
+}
+
 
     /* 快速按鈕 */
     #pastebtn {
@@ -816,7 +819,7 @@
     
     /* 回覆功能樣式 */
      .reply-btn {
-    opacity: 0;
+    opacity: 1 !important; 
     background: none;
     border: none;
     color: #adadb8;
@@ -831,6 +834,9 @@
 }
 
 .msg-with-reply:hover .reply-btn {
+      opacity: 1;
+    }
+	.msg-with-reply .reply-btn {
         opacity: 1;
     }
     
