@@ -344,6 +344,137 @@
     background: #c51614;
 }
 	
+	/* @功能樣式 */
+
+    .mention-autocomplete {
+
+        position: absolute;
+
+        bottom: 100%;
+
+        left: 0;
+
+        right: 0;
+
+        background: #18181b;
+
+        border: 1px solid #26262c;
+
+        border-radius: 4px;
+
+        max-height: 200px;
+
+        overflow-y: auto;
+
+        z-index: 1000;
+
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+
+        display: none;
+
+    }
+
+    
+
+    .mention-item {
+
+        padding: 8px 12px;
+
+        cursor: pointer;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        border-bottom: 1px solid #26262c;
+
+    }
+
+    
+
+    .mention-item:last-child {
+
+        border-bottom: none;
+
+    }
+
+    
+
+    .mention-item:hover, .mention-item.active {
+
+        background: #9147ff;
+
+        color: white;
+
+    }
+
+    
+
+    .mention-item img {
+
+        width: 20px;
+
+        height: 20px;
+
+        border-radius: 50%;
+
+    }
+
+    
+
+    .mention-item .username {
+
+        font-weight: bold;
+
+    }
+
+    
+
+    .mention-item .display-name {
+
+        color: #adadb8;
+
+    }
+
+    
+
+    .mention-item:hover .display-name, .mention-item.active .display-name {
+
+        color: white;
+
+    }
+
+    
+
+    /* @提及視覺反饋樣式 */
+
+    .mention-highlight {
+
+        background-color: #9147ff;
+
+        color: #ffffff;
+
+        padding: 2px 6px;
+
+        border-radius: 4px;
+
+        font-weight: bold;
+
+    }
+
+    
+
+    /* 被提及的訊息容器樣式 */
+
+    .mentioned-message .msg-content {
+
+        padding: 0;
+
+    }
+	
+	
 	
     #loginBtn {
         padding: 8px 16px;
@@ -378,14 +509,65 @@
         opacity: 1;
     }
     
-    .name {
-        font-weight: bold;
-        margin-right: 6px;
-        color: inherit;
-        flex-shrink: 0;
-        white-space: nowrap;
+    /* 修改訊息內容布局 - 移除 text-container */
+    .msg-content {
+        display: block;
+        position: relative;
+        width: 100%;
+        line-height: 1.4;
+        padding: 2px 0;
     }
     
+    /* 名稱容器使用浮動 */
+    .name-container {
+        float: left;
+        margin-right: 6px;
+        max-width: 30%;
+    }
+    
+    /* 按鈕容器使用絕對定位在右側 */
+    .button-container {
+        position: absolute;
+        right: 0;
+        top: 0;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .msg:hover .button-container {
+        opacity: 1;
+    }
+    
+	 .msg-with-reply:hover .reply-btn {
+
+        opacity: 1;
+
+    }
+	
+    /* 確保名稱和文字在同一行 */
+    .name {
+        font-weight: bold;
+        color: inherit;
+        white-space: nowrap;
+        display: inline;
+    }
+    
+    .message-text {
+        display: inline;
+        line-height: 1.4;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+    
+    /* 回覆訊息的調整 */
+    .msg-with-reply .msg-content {
+        padding: 8px 12px;
+        display: block;
+        position: relative;
+    }
+
     /* 快速按鈕 */
     #pastebtn {
       position: relative;
@@ -457,15 +639,6 @@
     
     iframe {
         border: none;
-    }
-
-    .message-text {
-        flex: 1;
-        min-width: 0;
-        word-break: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        line-height: 1.4;
     }
 
     /* 表情面板樣式 */
@@ -818,108 +991,6 @@
         margin-right: 6px;
     }
     
-    /* 修正訊息內容布局 - 移除 text-container */
-    .msg-content {
-        
-        align-items: flex-start;
-        gap: 6px;
-        width: 100%;
-        line-height: 1.4;
-    }
-    
-     .msg-with-reply .msg-content {
-        padding: 8px 12px;
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
-        width: 100%;
-    }
-    
-    .msg-with-reply:hover .reply-btn {
-        opacity: 1;
-    }
-    
-    /* 使用 table-cell 佈局確保正確對齊 */
-    .name-container {
-        flex-shrink: 0;
-        white-space: nowrap;
-        display: flex;
-        align-items: flex-start;
-    }
-    
-    .button-container {
-        flex-shrink: 0;
-        white-space: nowrap;
-        margin-left: auto;
-        padding-left: 8px;
-    }
-
-    /* @功能樣式 */
-    .mention-autocomplete {
-        position: absolute;
-        bottom: 100%;
-        left: 0;
-        right: 0;
-        background: #18181b;
-        border: 1px solid #26262c;
-        border-radius: 4px;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        display: none;
-    }
-    
-    .mention-item {
-        padding: 8px 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border-bottom: 1px solid #26262c;
-    }
-    
-    .mention-item:last-child {
-        border-bottom: none;
-    }
-    
-    .mention-item:hover, .mention-item.active {
-        background: #9147ff;
-        color: white;
-    }
-    
-    .mention-item img {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-    }
-    
-    .mention-item .username {
-        font-weight: bold;
-    }
-    
-    .mention-item .display-name {
-        color: #adadb8;
-    }
-    
-    .mention-item:hover .display-name, .mention-item.active .display-name {
-        color: white;
-    }
-    
-    /* @提及視覺反饋樣式 */
-    .mention-highlight {
-        background-color: #9147ff;
-        color: #ffffff;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: bold;
-    }
-    
-    /* 被提及的訊息容器樣式 */
-    .mentioned-message .msg-content {
-        padding: 0;
-    }
-    
     /* 徽章樣式 */
     .badge {
         width: 18px;
@@ -1081,7 +1152,7 @@
     let mentionQuery = '';
 
     // 正則
-    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be\.com\/(?:shorts\/|(?:\S*(?:watch|embed)(?:(?:(?=\/[-a-zA-Z0-9_]{11,}(?!\S))\/)|(?:\S*v=|v\/)))))([-a-zA-Z0-9_]{11,})/;
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     const twitterImageRegex = /https?:\/\/pbs\.twimg\.com\/media\/[^?]+\?format=(jpg|jpeg|png|gif|webp)/i;
     const mp4Regex = /\.mp4(?:[/?].*)?$/i;
 
@@ -1468,7 +1539,7 @@ async function processMessage(text) {
         let replacement;
         
         // 檢查是否為 YouTube 影片
-        const youtubeMatch = content.match(/(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be\.com\/(?:shorts\/|(?:\S*(?:watch|embed)(?:(?:(?=\/[-a-zA-Z0-9_]{11,}(?!\S))\/)|(?:\S*v=|v\/)))))([-a-zA-Z0-9_]{11,})/);
+        const youtubeMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:&[^&\s]*)?/);
         if (youtubeMatch) {
             const id = escapeHtml(youtubeMatch[1]);
             replacement = `<br><iframe src="https://www.youtube.com/embed/${id}?autoplay=0" width="340" height="191" frameborder="0" allowfullscreen class="zero-width-image"></iframe>`;
@@ -2488,8 +2559,8 @@ function isValidUrl(url) {
                     nameContainer.appendChild(nameSpan);
                     msgContent.appendChild(nameContainer);
                     
-                    // 創建訊息文字元素（移除 text-container）
-                    const msg = document.createElement('div');
+                    // 創建訊息文字（直接放在 msg-content 中）
+                    const msg = document.createElement('span');
                     msg.className = 'message-text';
                     msg.innerHTML = await processMessage(message);
                     msgContent.appendChild(msg);
@@ -2548,8 +2619,8 @@ function isValidUrl(url) {
                     nameContainer.appendChild(nameSpan);
                     msgContent.appendChild(nameContainer);
                     
-                    // 創建訊息文字元素（移除 text-container）
-                    const msg = document.createElement('div');
+                    // 創建訊息文字（直接放在 msg-content 中）
+                    const msg = document.createElement('span');
                     msg.className = 'message-text';
                     msg.innerHTML = await processMessage(message);
                     msgContent.appendChild(msg);
@@ -2596,7 +2667,7 @@ function isValidUrl(url) {
                                 ${escapeHtml(tags['display-name'] || tags.username)}: 
                             </span>
                         </div>
-                        <div class="message-text">${escapeHtml(message)}</div>
+                        <span class="message-text">${escapeHtml(message)}</span>
                     </div>
                 `;
                 chat.appendChild(fallbackDiv);
@@ -2771,5 +2842,4 @@ function limitInputLength(e) {
     initPasteHandler();
     </script>
 </body>
-
 </html>
