@@ -12,7 +12,7 @@
     "url": "https://chicktv.github.io/tv/吔屎啦你.m4a"
   },
   {
-    "name": "我們懷代他", 
+    "name": "我們懷念他", 
     "url": "https://memes.tw/sound/download?name=0adc69e63a5e0bb342d6cd4b0246b437.mp3"
   },
   {
