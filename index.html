@@ -303,7 +303,7 @@
        
         let TWITCH_TOKEN = "";
         let TWITCH_CLIENT_ID = "";
-
+        let apiChannels = []; 
         let channels = [];
 
         
@@ -330,34 +330,33 @@
 
 //https://young-cloud-e59f.chicktv001.workers.dev/https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918
 //https://api.codetabs.com/v1/proxy/?quest=https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918
-    async function loadChannelsFromUrl() {
-    let txtChannels = [];   // 舊 txt 來源頻道
-    let apiChannels = [];   // 新 API 來源頻道
+   async function loadChannelsFromUrl() {
+    let txtChannels = [];   // 舊 txt 來源
+    let apiChannels = [];   // 新 API 來源（最高優先）
 
-    // ===== 第一步：載入舊 txt 來源 =====
+    // ===== 步驟1：載入舊 txt 來源 =====
     try {
         const response = await fetch('https://chicktv.github.io/tv/channels.txt');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.text();
-        const channelLines = data.split('\n');
+        const channelLines = data.split('\n').filter(line => line.trim());
 
         txtChannels = channelLines.map(line => {
             const parts = line.split(',').map(part => part.trim());
             if (parts.length === 3) {
                 const [name, id, platform] = parts;
-                return { name: name.trim(), id: id.trim(), platform: platform.trim() };
+                return { name: name.trim(), id: id.trim(), platform: platform.trim().toLowerCase() };
             }
             return null;
         }).filter(channel => channel !== null && channel.id);
 
         console.log(`舊 txt 來源載入成功，共 ${txtChannels.length} 個頻道`);
     } catch (error) {
-        console.warn('舊 txt 來源載入失敗，將跳過此來源', error);
-        txtChannels = [];
+        console.warn('舊 txt 來源載入失敗，將跳過', error);
     }
 
-    // ===== 第二步：載入新 API 來源 =====
+    // ===== 步驟2：載入新 API 來源（最高優先）=====
     try {
         const response = await fetch('https://api.codetabs.com/v1/proxy/?quest=https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -386,19 +385,19 @@
                 };
             }).filter(channel => channel !== null && channel.id);
 
-            console.log(`新 API 來源載入成功，共 ${apiChannels.length} 個頻道`);
+            console.log(`新 API 來源載入成功，共 ${apiChannels.length} 個頻道（最高優先權）`);
         } else {
-            throw new Error("API 格式錯誤");
+            throw new Error("API 格式錯誤：缺少 channels");
         }
     } catch (error) {
-        console.warn('新 API 來源載入失敗，將跳過此來源', error);
-        apiChannels = [];
+        console.warn('新 API 來源載入失敗，將跳過', error);
     }
 
-    // ===== 第三步：合併頻道（API 優先）+ 去重 =====
+    // ===== 步驟3：載入 localStorage 自訂頻道 =====
     const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
 
-    // 合併順序：自訂 > txt來源 > API來源 → 這樣 API 會最後出現，覆蓋相同 name+platform
+    // ===== 步驟4：合併並去重 —— API 最高優先（放在最後）=====
+    // 順序：localStorage → txt → API（後面的會覆蓋前面的相同 name+platform）
     let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
 
     const seen = new Set();
@@ -410,25 +409,36 @@
             seen.add(key);
             channels.push(ch);
         }
-        // 重複時保留後面的（API 優先）
+        // 如果重複，因為 API 在最後 → 會保留 API 版本，前面 localStorage 或 txt 的會被丟棄
     }
 
-    // ===== 第四步：如果兩個來源都沒載入成功，才用純 localStorage 備援 =====
-    if (txtChannels.length === 0 && apiChannels.length === 0 && storedChannels.length > 0 && channels.length === 0) {
-        console.warn('兩個線上來源皆失敗，使用 localStorage 純備援');
+    // ===== 步驟5：特殊備援（兩個線上來源都失敗且 channels 為空）=====
+    if (channels.length === 0 && storedChannels.length > 0) {
+        console.warn('兩個線上來源皆失敗，使用 localStorage 純備援（下次 API 成功時仍會被覆蓋）');
         channels = [...storedChannels];
     }
 
-    console.log(`最終合併後頻道數：${channels.length} 個（自訂 ${storedChannels.length} + txt ${txtChannels.length} + API ${apiChannels.length}）`);
+    console.log(`最終頻道數：${channels.length} 個（API 已覆蓋所有同名同平台項目，包括 localStorage）`);
 
+    // ===== 步驟6：儲存自訂頻道（只保留不在 API 中的）=====
     saveChannelsToStorage();
     generateButtons();
 }
 
-        function saveChannelsToStorage() {
-            const customChannels = channels.filter(ch => !isDefaultChannel(ch));
-            localStorage.setItem("customChannels", JSON.stringify(customChannels));
-        }
+     function saveChannelsToStorage() {
+    // 只儲存「不在目前 API 來源中」的頻道
+    // 這樣即使使用者曾手動新增與 API 同名的頻道，也不會再存回來（已被 API 覆蓋）
+    const apiKeys = new Set(
+        apiChannels.map(ch => `${ch.name.toLowerCase()}|${ch.platform.toLowerCase()}`)
+    );
+
+    const customChannels = channels.filter(ch => 
+        !apiKeys.has(`${ch.name.toLowerCase()}|${ch.platform.toLowerCase()}`)
+    );
+
+    localStorage.setItem("customChannels", JSON.stringify(customChannels));
+    console.log(`已儲存 ${customChannels.length} 個純自訂頻道（不與 API 重複）`);
+}
 
         function loadChannelsFromStorage() {
             const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
