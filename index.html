@@ -548,7 +548,7 @@ try {
             }
 
             // 步驟3：載入 localStorage 自訂頻道
-            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels11") || "[]");
 
             // 步驟4：合併並去重
             let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
@@ -592,20 +592,20 @@ try {
 
         function saveChannelsToStorage() {
     // 嚴格只儲存完全沒有標記的（真正手動新增）
-    let customChannels = channels.filter(ch => !ch._fromAPI && !ch._fromTxt);
+    let customChannels1 = channels.filter(ch => !ch._fromAPI && !ch._fromTxt);
 
     // 清除標記
-    customChannels = customChannels.map(ch => {
+    customChannels1 = customChannels1.map(ch => {
         const { _fromAPI, _fromTxt, ...cleanCh } = ch;
         return cleanCh;
     });
 
-    localStorage.setItem("customChannels", JSON.stringify(customChannels));  // 或你的 customChannels1
-    console.log(`已儲存 ${customChannels.length} 個真正手動新增的自訂頻道（完全排除 API 和 txt 來源）`);
+    localStorage.setItem("customChannels1", JSON.stringify(customChannels1));  // 或你的 customChannels11
+    console.log(`已儲存 ${customChannels1.length} 個真正手動新增的自訂頻道（完全排除 API 和 txt 來源）`);
 }
 
         function loadChannelsFromStorage() {
-            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels11") || "[]");
             channels = [...channels.filter(isDefaultChannel), ...storedChannels];
         }
 
