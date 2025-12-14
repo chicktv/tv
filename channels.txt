@@ -1,4 +1,4 @@
-
+W,wing36747,kick
 
 
 
@@ -9,6 +9,7 @@ A,alancml01,twitch
 
 
 木,muse_tw2,twitch
+
 
 
 
