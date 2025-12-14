@@ -364,39 +364,33 @@
         const data = await response.json();
 
         if (data.channels && Array.isArray(data.channels)) {
-            apiChannels = data.channels.map(item => {
-                let platform = "";
-                let id = (item.details || "").trim();
+    apiChannels = data.channels.map(item => {
+        let platform = "";
+        let id = (item.details || "").trim();
 
-                if (item.platform === "vl") {
-                    platform = "kick";
-                } else if (item.platform === "twitch") {
-                    platform = "twitch";
-                } else if (item.platform === "okru") {
-                    platform = "ok";
-                } else {
-                    return null;
-                }
-
-                return {
-                    name: (item.displayname || id || "Unknown").trim(),
-                    id: id,
-                    platform: platform
-                };
-				 const channel = {
-        name: (item.displayname || id || "Unknown").trim(),
-        id: id,
-        platform: platform
-    };
-
-    channel._fromAPI = true;  // 加標記
-
-    return channel;
-}).filter(channel => channel !== null && channel.id);
-
-
-            console.log(`新 API 來源載入成功，共 ${apiChannels.length} 個頻道（最高優先權）`);
+        if (item.platform === "vl") {
+            platform = "kick";
+        } else if (item.platform === "twitch") {
+            platform = "twitch";
+        } else if (item.platform === "okru") {
+            platform = "ok";
         } else {
+            return null;
+        }
+
+        const channel = {
+            name: (item.displayname || id || "Unknown").trim(),
+            id: id,
+            platform: platform
+        };
+
+        channel._fromAPI = true;  // <<< 關鍵：加標記，表示這是 API 來源（最高優先）
+
+        return channel;
+    }).filter(channel => channel !== null && channel.id);
+
+    console.log(`新 API 來源載入成功，共 ${apiChannels.length} 個頻道（已加 _fromAPI 標記）`);
+} else {
             throw new Error("API 格式錯誤：缺少 channels");
         }
     } catch (error) {
@@ -415,17 +409,14 @@ const seen = new Set();
 channels = [];
 
 for (const ch of allChannels) {
-    // 強制正規化：去除前後空格 + name 小寫
     const normalizedName = ch.name.trim().toLowerCase();
     const normalizedPlatform = ch.platform.trim().toLowerCase();
     const key = `${normalizedName}|${normalizedPlatform}`;
 
     if (!seen.has(key)) {
         seen.add(key);
-        // 使用原始 ch（保留原 name 大小寫和 id）
-        channels.push(ch);
+        channels.push(ch);  // API 的會帶 _fromAPI 標記進去
     }
-    // 重複時直接跳過舊的，保留後面的（API 的）
 }
 
 console.log(`去重完成，最終頻道數：${channels.length} 個（API 已自動覆蓋所有同名同平台，包括舊自訂）`);
@@ -445,14 +436,18 @@ console.log(`去重完成，最終頻道數：${channels.length} 個（API 已�
 
     // ===== saveChannelsToStorage() 改為以下（強制排除與 API 重複的）=====
 function saveChannelsToStorage() {
-    // 建立 API 的正規化鍵集合
-    const apiKeys = new Set();
-    apiChannels.forEach(ch => {
-        const normalizedName = ch.name.trim().toLowerCase();
-        const normalizedPlatform = ch.platform.trim().toLowerCase();
-        apiKeys.add(`${normalizedName}|${normalizedPlatform}`);
+    // 只儲存「不是來自 API」的頻道（沒有 _fromAPI 標記）
+    let customChannels = channels.filter(ch => !ch._fromAPI);
+
+    // 可選：清除任何殘留標記（雖然通常不會有）
+    customChannels = customChannels.map(ch => {
+        const { _fromAPI, ...cleanCh } = ch;  // 移除標記
+        return cleanCh;
     });
 
+    localStorage.setItem("customChannels", JSON.stringify(customChannels));
+    console.log(`已儲存 ${customChannels.length} 個純自訂頻道（已自動排除所有 API 來源，包括覆蓋的舊自訂）`);
+}
     // 只儲存「完全不與 API 同名同平台」的頻道
     const customChannels = channels.filter(ch => {
         const normalizedName = ch.name.trim().toLowerCase();
@@ -462,7 +457,7 @@ function saveChannelsToStorage() {
 
     localStorage.setItem("customChannels", JSON.stringify(customChannels));
     console.log(`已儲存 ${customChannels.length} 個純自訂頻道（自動排除與 API 同名的）`);
-}
+
 
         function loadChannelsFromStorage() {
             const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
