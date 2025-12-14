@@ -415,16 +415,29 @@ const seen = new Set();
 channels = [];
 
 for (const ch of allChannels) {
-    const normalizedName = ch.name.trim().toLowerCase();
-    const normalizedPlatform = ch.platform.trim().toLowerCase();
-    const key = `${normalizedName}|${normalizedPlatform}`;
+    // 超強正規化：trim + toLowerCase for name and platform
+    const normName = (ch.name || "").trim().toLowerCase();
+    const normPlatform = (ch.platform || "").trim().toLowerCase();
+    const key = `${normName}|${normPlatform}`;
 
+    // 如果已經有這個 key，跳過（保留第一個看到的？不，我們要保留最後的 API）
+    // 因為 allChannels 順序是 stored + txt + api → 後面的會後進先處理
     if (!seen.has(key)) {
         seen.add(key);
-        channels.push(ch);  // API 的會帶 _fromAPI 標記進去
+        // 強制如果這個 ch 是 API 來源，保留它（但因為順序已是最後，通常不用）
+        channels.push(ch);
+    } else {
+        // 如果重複，強制找 API 版本取代
+        const existingIndex = channels.findIndex(c => {
+            const cName = (c.name || "").trim().toLowerCase();
+            const cPlat = (c.platform || "").trim().toLowerCase();
+            return `${cName}|${cPlat}` === key;
+        });
+        if (existingIndex !== -1 && ch._fromAPI) {
+            channels[existingIndex] = ch;  // 強制用 API 版本取代
+        }
     }
 }
-
 console.log(`去重完成，最終頻道數：${channels.length} 個（API 已自動覆蓋所有同名同平台，包括舊自訂）`);
 
     // ===== 步驟5：特殊備援（兩個線上來源都失敗且 channels 為空）=====
