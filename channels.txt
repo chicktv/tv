@@ -6,10 +6,11 @@ ATV,collartv,kick
 QT,qt369,kick
 哥,cobra-and-godzilla,kick
 A,falconjurer,kick
-絕,ppkkkpp,angelthump
+絕,ppkkkpp,at
 木,muse_tw2,twitch
 友,yaubotai,kick
 w,10268974521971,ok
+
 
 
 
