@@ -478,33 +478,33 @@
             let txtChannels = [];
             let apiChannels = [];
 
-            // 步驟1：載入舊 txt 來源
-            try {
-                const response = await fetch('https://chicktv.github.io/tv/channels.txt');
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const data = await response.text();
-                const channelLines = data.split('\n').filter(line => line.trim());
+                 // ===== 步驟1：載入舊 txt 來源 =====
+try {
+    const response = await fetch('https://chicktv.github.io/tv/channels.txt');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.text();
+    const channelLines = data.split('\n').filter(line => line.trim());
 
-                txtChannels = channelLines.map(line => {
-                    const parts = line.split(',').map(part => part.trim());
-                    if (parts.length === 3) {
-                        const [name, id, platform] = parts;
-                        const channel = { 
-                            name: name.trim(), 
-                            id: id.trim(), 
-                            platform: platform.trim().toLowerCase() 
-                        };
-                        channel._fromTxt = true;
-                        return channel;
-                    }
-                    return null;
-                }).filter(channel => channel !== null && channel.id);
+    txtChannels = channelLines.map(line => {
+        const parts = line.split(',').map(part => part.trim());
+        if (parts.length === 3) {
+            const [name, id, platform] = parts;
+            const channel = {
+                name: name.trim(),
+                id: id.trim(),
+                platform: platform.trim().toLowerCase()
+            };
+            channel._fromTxt = true;  // <<< 關鍵標記，確保不存
+            return channel;
+        }
+        return null;
+    }).filter(channel => channel !== null && channel.id);
 
-                console.log(`舊 txt 來源載入成功，共 ${txtChannels.length} 個頻道`);
-            } catch (error) {
-                console.warn('舊 txt 來源載入失敗，將跳過', error);
-            }
+    console.log(`舊 txt 來源載入成功，共 ${txtChannels.length} 個頻道（已加 _fromTxt 標記）`);
+} catch (error) {
+    console.warn('舊 txt 來源載入失敗，將跳過', error);
+}
 
             // 步驟2：載入新 API 來源
             try {
@@ -591,15 +591,18 @@
         }
 
         function saveChannelsToStorage() {
-            let customChannels1 = channels.filter(ch => !ch._fromAPI);
-            customChannels1 = customChannels1.map(ch => {
-                const { _fromAPI, _fromTxt, ...cleanCh } = ch;
-                return cleanCh;
-            });
+    // 嚴格只儲存完全沒有標記的（真正手動新增）
+    let customChannels = channels.filter(ch => !ch._fromAPI && !ch._fromTxt);
 
-            localStorage.setItem("customChannels1", JSON.stringify(customChannels1));
-            console.log(`已儲存 ${customChannels1.length} 個自訂/備援頻道`);
-        }
+    // 清除標記
+    customChannels = customChannels.map(ch => {
+        const { _fromAPI, _fromTxt, ...cleanCh } = ch;
+        return cleanCh;
+    });
+
+    localStorage.setItem("customChannels", JSON.stringify(customChannels));  // 或你的 customChannels1
+    console.log(`已儲存 ${customChannels.length} 個真正手動新增的自訂頻道（完全排除 API 和 txt 來源）`);
+}
 
         function loadChannelsFromStorage() {
             const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
