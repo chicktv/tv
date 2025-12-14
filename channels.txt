@@ -1,4 +1,4 @@
-w,wing36747,kick
+w,wing3674,kick
 N,Eastsnake25,kick
 ATV,collartv,kick
 西,nanase-maru525,kick
@@ -10,6 +10,7 @@ A,alancml01,twitch
 木,muse_tw2,twitch
 友,yaubotai,kick
 w,10268974521971,ok
+
 
 
 
