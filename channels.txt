@@ -5,10 +5,11 @@
 
 QT,qt369,kick
 
-A,alancml,twitch
-朗,mingpig930_2,twitch
+A,alancml01,twitch
+
 
 木,muse_tw2,twitch
+
 
 
 
