@@ -383,7 +383,17 @@
                     id: id,
                     platform: platform
                 };
-            }).filter(channel => channel !== null && channel.id);
+				 const channel = {
+        name: (item.displayname || id || "Unknown").trim(),
+        id: id,
+        platform: platform
+    };
+
+    channel._fromAPI = true;  // 加標記
+
+    return channel;
+}).filter(channel => channel !== null && channel.id);
+
 
             console.log(`新 API 來源載入成功，共 ${apiChannels.length} 個頻道（最高優先權）`);
         } else {
