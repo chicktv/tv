@@ -343,15 +343,21 @@
         const channelLines = data.split('\n').filter(line => line.trim());
 
         txtChannels = channelLines.map(line => {
-            const parts = line.split(',').map(part => part.trim());
-            if (parts.length === 3) {
-                const [name, id, platform] = parts;
-                return { name: name.trim(), id: id.trim(), platform: platform.trim().toLowerCase() };
-            }
-            return null;
-        }).filter(channel => channel !== null && channel.id);
+    const parts = line.split(',').map(part => part.trim());
+    if (parts.length === 3) {
+        const [name, id, platform] = parts;
+        const channel = { 
+            name: name.trim(), 
+            id: id.trim(), 
+            platform: platform.trim().toLowerCase() 
+        };
+        channel._fromTxt = true;  // <<< 加 txt 來源標記
+        return channel;
+    }
+    return null;
+}).filter(channel => channel !== null && channel.id);
 
-        console.log(`舊 txt 來源載入成功，共 ${txtChannels.length} 個頻道`);
+console.log(`舊 txt 來源載入成功，共 ${txtChannels.length} 個頻道（已加 _fromTxt 標記）`);
     } catch (error) {
         console.warn('舊 txt 來源載入失敗，將跳過', error);
     }
@@ -436,28 +442,18 @@ console.log(`去重完成，最終頻道數：${channels.length} 個（API 已�
 
     // ===== saveChannelsToStorage() 改為以下（強制排除與 API 重複的）=====
 function saveChannelsToStorage() {
-    // 只儲存「不是來自 API」的頻道（沒有 _fromAPI 標記）
-    let customChannels = channels.filter(ch => !ch._fromAPI);
+    // 只儲存「完全沒有來源標記」的頻道 → 才是真正使用者手動新增的
+    let customChannels = channels.filter(ch => !ch._fromAPI && !ch._fromTxt);
 
-    // 可選：清除任何殘留標記（雖然通常不會有）
+    // 清除任何可能的殘留標記
     customChannels = customChannels.map(ch => {
-        const { _fromAPI, ...cleanCh } = ch;  // 移除標記
+        const { _fromAPI, _fromTxt, ...cleanCh } = ch;
         return cleanCh;
     });
 
     localStorage.setItem("customChannels", JSON.stringify(customChannels));
-    console.log(`已儲存 ${customChannels.length} 個純自訂頻道（已自動排除所有 API 來源，包括覆蓋的舊自訂）`);
+    console.log(`已儲存 ${customChannels.length} 個真正手動新增的自訂頻道（排除 API 和 txt 來源）`);
 }
-    // 只儲存「完全不與 API 同名同平台」的頻道
-    const customChannels = channels.filter(ch => {
-        const normalizedName = ch.name.trim().toLowerCase();
-        const normalizedPlatform = ch.platform.trim().toLowerCase();
-        return !apiKeys.has(`${normalizedName}|${normalizedPlatform}`);
-    });
-
-    localStorage.setItem("customChannels", JSON.stringify(customChannels));
-    console.log(`已儲存 ${customChannels.length} 個純自訂頻道（自動排除與 API 同名的）`);
-
 
         function loadChannelsFromStorage() {
             const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
