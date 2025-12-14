@@ -495,7 +495,7 @@
                             id: id.trim(), 
                             platform: platform.trim().toLowerCase() 
                         };
-                        
+                        channel._fromTxt = true;
                         return channel;
                     }
                     return null;
@@ -548,7 +548,7 @@
             }
 
             // 步驟3：載入 localStorage 自訂頻道
-            const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
 
             // 步驟4：合併並去重
             let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
@@ -591,18 +591,18 @@
         }
 
         function saveChannelsToStorage() {
-            let customChannels = channels.filter(ch => !ch._fromAPI);
-            customChannels = customChannels.map(ch => {
+            let customChannels1 = channels.filter(ch => !ch._fromAPI);
+            customChannels1 = customChannels1.map(ch => {
                 const { _fromAPI, _fromTxt, ...cleanCh } = ch;
                 return cleanCh;
             });
 
-            localStorage.setItem("customChannels", JSON.stringify(customChannels));
-            console.log(`已儲存 ${customChannels.length} 個自訂/備援頻道`);
+            localStorage.setItem("customChannels1", JSON.stringify(customChannels1));
+            console.log(`已儲存 ${customChannels1.length} 個自訂/備援頻道`);
         }
 
         function loadChannelsFromStorage() {
-            const storedChannels = JSON.parse(localStorage.getItem("customChannels") || "[]");
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
             channels = [...channels.filter(isDefaultChannel), ...storedChannels];
         }
 
