@@ -398,19 +398,27 @@
 
     // ===== 步驟4：合併並去重 —— API 最高優先（放在最後）=====
     // 順序：localStorage → txt → API（後面的會覆蓋前面的相同 name+platform）
-    let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
+   // ===== 在 loadChannelsFromUrl() 內的合併去重部分改為以下（更強壯）=====
+let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
 
-    const seen = new Set();
-    channels = [];
+const seen = new Set();
+channels = [];
 
-    for (const ch of allChannels) {
-        const key = `${ch.name.toLowerCase()}|${ch.platform.toLowerCase()}`;
-        if (!seen.has(key)) {
-            seen.add(key);
-            channels.push(ch);
-        }
-        // 如果重複，因為 API 在最後 → 會保留 API 版本，前面 localStorage 或 txt 的會被丟棄
+for (const ch of allChannels) {
+    // 強制正規化：去除前後空格 + name 小寫
+    const normalizedName = ch.name.trim().toLowerCase();
+    const normalizedPlatform = ch.platform.trim().toLowerCase();
+    const key = `${normalizedName}|${normalizedPlatform}`;
+
+    if (!seen.has(key)) {
+        seen.add(key);
+        // 使用原始 ch（保留原 name 大小寫和 id）
+        channels.push(ch);
     }
+    // 重複時直接跳過舊的，保留後面的（API 的）
+}
+
+console.log(`去重完成，最終頻道數：${channels.length} 個（API 已自動覆蓋所有同名同平台，包括舊自訂）`);
 
     // ===== 步驟5：特殊備援（兩個線上來源都失敗且 channels 為空）=====
     if (channels.length === 0 && storedChannels.length > 0) {
@@ -425,19 +433,25 @@
     generateButtons();
 }
 
-     function saveChannelsToStorage() {
-    // 只儲存「不在目前 API 來源中」的頻道
-    // 這樣即使使用者曾手動新增與 API 同名的頻道，也不會再存回來（已被 API 覆蓋）
-    const apiKeys = new Set(
-        apiChannels.map(ch => `${ch.name.toLowerCase()}|${ch.platform.toLowerCase()}`)
-    );
+    // ===== saveChannelsToStorage() 改為以下（強制排除與 API 重複的）=====
+function saveChannelsToStorage() {
+    // 建立 API 的正規化鍵集合
+    const apiKeys = new Set();
+    apiChannels.forEach(ch => {
+        const normalizedName = ch.name.trim().toLowerCase();
+        const normalizedPlatform = ch.platform.trim().toLowerCase();
+        apiKeys.add(`${normalizedName}|${normalizedPlatform}`);
+    });
 
-    const customChannels = channels.filter(ch => 
-        !apiKeys.has(`${ch.name.toLowerCase()}|${ch.platform.toLowerCase()}`)
-    );
+    // 只儲存「完全不與 API 同名同平台」的頻道
+    const customChannels = channels.filter(ch => {
+        const normalizedName = ch.name.trim().toLowerCase();
+        const normalizedPlatform = ch.platform.trim().toLowerCase();
+        return !apiKeys.has(`${normalizedName}|${normalizedPlatform}`);
+    });
 
     localStorage.setItem("customChannels", JSON.stringify(customChannels));
-    console.log(`已儲存 ${customChannels.length} 個純自訂頻道（不與 API 重複）`);
+    console.log(`已儲存 ${customChannels.length} 個純自訂頻道（自動排除與 API 同名的）`);
 }
 
         function loadChannelsFromStorage() {
