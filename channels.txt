@@ -5,11 +5,12 @@ ATV,collartv,kick
 爵,jeukpo,kick
 QT,qt369,kick
 哥,cobra-and-godzilla,kick
-A,alancml01,twitch
+A,falconjurer,kick
 哥,godzilla_2025,twitch
 木,muse_tw2,twitch
 友,yaubotai,kick
 w,10268974521971,ok
+
 
 
 
