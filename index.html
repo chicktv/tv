@@ -478,7 +478,7 @@
             let txtChannels = [];
             let apiChannels = [];
 
-                 // ===== 步驟1：載入舊 txt 來源 =====
+     // ===== 步驟1：載入舊 txt 來源 =====
 try {
     const response = await fetch('https://chicktv.github.io/tv/channels.txt');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -548,7 +548,7 @@ try {
             }
 
             // 步驟3：載入 localStorage 自訂頻道
-            const storedChannels = JSON.parse(localStorage.getItem("customChannels11") || "[]");
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
 
             // 步驟4：合併並去重
             let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
@@ -605,7 +605,7 @@ try {
 }
 
         function loadChannelsFromStorage() {
-            const storedChannels = JSON.parse(localStorage.getItem("customChannels11") || "[]");
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
             channels = [...channels.filter(isDefaultChannel), ...storedChannels];
         }
 
