@@ -968,23 +968,37 @@ try {
         }
 
         function clickyClick() {
-            const name = document.getElementById("channel-name").value;
-            const id = document.getElementById("channel-id").value;
-            const platform = document.getElementById("channel-platform").value;
+    const name = document.getElementById("channel-name").value.trim();
+    const id = document.getElementById("channel-id").value.trim();
+    const platform = document.getElementById("channel-platform").value.toLowerCase();
 
-            const existingChannelIndex = channels.findIndex(ch => ch.id === id);
-            if (existingChannelIndex > -1) {
-                channels[existingChannelIndex].platform = platform;
-            } else {
-                const newChannel = { name, id, platform };
-                channels.push(newChannel);
-                channelStatuses[id] = 'unknown'; // 初始化新頻道狀態
-            }
+    if (!name || !id || !platform) {
+        alert("請填完整資料");
+        return;
+    }
 
-            saveChannelsToStorage();
-            generateButtons();
-            cleardata();
-        }
+    const existingChannelIndex = channels.findIndex(ch => 
+        ch.name.toLowerCase() === name.toLowerCase() && 
+        ch.platform.toLowerCase() === platform
+    );
+
+    let newChannel = { name, id, platform };
+
+    // 強制清除任何標記，確保是純自訂
+    delete newChannel._fromAPI;
+    delete newChannel._fromTxt;
+
+    if (existingChannelIndex > -1) {
+        // 更新現有（可能覆蓋官方，但我們允許使用者強制更新）
+        channels[existingChannelIndex] = newChannel;
+    } else {
+        channels.push(newChannel);
+    }
+
+    saveChannelsToStorage();  // 立即儲存
+    generateButtons();
+    cleardata();
+}
 
         function editClick() {
             const deleteButtons = document.querySelectorAll("button");
