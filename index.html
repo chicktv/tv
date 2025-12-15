@@ -946,7 +946,7 @@ try {
             } else if (channel.platform === "twitch") {
                 return `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
             } else if (channel.platform === "ok") {
-                return `https://young-cloud-e59f.chicktv001.workers.dev/${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+                return `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
             } else {
                 return "";
             }
