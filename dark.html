@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>chickchat</title>
+<link rel="icon" href="https://chicktv.github.io/tv/chicktv.png" type="image/svg+xml">
 <style>
     /* ========== Twitch Dark Theme ========== */
     body {
@@ -722,54 +723,35 @@
         color: #9147ff;
     }
     
-    .reply-message {
-        background: #1f1f23;
+    /* 回覆行樣式 */
+    .reply-line {
+        background: rgba(31, 31, 35, 0.8);
         border-left: 2px solid #9147ff;
-        padding: 6px 8px;
-        margin-bottom: 6px;
+        padding: 4px 8px;
+        margin-bottom: 4px;
         border-radius: 0 4px 4px 0;
         font-size: 12px;
         color: #adadb8;
-        display: flex;
-        align-items: flex-start;
+        cursor: pointer;
+        line-height: 1.2;
+        display: block;
     }
     
-    .reply-message .reply-avatar {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        margin-right: 6px;
-        flex-shrink: 0;
-    }
-    
-    .reply-message .reply-content {
-        flex: 1;
-        overflow: hidden;
-    }
-    
-    .reply-message .reply-username {
+    .reply-line .reply-username {
         font-weight: bold;
         color: #9147ff;
-        margin-right: 6px;
-        font-size:14px;
-        font-weight: bold;
-        flex-shrink: 0;
+        margin-right: 4px;
+        font-size: 12px;
+        display: inline;
     }
     
-    .reply-message .reply-text {
+    .reply-line .reply-text {
         color: #adadb8;
         word-break: break-word;
-        line-height: 1.3;
-    }
-    
-    .reply-message .reply-arrow {
-        color: #9147ff;
-        margin-right: 6px;
-        font-size: 10px;
-    }
-    
-    .reply-container {
-        margin-bottom: 8px;
+        line-height: 1.2;
+        display: inline;
+        font-size: 11px;
+        opacity: 0.9;
     }
     
     /* 改進的完整回覆訊息容器 */
@@ -777,59 +759,14 @@
         background: rgba(30, 30, 35, 0.7);
         border-radius: 8px;
         margin: 8px 0;
-        padding: 0;
+        padding: 8px 12px;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        display: block;
     }
     
-    .reply-header {
-        display: flex;
-        align-items: center;
-        padding: 6px 12px;
-        background: rgba(31, 31, 35, 0.8);
-        display:none;
-        font-size: 11px;
-        color: #bf94ff;
-    }
-    
-    .reply-header .reply-icon {
-        margin-right: 6px;
-        font-size: 10px;
-    }
-    
-    .reply-header .reply-username {
-        font-weight: bold;
-        margin-right: 0px;
-    }
-    
-    .reply-original {
-        padding: 8px 12px;
-        background: rgba(31, 31, 35, 0.8);
-        margin: 0;
-        font-size: 12px;
-        color: #adadb8;
-        max-height: 60px;
-        overflow: hidden;
-        line-height: 1.3;
-    }
-    
-    .reply-original .original-username {
-        font-weight: bold;
-        color: #9147ff;
-        margin-right: 6px;
-    }
-    
-    /* 修正訊息內容布局 - 使用 table 佈局而不是 flex */
-    .msg-content {
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
-        width: 100%;
-        line-height: 1.4;
-    }
-    
-     .msg-with-reply .msg-content {
-        padding: 8px 12px;
+    .msg-with-reply .msg-content {
+        padding: 0;
         display: flex;
         align-items: flex-start;
         gap: 6px;
@@ -1036,7 +973,7 @@
 // ===================== 重要設定 =====================
 // ===================== 重要設定 =====================
 const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-const channel = "whitewing940920";
+const channel = "69nocondom";
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
 const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
@@ -1100,6 +1037,7 @@ const MAX_MESSAGES = 100;
 
 // 訊息 ID 映射系統 (使用 timestamp)
 const messageIdMap = new Map();
+const twitchMsgIdToTimestamp = new Map(); // Twitch 訊息 ID 到 timestamp 的映射
 
 // ===================== 防止 XSS =====================
 function escapeHtml(text) {
@@ -1465,7 +1403,6 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
-
 // ===================== 處理媒體和表情的函數 =====================
 function processMediaAndEmojis(text) {
   let html = escapeHtml(text);
@@ -1699,14 +1636,14 @@ function escapeRegExp(string) {
 }
 
 // ===================== 完整的訊息處理函數 =====================
-async function processMessage(text) {
+async function processMessage(tags, message, messageTimestamp) {
   function decodeHtmlEntities(text) {
     const textarea = document.createElement('textarea');
     textarea.innerHTML = text;
     return textarea.value;
   }
   
-  let decodedText = decodeHtmlEntities(text);
+  let decodedText = decodeHtmlEntities(message);
   let html = decodedText;
   
   // 檢查是否包含 [r] 標籤
@@ -1729,11 +1666,17 @@ async function processMessage(text) {
         const repliedUsername = parts[0].trim();
         const repliedTimestamp = parts[1].trim();
         
-        // 嘗試獲取原始訊息內容
+        // 嘗試獲取原始訊息內容和 displayname
         let originalMessageText = '[原始訊息已不可用]';
+        let repliedDisplayName = repliedUsername; // 預設使用 username
+        
         const messageInfo = messageIdMap.get(repliedTimestamp);
-        if (messageInfo && messageInfo.message) {
-          originalMessageText = messageInfo.message;
+        if (messageInfo) {
+          // 如果有原始訊息，使用原始訊息內容
+          originalMessageText = messageInfo.message || originalMessageText;
+          
+          // 如果有 displayName，使用 displayName，否則使用 username
+          repliedDisplayName = messageInfo.displayName || messageInfo.username || repliedUsername;
         }
         
         // 處理原始訊息中的表情和圖片
@@ -1745,30 +1688,32 @@ async function processMessage(text) {
         // 處理剩餘內容中的媒體和表情
         let processedRemainingContent = processMediaAndEmojis(remainingContent);
         
-        // 創建完整的回覆結構
-        return `
-          <div class="reply-context">
-            <span class="reply-icon">↩</span>
-            回覆給 
-            <span class="replying-to">${escapeHtml(repliedUsername)}</span>
-          </div>
-          <div class="reply-message" onclick="scrollToTimestamp('${escapeHtml(repliedTimestamp)}')" style="cursor: pointer;">
-            <div class="reply-content">
-              <span class="reply-arrow">→</span>
-              <span class="reply-username">${escapeHtml(repliedUsername)}:</span>
+        // 返回回覆行和訊息的結構
+        return {
+          isReply: true,
+          replyLine: `
+            <div class="reply-line" onclick="scrollToTimestamp('${escapeHtml(repliedTimestamp)}')">
+              <span style="color: #9147ff; font-weight: bold;">回覆給</span>
+              <span class="reply-username">@${escapeHtml(repliedDisplayName)}:</span>
               <span class="reply-text">${processedOriginalMessage}</span>
             </div>
-          </div>
-          ${processedRemainingContent}
-        `;
+          `,
+          messageContent: processedRemainingContent
+        };
       }
     }
     
     // 如果 [r] 標籤格式不正確，返回原始處理結果
-    return processMediaAndEmojis(html);
+    return {
+      isReply: false,
+      messageContent: processMediaAndEmojis(html)
+    };
   } else {
     // 沒有 [r] 標籤，正常處理
-    return processMediaAndEmojis(html);
+    return {
+      isReply: false,
+      messageContent: processMediaAndEmojis(html)
+    };
   }
 }
 
@@ -1882,17 +1827,19 @@ input.addEventListener('focus', function() {
 });
 
 // ===================== 回覆功能 (使用 timestamp) =====================
-function setupReply(messageId, username, messageText, timestamp) {
+function setupReply(messageId, username, displayName, messageText, timestamp) {
   replyingTo = {
     id: messageId,
     username: username,
+    displayName: displayName || username, // 儲存 displayName
     message: messageText,
     timestamp: timestamp,
     // 儲存原始訊息內容（截斷後）
     originalMessage: truncateMessageText(messageText, 50)
   };
   
-  replyTargetName.textContent = username;
+  // 使用 displayName 顯示
+  replyTargetName.textContent = displayName || username;
   replyIndicator.style.display = 'flex';
   input.focus();
   
@@ -1905,7 +1852,7 @@ function setupReply(messageId, username, messageText, timestamp) {
   preview.id = 'replyPreview';
   preview.className = 'reply-preview';
   preview.innerHTML = `
-    回覆給 <span class="replying-to">${username}</span>: ${truncateMessageText(messageText, 25)}
+    回覆給 <span class="replying-to">${displayName || username}</span>: ${truncateMessageText(messageText, 25)}
     <div style="margin-top: 5px; font-size: 11px; color: #adadb8;">
       使用以下格式插入回覆連結：
       <button onclick="insertRtag()" style="margin-left: 5px; padding: 2px 6px; background: #3a3a3d; color: #fff; border: none; border-radius: 3px; font-size: 11px; cursor: pointer;">
@@ -1924,7 +1871,8 @@ function insertRtag() {
   const currentValue = input.value;
   const cursorPos = input.selectionStart;
   
-  // 使用 timestamp 而不是 message ID
+  // 使用 username 而不是 displayname，因為回覆標籤中需要的是 username
+  // 但我們在顯示時會使用 displayname
   const rtag = `[r]${replyingTo.username},${replyingTo.timestamp}[m] `;
   const newValue = currentValue.substring(0, cursorPos) + rtag + currentValue.substring(cursorPos);
   input.value = newValue;
@@ -2454,6 +2402,47 @@ document.getElementById('emojiCloseBtn').onclick = () => {
   document.getElementById('emojiPanel').style.display = 'none';
 };
 
+// ===================== 處理非 [r] 標籤的回覆訊息 =====================
+function processReplyMessage(tags, message, messageTimestamp) {
+  // 檢查是否是 Twitch 原生回覆
+  if (tags['reply-parent-msg-id']) {
+    const parentMsgId = tags['reply-parent-msg-id'];
+    const parentTimestamp = twitchMsgIdToTimestamp.get(parentMsgId);
+    const parentMsgInfo = parentTimestamp ? messageIdMap.get(parentTimestamp.toString()) : null;
+    
+    if (parentMsgInfo) {
+      // 獲取父訊息的 displayName
+      const parentDisplayName = parentMsgInfo.displayName || parentMsgInfo.username || tags['reply-parent-user-login'];
+      const parentMessage = parentMsgInfo.message || '[原始訊息已不可用]';
+      
+      // 處理父訊息的媒體和表情
+      let processedParentMessage = processMediaAndEmojis(parentMessage);
+      
+      // 處理當前訊息的媒體和表情
+      let processedCurrentMessage = processMediaAndEmojis(message);
+      
+      // 返回回覆格式的 HTML
+      return {
+        isReply: true,
+        replyLine: `
+          <div class="reply-line" onclick="scrollToTimestamp('${escapeHtml(parentTimestamp)}')">
+            <span style="color: #9147ff; font-weight: bold;">回覆給</span>
+            <span class="reply-username">@${escapeHtml(parentDisplayName)}:</span>
+            <span class="reply-text">${processedParentMessage}</span>
+          </div>
+        `,
+        messageContent: processedCurrentMessage
+      };
+    }
+  }
+  
+  // 如果不是回覆訊息，直接處理當前訊息
+  return {
+    isReply: false,
+    messageContent: processMediaAndEmojis(message)
+  };
+}
+
 // ===================== tmi.js 連線 =====================
 function connectChat() {
   if (isConnected) return;
@@ -2483,28 +2472,99 @@ function connectChat() {
       // 為每條訊息生成一個 timestamp
       const messageTimestamp = tags['tmi-sent-ts'] || Date.now();
       
+      // 儲存 Twitch 訊息 ID 到 timestamp 的映射
+      if (tags.id && messageTimestamp) {
+        twitchMsgIdToTimestamp.set(tags.id, messageTimestamp.toString());
+      }
+      
       // 記錄 timestamp 映射，包含完整的原始訊息
       if (messageTimestamp) {
         messageIdMap.set(messageTimestamp.toString(), {
-          username: tags['display-name'] || tags.username,
+          username: tags.username, // 儲存 username
+          displayName: tags['display-name'] || tags.username, // 儲存 display-name
           timestamp: messageTimestamp,
           elementId: `timestamp-${messageTimestamp}`,
           message: message, // 儲存完整的原始訊息
-          processedMessage: await processMessage(message) // 儲存處理後的訊息（可選）
         });
       }
 
-      // 檢查是否包含 [r] 標籤
+      // 檢查是否包含 [r] 標籤或 Twitch 原生回覆
       const hasRtag = message.includes('[r]') && message.includes('[m]');
+      const isReply = hasRtag || tags['reply-parent-msg-id'];
       
       let div;
-      if (hasRtag) {
-        // 如果是包含 [r] 標籤的訊息，創建帶有回覆樣式的容器
+      if (isReply) {
+        // 如果是回覆訊息，創建帶有回覆樣式的容器
         div = document.createElement('div');
         div.className = `msg-with-reply ${isMentioned ? 'mentioned-message' : ''}`;
         div.id = `timestamp-${messageTimestamp}`;
         div.setAttribute('data-timestamp', messageTimestamp);
         div.setAttribute('data-message-id', tags.id || '');
+        
+        // 處理訊息
+        const processedMessage = hasRtag ? await processMessage(tags, message, messageTimestamp) : processReplyMessage(tags, message, messageTimestamp);
+        
+        // 添加回覆行（如果有）
+        if (processedMessage.isReply) {
+          div.innerHTML = processedMessage.replyLine;
+        }
+        
+        // 創建訊息內容區域
+        const msgContent = document.createElement('div');
+        msgContent.className = 'msg-content';
+        
+        const nameContainer = document.createElement('div');
+        nameContainer.className = 'name-container';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.style.color = tags.color || '#9147ff';
+        
+        const badges = parseBadges(tags.badges);
+        const badgesHtml = renderBadges(badges);
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
+        while (tempDiv.firstChild) {
+          nameSpan.appendChild(tempDiv.firstChild);
+        }
+        
+        nameContainer.appendChild(nameSpan);
+        msgContent.appendChild(nameContainer);
+        
+        const textContainer = document.createElement('div');
+        textContainer.className = 'text-container';
+        
+        const msg = document.createElement('span');
+        msg.className = 'message-text';
+        msg.innerHTML = processedMessage.messageContent;
+        
+        textContainer.appendChild(msg);
+        msgContent.appendChild(textContainer);
+        
+        if (oauthToken && !self) {
+          const buttonContainer = document.createElement('div');
+          buttonContainer.className = 'button-container';
+          
+          const replyBtn = document.createElement('button');
+          replyBtn.className = 'reply-btn';
+          replyBtn.innerHTML = '↩️';
+          replyBtn.title = '回覆此訊息';
+          replyBtn.onclick = () => {
+            // 傳遞 display-name 給 setupReply
+            setupReply(
+              tags.id || messageTimestamp.toString(), 
+              tags.username, 
+              tags['display-name'], 
+              message, 
+              messageTimestamp.toString()
+            );
+          };
+          buttonContainer.appendChild(replyBtn);
+          
+          msgContent.appendChild(buttonContainer);
+        }
+        
+        div.appendChild(msgContent);
       } else {
         // 普通訊息
         div = document.createElement('div');
@@ -2512,57 +2572,67 @@ function connectChat() {
         div.id = `timestamp-${messageTimestamp}`;
         div.setAttribute('data-timestamp', messageTimestamp);
         div.setAttribute('data-message-id', tags.id || '');
-      }
-
-      const msgContent = document.createElement('div');
-      msgContent.className = 'msg-content';
-      
-      const nameContainer = document.createElement('div');
-      nameContainer.className = 'name-container';
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'name';
-      nameSpan.style.color = tags.color || '#9147ff';
-      
-      const badges = parseBadges(tags.badges);
-      const badgesHtml = renderBadges(badges);
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
-      while (tempDiv.firstChild) {
-        nameSpan.appendChild(tempDiv.firstChild);
-      }
-      
-      nameContainer.appendChild(nameSpan);
-      msgContent.appendChild(nameContainer);
-      
-      const textContainer = document.createElement('div');
-      textContainer.className = 'text-container';
-      
-      // 處理完整訊息
-      const msg = document.createElement('span');
-      msg.className = 'message-text';
-      msg.innerHTML = await processMessage(message);
-      textContainer.appendChild(msg);
-      
-      msgContent.appendChild(textContainer);
-      
-      if (oauthToken && !self) {
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'button-container';
         
-        const replyBtn = document.createElement('button');
-        replyBtn.className = 'reply-btn';
-        replyBtn.innerHTML = '↩️';
-        replyBtn.title = '回覆此訊息';
-        replyBtn.onclick = () => {
-          setupReply(tags.id || messageTimestamp.toString(), tags['display-name'] || tags.username, message, messageTimestamp.toString());
-        };
-        buttonContainer.appendChild(replyBtn);
+        const msgContent = document.createElement('div');
+        msgContent.className = 'msg-content';
         
-        msgContent.appendChild(buttonContainer);
+        const nameContainer = document.createElement('div');
+        nameContainer.className = 'name-container';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.style.color = tags.color || '#9147ff';
+        
+        const badges = parseBadges(tags.badges);
+        const badgesHtml = renderBadges(badges);
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = badgesHtml + escapeHtml(tags['display-name'] || tags.username) + ': ';
+        while (tempDiv.firstChild) {
+          nameSpan.appendChild(tempDiv.firstChild);
+        }
+        
+        nameContainer.appendChild(nameSpan);
+        msgContent.appendChild(nameContainer);
+        
+        const textContainer = document.createElement('div');
+        textContainer.className = 'text-container';
+        
+        const msg = document.createElement('span');
+        msg.className = 'message-text';
+        
+        // 處理普通訊息
+        const processedMessage = processMediaAndEmojis(message);
+        msg.innerHTML = processedMessage;
+        
+        textContainer.appendChild(msg);
+        
+        msgContent.appendChild(textContainer);
+        
+        if (oauthToken && !self) {
+          const buttonContainer = document.createElement('div');
+          buttonContainer.className = 'button-container';
+          
+          const replyBtn = document.createElement('button');
+          replyBtn.className = 'reply-btn';
+          replyBtn.innerHTML = '↩️';
+          replyBtn.title = '回覆此訊息';
+          replyBtn.onclick = () => {
+            setupReply(
+              tags.id || messageTimestamp.toString(), 
+              tags.username, 
+              tags['display-name'], 
+              message, 
+              messageTimestamp.toString()
+            );
+          };
+          buttonContainer.appendChild(replyBtn);
+          
+          msgContent.appendChild(buttonContainer);
+        }
+        
+        div.appendChild(msgContent);
       }
       
-      div.appendChild(msgContent);
       chat.appendChild(div);
       
       limitMessages();
@@ -2745,7 +2815,43 @@ cancelReplyBtn.onclick = cancelReply;
 
 // ===================== 新增 [r] 標籤按鈕 =====================
 // 在貼上按鈕區域添加 [r] 標籤按鈕
+const pasteBtn = document.getElementById('pastebtn');
+if (pasteBtn) {
+  const rTagButton = document.createElement('button');
+  rTagButton.id = 'pasteRtag';
+  rTagButton.type = 'button';
+  rTagButton.className = 'sk_botton';
+  rTagButton.textContent = '回覆 [r]';
+  rTagButton.title = '插入回覆標籤';
+  pasteBtn.appendChild(rTagButton);
 
+  rTagButton.addEventListener('click', function() {
+    if (input.disabled) {
+      alert('請先登入後再使用此功能');
+      return;
+    }
+    
+    if (replyingTo) {
+      insertRtag();
+    } else {
+      // 插入空的 [r] 標籤模板
+      const currentValue = input.value;
+      const cursorPos = input.selectionStart;
+      
+      const newValue = currentValue.substring(0, cursorPos) + '[r]使用者名稱,timestamp[m] ' + currentValue.substring(cursorPos);
+      input.value = newValue;
+      
+      adjustTextareaHeight();
+      const newCursorPos = cursorPos + 4;
+      setTimeout(() => {
+        input.focus();
+        input.setSelectionRange(newCursorPos, newCursorPos + 4);
+      }, 10);
+    }
+    
+    updateCharCounter();
+  });
+}
 
 // ===================== 初始化 =====================
 // 在文檔載入完成後初始化點擊事件監聽
@@ -2753,34 +2859,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // 監聽回覆訊息的點擊
   document.addEventListener('click', function(e) {
     // 處理回覆上下文的點擊
-    if (e.target.closest('.reply-context') || e.target.closest('.reply-message')) {
-      const replyContext = e.target.closest('.reply-context') || e.target.closest('.reply-message').previousElementSibling;
-      if (replyContext) {
-        const replyingToSpan = replyContext.querySelector('.replying-to');
-        if (replyingToSpan) {
-          const username = replyingToSpan.textContent;
-          // 可以添加搜尋該使用者訊息的功能
-          console.log('點擊了回覆給:', username);
-        }
-      }
-    }
-    
-    // 處理回覆訊息預覽的點擊
-    if (e.target.closest('.reply-message')) {
-      const replyMessage = e.target.closest('.reply-message');
-      const usernameElement = replyMessage.querySelector('.reply-username');
-      if (usernameElement) {
-        const username = usernameElement.textContent.replace(':', '');
-        // 嘗試搜尋該使用者的最新訊息
-        const userMessages = document.querySelectorAll(`.name[style*="${username}"], .name[data-username="${username}"]`);
-        if (userMessages.length > 0) {
-          const latestMessage = userMessages[userMessages.length - 1];
-          latestMessage.closest('.msg, .msg-with-reply').scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }
-      }
+    if (e.target.closest('.reply-line')) {
+      const replyLine = e.target.closest('.reply-line');
+      replyLine.style.backgroundColor = 'rgba(145, 71, 255, 0.2)';
+      setTimeout(() => {
+        replyLine.style.backgroundColor = '';
+      }, 1000);
     }
   });
   
@@ -2803,10 +2887,4 @@ insertRtagBtn.addEventListener('click', function() {
 });
 </script>
 </body>
-
 </html>
-
-
-
-
-
