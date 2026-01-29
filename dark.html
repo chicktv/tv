@@ -2745,43 +2745,7 @@ cancelReplyBtn.onclick = cancelReply;
 
 // ===================== 新增 [r] 標籤按鈕 =====================
 // 在貼上按鈕區域添加 [r] 標籤按鈕
-const pasteBtn = document.getElementById('pastebtn');
-if (pasteBtn) {
-  const rTagButton = document.createElement('button');
-  rTagButton.id = 'pasteRtag';
-  rTagButton.type = 'button';
-  rTagButton.className = 'sk_botton';
-  rTagButton.textContent = '回覆 [r]';
-  rTagButton.title = '插入回覆標籤';
-  pasteBtn.appendChild(rTagButton);
 
-  rTagButton.addEventListener('click', function() {
-    if (input.disabled) {
-      alert('請先登入後再使用此功能');
-      return;
-    }
-    
-    if (replyingTo) {
-      insertRtag();
-    } else {
-      // 插入空的 [r] 標籤模板
-      const currentValue = input.value;
-      const cursorPos = input.selectionStart;
-      
-      const newValue = currentValue.substring(0, cursorPos) + '[r]使用者名稱,timestamp[m] ' + currentValue.substring(cursorPos);
-      input.value = newValue;
-      
-      adjustTextareaHeight();
-      const newCursorPos = cursorPos + 4;
-      setTimeout(() => {
-        input.focus();
-        input.setSelectionRange(newCursorPos, newCursorPos + 4);
-      }, 10);
-    }
-    
-    updateCharCounter();
-  });
-}
 
 // ===================== 初始化 =====================
 // 在文檔載入完成後初始化點擊事件監聽
