@@ -2,46 +2,38 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v5.5 - Mentions & Full Sync</title>
+    <title>Twitch Console v5.6</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        /* 頂部導覽 */
         .header-bar { background: var(--t-alt); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-        
-        /* 聊天區域 */
         #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #000; }
-        #messages { width: 100%; }
-
-        /* 訊息樣式 */
-        .chat-line { position: relative; margin-bottom: 8px; padding: 10px 45px 10px 10px; border-radius: 4px; background: rgba(255,255,255,0.02); line-height: 1.6; word-wrap: break-word; border: 1px solid transparent; transition: all 0.2s; }
-        .chat-line:hover { background: rgba(255,255,255,0.08); }
         
-        /* 被提及/回覆時的提亮樣式 */
-        .mention-highlight { background: rgba(145, 71, 255, 0.18) !important; border: 1px solid var(--t-purp) !important; box-shadow: 0 0 10px rgba(145, 71, 255, 0.3); }
+        /* 訊息列基礎樣式 */
+        .chat-line { position: relative; margin-bottom: 4px; padding: 8px 45px 8px 10px; border-radius: 4px; background: transparent; line-height: 1.5; word-wrap: break-word; }
+        
+        /* 當別人提及你時的整條提亮 */
+        .mention-highlight { background: rgba(255, 255, 255, 0.1) !important; }
 
-        /* 回覆按鈕 */
-        .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; background: #2f2f35; border-radius: 4px; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 5; }
+        /* 自己名字的紫色背景樣式 */
+        .self-name-tag { background: var(--t-purp); color: #fff !important; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+
+        .reply-btn { position: absolute; right: 10px; top: 8px; width: 26px; height: 26px; background: #2f2f35; border-radius: 4px; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 5; }
+        .chat-line:hover { background: rgba(255,255,255,0.05); }
         .chat-line:hover .reply-btn { display: flex; }
-        .quote-box { font-size: 12px; color: #adadb8; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid var(--t-purp); }
-
-        /* 媒體與表情 */
-        .media-preview { max-width: 200px !important; border-radius: 6px; margin-top: 10px; display: block; border: 1px solid #444; }
-        .alt-emoji { max-width: 150px !important; max-height: 150px !important; vertical-align: middle; margin: 2px; }
+        .quote-box { font-size: 12px; color: #adadb8; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid var(--t-purp); }
+        
+        .media-preview { max-width: 200px !important; border-radius: 6px; margin-top: 8px; display: block; border: 1px solid #333; }
+        .alt-emoji { max-width: 100px !important; max-height: 100px !important; vertical-align: middle; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; }
 
-        /* 表情面板 */
         #emojiPanel { position: fixed; display: none; width: 450px; height: 500px; background: #1f182e; border: 2px solid #443a5a; border-radius: 12px; z-index: 5000; left: 50%; top: 50%; transform: translate(-50%, -50%); flex-direction: column; }
-        #emojiTabs { display: flex; gap: 10px; padding: 12px; background: #0e0e10; overflow-x: auto; border-bottom: 1px solid #333; min-height: 60px; flex-shrink: 0; }
-        #emojiContent { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 12px; background: #18181b; }
-        .emoji-tab { width: 36px; height: 36px; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; border: 2px solid transparent; opacity: 0.6; flex-shrink: 0; }
-        .emoji-tab.active { border-color: var(--t-purp); opacity: 1; }
-        .emoji-item { cursor: pointer; display: flex; align-items: center; justify-content: center; height: 50px; }
-        .emoji-item img { max-width: 100%; max-height: 100%; }
-
-        /* 底部輸入 */
+        #emojiTabs { display: flex; gap: 8px; padding: 10px; background: #0e0e10; overflow-x: auto; min-height: 55px; flex-shrink: 0; }
+        #emojiContent { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; background: #18181b; }
+        .emoji-tab { width: 32px; height: 32px; background-size: contain; background-repeat: no-repeat; background-position: center; cursor: pointer; border-radius: 4px; opacity: 0.5; }
+        .emoji-tab.active { background-color: #333; opacity: 1; }
+        
         .footer { padding: 15px; background: var(--t-alt); border-top: 1px solid #333; flex-shrink: 0; }
         .input-row { display: flex; gap: 10px; margin-top: 10px; }
         #msginput { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 4px; outline: none; }
@@ -51,7 +43,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v5.5</div>
+    <div id="title" style="font-weight:bold;">Twitch Console v5.6</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -60,7 +52,7 @@
 <div id="emojiPanel">
     <div style="padding:12px; display:flex; justify-content:space-between; background:#26262c; border-radius: 12px 12px 0 0; align-items:center;">
         <b>表情資源</b>
-        <button onclick="$('#emojiPanel').hide()">關閉</button>
+        <button onclick="$('#emojiPanel').hide()">✕</button>
     </div>
     <div id="emojiTabs"></div>
     <div id="emojiContent"></div>
@@ -82,10 +74,7 @@
     const CHANNEL = "69nocondom";
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiSets = {}, customBadges = {}, msgCache = {};
-    
-    // 身分資訊識別
-    let myLoginId = "justinfan123"; 
-    let myDisplayName = "Me"; 
+    let myLoginId = "justinfan123", myDisplayName = "Me"; 
 
     async function initApp() {
         if (window.location.hash) {
@@ -93,18 +82,15 @@
             if (token) {
                 if (window.opener) { window.opener.postMessage({ type: "TWITCH_TOKEN", token: token }, "*"); window.close(); return; }
                 ACCESS_TOKEN = token;
-                // 透過 API 獲取真實 DisplayName
                 try {
-                    const r = await fetch('https://api.twitch.tv/helix/users', {
-                        headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID }
-                    });
+                    const r = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } });
                     const d = await r.json();
                     if(d.data && d.data[0]) {
                         myLoginId = d.data[0].login;
                         myDisplayName = d.data[0].display_name;
                         $("#auth-area").html(`<b style="color:#00ff00;">● ${myDisplayName}</b>`);
                     }
-                } catch(e) { console.error("User API Error", e); }
+                } catch(e) { console.error(e); }
             }
         }
         await loadResources();
@@ -138,15 +124,14 @@
             }
             const res = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
             for (const item of res.set) {
-                let name = (typeof item === 'object') ? item.name : item;
-                let img = (typeof item === 'object') ? item.image : "";
-                if (!name || name === "skuser_icon") continue;
+                let n = (typeof item === 'object') ? item.name : item;
+                if (!n || n === "skuser_icon") continue;
                 try {
-                    const d = await $.getJSON(`https://chicktv.github.io/tv/${name}.txt`);
-                    emojiSets[name] = d[name] || [];
-                    emojiSets[name].forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
-                    $('<div class="emoji-tab"></div>').css("background-image", `url(${img})`).on('click', function(){
-                        $(".emoji-tab").removeClass("active"); $(this).addClass("active"); renderEmojiList(name);
+                    const d = await $.getJSON(`https://chicktv.github.io/tv/${n}.txt`);
+                    emojiSets[n] = d[n] || [];
+                    emojiSets[n].forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
+                    $('<div class="emoji-tab"></div>').css("background-image", `url(${(typeof item === 'object')?item.image:''})`).on('click', function(){
+                        $(".emoji-tab").removeClass("active"); $(this).addClass("active"); renderEmojiList(n);
                     }).appendTo("#emojiTabs");
                 } catch(e){}
             }
@@ -156,11 +141,9 @@
 
     function renderEmojiList(n) {
         $("#emojiContent").empty();
-        if(emojiSets[n]) {
-            emojiSets[n].forEach(e => {
-                $('<div class="emoji-item"></div>').append($('<img>').attr('src', e.src).attr('title', e.alt)).on('click', () => insertAtCursor(` ${e.alt} `)).appendTo("#emojiContent");
-            });
-        }
+        if(emojiSets[n]) emojiSets[n].forEach(e => {
+            $('<div class="emoji-item"></div>').append($('<img>').attr('src', e.src)).on('click', () => insertAtCursor(` ${e.alt} `)).appendTo("#emojiContent");
+        });
     }
 
     function sendMessage() {
@@ -174,9 +157,8 @@
             return ""; 
         });
 
-        // 決定本地預覽顯示名稱
-        const selfName = myDisplayName || myLoginId;
-        const html = `<div class="chat-line" style="border-left: 2px solid var(--t-purp); opacity: 0.9;">${replyHtml}<b style="color:#efeff1">${selfName}:</b> ${parseContent(msg)}</div>`;
+        const nameTag = `<b class="self-name-tag">${myDisplayName || myLoginId}</b>`;
+        const html = `<div class="chat-line" style="border-left: 2px solid var(--t-purp);">${replyHtml}${nameTag} ${parseContent(msg)}</div>`;
         $("#messages").append(html);
         $("#chat-container").scrollTop($("#chat-container")[0].scrollHeight);
         $("#msginput").val("");
@@ -189,12 +171,9 @@
             const v = c.match(/(?:v=|\/shorts\/|youtu.be\/)([^#&?]*)/)?.[1];
             return v ? `<iframe class="media-preview" width="200" height="150" src="https://www.youtube.com/embed/${v}" frameborder="0"></iframe>` : m;
         });
-        s = s.replace(/(https?:\/\/x\.com\/[^\s]+)/gi, '<a href="$1" target="_blank" style="color:#1da1f2; font-size:12px;">X 連結</a>');
-        s = s.replace(/(https?:\/\/www\.instagram\.com\/(?:p|reels)\/([^/?#& ]+))/gi, '<iframe class="media-preview" src="https://www.instagram.com/p/$2/embed" width="200" height="280" frameborder="0"></iframe>');
-        s = s.replace(/https?:\/\/store\.steampowered\.com\/app\/([0-9]+)/gi, '<iframe src="https://store.steampowered.com/widget/$1/" frameborder="0" width="200" height="190"></iframe>');
         return s.split(' ').map(w => {
             const src = altMap[w.toLowerCase()];
-            return src ? `<img src="${src}" class="alt-emoji" title="${w}">` : w;
+            return src ? `<img src="${src}" class="alt-emoji">` : w;
         }).join(' ');
     }
 
@@ -214,16 +193,11 @@
             const badgeStr = tags.match(/badges=([^;]*)/)?.[1], msgId = tags.match(/id=([^;]+)/)?.[1], ts = tags.match(/tmi-sent-ts=([\d]+)/)?.[1];
             const cacheKey = ts || msgId;
 
-            // 提亮偵測
+            // 提亮與名字背景判定
             let isMentioned = false;
             const pUser = tags.match(/reply-parent-display-name=([^;]+)/)?.[1], pMsg = tags.match(/reply-parent-msg-body=([^;]+)/)?.[1];
-            
-            // 如果回覆對象是你
             if (pUser && (pUser.toLowerCase() === myDisplayName.toLowerCase() || pUser.toLowerCase() === myLoginId.toLowerCase())) isMentioned = true;
-            
-            // 如果內文提及你
-            const mRegex = new RegExp(`@(${myDisplayName}|${myLoginId})`, 'i');
-            if (mRegex.test(rawMsg)) isMentioned = true;
+            if (new RegExp(`@(${myDisplayName}|${myLoginId})`, 'i').test(rawMsg)) isMentioned = true;
 
             let msg = rawMsg, replyHtml = "";
             if(pUser) {
@@ -239,8 +213,11 @@
             const parsedMsg = parseContent(msg);
             msgCache[cacheKey] = parsedMsg;
             
-            const highlightClass = isMentioned ? "mention-highlight" : "";
-            const line = `<div class="chat-line ${highlightClass}"><div class="reply-btn" onclick="reply('${user}','${cacheKey}')">RE</div>${replyHtml}${parseBadges(badgeStr)}<b style="color:${color}">${user}:</b> ${parsedMsg}</div>`;
+            const isSelf = (user.toLowerCase() === myDisplayName.toLowerCase() || user.toLowerCase() === myLoginId.toLowerCase());
+            const nameHtml = isSelf ? `<b class="self-name-tag">${user}</b>` : `<b style="color:${color}">${user}:</b>`;
+            const hClass = isMentioned ? "mention-highlight" : "";
+
+            const line = `<div class="chat-line ${hClass}"><div class="reply-btn" onclick="reply('${user}','${cacheKey}')">RE</div>${replyHtml}${parseBadges(badgeStr)}${nameHtml} ${parsedMsg}</div>`;
             $("#messages").append(line);
             $("#chat-container").scrollTop($("#chat-container")[0].scrollHeight);
         };
@@ -250,15 +227,14 @@
         if(!s || !customBadges) return "";
         let h = "";
         s.split(',').forEach(b => {
-            const k = b.split('/')[0];
-            const u = customBadges[b] || customBadges[k];
+            const k = b.split('/')[0], u = customBadges[b] || customBadges[k];
             if(u) h += `<img class="badge" src="${u}">`;
         });
         return h;
     }
 
-    function insertTag(s, e) { const i = $("#msginput")[0]; const v = i.value, st = i.selectionStart, en = i.selectionEnd; i.value = v.substring(0, st)+s+v.substring(st, en)+e+v.substring(en); i.focus(); }
-    function insertAtCursor(v) { const i = $("#msginput")[0]; const st = i.selectionStart; i.value = i.value.substring(0, st)+v+i.value.substring(i.selectionEnd); i.focus(); }
+    function insertTag(s, e) { const i = $("#msginput")[0], v = i.value, st = i.selectionStart, en = i.selectionEnd; i.value = v.substring(0, st)+s+v.substring(st, en)+e+v.substring(en); i.focus(); }
+    function insertAtCursor(v) { const i = $("#msginput")[0], st = i.selectionStart; i.value = i.value.substring(0, st)+v+i.value.substring(i.selectionEnd); i.focus(); }
     function reply(u, k) { $("#msginput").val(`[r]${u},${k}[m] @${u} `).focus(); }
     function fetchBadges() { return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => customBadges = d); }
     $(document).on('keypress', '#msginput', e => { if (e.which == 13) sendMessage(); });
