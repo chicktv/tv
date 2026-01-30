@@ -2,15 +2,17 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.21 - Clean Reply Fix</title>
+    <title>Twitch Console v8.22 - Self Mention Highlight</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
+        /* 頁首 */
         .header-bar { background: var(--t-alt); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
         #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #000; }
         
+        /* 聊天訊息樣式 */
         .chat-line { position: relative; margin-bottom: 8px; padding: 8px 45px 8px 10px; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .self-name { color: var(--t-purp); font-weight: bold; }
@@ -24,9 +26,21 @@
         .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; background: #2f2f35; border-radius: 4px; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
         .chat-line:hover .reply-btn { display: flex; }
 
-        /* 引用框 */
-        .quote-box { font-size: 12px; color: #adadb8; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid var(--t-purp); line-height: 1.4; display: block; }
-        .quote-user { font-weight: bold; background-color: #9147ff;color: #ffffff; margin-right: 5px; }
+        /* 引用框基礎樣式 */
+        .quote-box { font-size: 12px; color: #adadb8; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #555; line-height: 1.4; display: block; }
+        
+
+        /* 當自己被回覆 (@) 時的提亮樣式 - 反選提亮 */
+        .quote-box.mention-self { 
+            background: #efeff1; /* 背景變亮 */
+            color: #000; /* 文字變黑 */
+            border-left: 4px solid var(--t-purp);
+            box-shadow: 0 0 10px rgba(145, 71, 255, 0.4);
+        }
+        .quote-box.mention-self .quote-user { 
+            color: #000; /* 引用者名稱在提亮模式下也設為黑色 */
+            text-decoration: underline;
+        }
 
         /* 頁腳 */
         .footer { padding: 15px; background: var(--t-alt); border-top: 1px solid #333; flex-shrink: 0; }
@@ -45,7 +59,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v8.1</div>
+    <div style="font-weight:bold;">Twitch Console v8.2</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -166,7 +180,7 @@
         s = s.replace(/\[y\](.*?)\[t\]/gi, (m, content) => {
             const url = content.trim(); let id = `__PH_${placeholders.length}__`; let html = "";
             if (url.toLowerCase().endsWith(".mp4")) { html = `<video class="media-preview" controls><source src="${url}" type="video/mp4"></video>`; }
-            else { const v = url.match(/(?:v=|\/shorts\/|youtu.be\/)([^#&?]*)/)?.[1]; html = v ? `<iframe class="media-preview" width="250" height="140" src="https://www.youtube.com/embed/${v}" frameborder="0" allowfullscreen></iframe>` : `<a href="${url}" target="_blank">${url}</a>`; }
+            else { const v = url.match(/(?:v=|\/shorts\/|youtu.be\/)([^#&?]*)/)?.[1]; html = v ? `<iframe class="media-preview" width="250" height="140" src="https://www.youtube.com/embed/${v}" frameborder="0" allowfullscreen></iframe>` : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`; }
             placeholders.push(html); return id;
         });
         // 連結
@@ -186,9 +200,9 @@
         let replyDisplayHtml = "";
 
         if (pendingReply.id) {
-            // 發送原生回覆標籤，訊息內容不再重複加 @名稱
             finalRawCommand = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
             let originalText = msgCache[pendingReply.id] || "...";
+            // 本地發送不觸發提亮
             replyDisplayHtml = `<div class="quote-box"><span class="quote-user">@${pendingReply.user}:</span>${originalText}</div>`;
         } else {
             finalRawCommand = `PRIVMSG #${CHANNEL} :${val}`;
@@ -226,14 +240,20 @@
             const pUser = tags.match(/reply-parent-display-name=([^;]+)/)?.[1];
             const pBodyRaw = tags.match(/reply-parent-msg-body=([^;]+)/)?.[1];
             
-            // --- 重點修正：解析顯示邏輯 ---
             let displayMsg = rawMsg;
 
-            if(pUser && pBodyRaw) {
-                let pBody = pBodyRaw.replace(/\\s/g, " ");
-                replyHtml = `<div class="quote-box"><span class="quote-user">@${pUser}:</span>${pBody}</div>`;
+            // --- 重點：判斷是否被 @ 提亮 ---
+            let isMentioned = false;
+            if(pUser) {
+                // 檢查被回覆的人是否為自己
+                if (pUser === myDisplayName || pUser === myLoginId) {
+                    isMentioned = true;
+                }
                 
-                // 如果訊息開頭重複出現了 @使用者名稱，將其過濾掉以避免 UI 出現雙重 @
+                let pBody = pBodyRaw.replace(/\\s/g, " ");
+                // 加上 mention-self 類別進行反選提亮
+                replyHtml = `<div class="quote-box ${isMentioned ? 'mention-self' : ''}"><span class="quote-user">@${pUser}:</span>${pBody}</div>`;
+                
                 const mentionPrefix = `@${pUser} `;
                 if (displayMsg.startsWith(mentionPrefix)) {
                     displayMsg = displayMsg.substring(mentionPrefix.length);
@@ -242,8 +262,9 @@
             else if (rawMsg.includes("[r]")) {
                 const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
                 if(myR) {
+                    if (myR[1] === myDisplayName || myR[1] === myLoginId) isMentioned = true;
                     let body = msgCache[myR[2]] || "...";
-                    replyHtml = `<div class="quote-box"><span class="quote-user">@${myR[1]}:</span>${body}</div>`;
+                    replyHtml = `<div class="quote-box ${isMentioned ? 'mention-self' : ''}"><span class="quote-user">@${myR[1]}:</span>${body}</div>`;
                     displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
                 }
             }
@@ -265,7 +286,6 @@
         pendingReply = { id: id, user: u };
         $("#replying-to-user").text(u);
         $("#reply-indicator").css('display', 'block');
-        // 修正點：點擊回覆時，輸入框保持空白，不插入重複的 @名稱
         $("#msginput").val("").focus();
     }
 
