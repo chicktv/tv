@@ -2,34 +2,29 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v7.3 - Reply Logic Fixed</title>
+    <title>Twitch Console v7.4 - Reply Preview Fixed</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* 基礎結構 */
         .header-bar { background: var(--t-alt); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
         #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #000; }
         
-        /* 聊天內容與提及反亮 */
         .chat-line { position: relative; margin-bottom: 8px; padding: 8px 45px 8px 10px; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .self-name { color: var(--t-purp); font-weight: bold; }
         .mention-tag { background: #efeff1 !important; color: #000 !important; padding: 0px 2px; border-radius: 2px; font-weight: bold; display: inline-block; }
 
-        /* 媒體尺寸限制 250*250 */
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; display: block; border: 1px solid #444; cursor: pointer; object-fit: contain; }
         .alt-emoji { max-width: 100px !important; max-height: 100px !important; vertical-align: middle; margin: 2px; cursor: pointer; border: none; }
         .chat-link { color: #58a6ff; text-decoration: none; word-break: break-all; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; }
 
-        /* 回覆按鈕與引用框 */
         .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; background: #2f2f35; border-radius: 4px; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; }
         .chat-line:hover .reply-btn { display: flex; }
         .quote-box { font-size: 12px; color: #adadb8; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid var(--t-purp); }
 
-        /* 表情面板 */
         #emojiPanel { position: fixed; display: none; width: 450px; height: 500px; background: #1f182e; border: 2px solid #443a5a; border-radius: 12px; z-index: 5000; left: 50%; top: 50%; transform: translate(-50%, -50%); flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         #emojiTabs { display: flex; gap: 10px; padding: 12px; background: #0e0e10; overflow-x: auto; border-bottom: 1px solid #333; min-height: 60px; flex-shrink: 0; }
         #emojiContent { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, 50px); grid-auto-rows: 50px; gap: 12px; background: #18181b; }
@@ -38,7 +33,6 @@
         .emoji-item { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: rgba(255,255,255,0.03); border-radius: 4px; }
         .emoji-item img { max-width: 40px !important; max-height: 40px !important; object-fit: contain; }
 
-        /* 頁尾 */
         .footer { padding: 15px; background: var(--t-alt); border-top: 1px solid #333; flex-shrink: 0; }
         #msginput { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 4px; outline: none; }
         #sendbtn { background: var(--t-purp); color: #fff; border: none; padding: 0 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -47,7 +41,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v7.3</div>
+    <div style="font-weight:bold;">Twitch Console v7.4</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -108,9 +102,7 @@
 
     async function fetchUserInfo() {
         try {
-            const r = await fetch('https://api.twitch.tv/helix/users', { 
-                headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } 
-            });
+            const r = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } });
             const d = await r.json();
             if(d.data && d.data[0]) {
                 myLoginId = d.data[0].login;
@@ -124,10 +116,7 @@
 
     function updateAuthUI() {
         if (myDisplayName) {
-            $("#auth-area").html(`
-                <span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span>
-                <button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>
-            `);
+            $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`);
         }
     }
 
@@ -135,8 +124,7 @@
 
     function twitchLoginPopup() {
         const redirect = window.location.href.split('#')[0];
-        const url = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email`;
-        window.location.href = url;
+        window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email`;
     }
 
     async function loadResources() {
@@ -176,27 +164,17 @@
 
     function parseContent(str) {
         let s = str, placeholders = [];
-        
-        // 1. @提及反亮 (優先處理)
         if (myDisplayName || myLoginId) {
             const names = [myDisplayName, myLoginId].filter(n => n && n.length > 0);
             const escapedNames = names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
             const mReg = new RegExp(`(@?(${escapedNames}))`, 'gi');
-            s = s.replace(mReg, (m) => { 
-                let id = `__PH_${placeholders.length}__`; 
-                placeholders.push(`<span class="mention-tag">${m}</span>`); 
-                return id; 
-            });
+            s = s.replace(mReg, (m) => { let id = `__PH_${placeholders.length}__`; placeholders.push(`<span class="mention-tag">${m}</span>`); return id; });
         }
-
-        // 2. [s] 圖片
         s = s.replace(/\[s\](.*?)\[e\]/gi, (m, url) => { 
             let id = `__PH_${placeholders.length}__`; 
             placeholders.push(`<img src="${url.trim()}" class="media-preview" onclick="window.open('${url.trim()}','_blank')">`); 
             return id; 
         });
-
-        // 3. [y] 影片 (MP4 & YouTube)
         s = s.replace(/\[y\](.*?)\[t\]/gi, (m, content) => {
             const url = content.trim();
             let id = `__PH_${placeholders.length}__`;
@@ -210,19 +188,14 @@
             placeholders.push(html);
             return id;
         });
-
-        // 4. 一般網址
         const urlRegex = /https?:\/\/[^\s]+(?<!__PH_\d+__)/gi;
         s = s.replace(urlRegex, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" class="chat-link">${url}</a>`);
-        
-        // 5. 表情 alt
         let words = s.split(' ');
         s = words.map(w => {
             if (w.includes('__PH_')) return w;
             const src = altMap[w.toLowerCase()];
             return src ? `<img src="${src}" class="alt-emoji" onclick="window.open('${src}','_blank')">` : w;
         }).join(' ');
-
         placeholders.forEach((html, i) => { s = s.replace(`__PH_${i}__`, html); });
         return s;
     }
@@ -230,24 +203,25 @@
     function sendMessage() {
         const val = $("#msginput").val();
         if (!val || !socket || socket.readyState !== 1) return;
-        let msg = val, replyHtml = "";
-        const rMatch = msg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
         
-        // 如果是回覆訊息，生成預覽框
+        let msgToDisplay = val;
+        let replyHtml = "";
+        
+        // 發送端關鍵修復：重新解析 [r] 語法
+        const rMatch = val.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
         if (rMatch) {
             const user = rMatch[1], key = rMatch[2];
-            replyHtml = `<div class="quote-box">@${user}: ${msgCache[key] || "..."}</div>`;
-            msg = msg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
+            replyHtml = `<div class="quote-box">@${user}: ${msgCache[key] || "..." }</div>`;
+            msgToDisplay = val.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
         }
 
-        // 傳送原始訊息給 Twitch
         socket.send(`PRIVMSG #${CHANNEL} :${val}`);
         
-        // 本地渲染：手動為自己生成的訊息建立一個臨時 ID 以供快取
+        // 為自己的訊息建立臨時快取
         const tempId = "self_" + Date.now();
-        msgCache[tempId] = msg; 
-        
-        const html = `<div class="chat-line">${replyHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> ${parseContent(msg)}</div>`;
+        msgCache[tempId] = msgToDisplay;
+
+        const html = `<div class="chat-line">${replyHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> ${parseContent(msgToDisplay)}</div>`;
         $("#messages").append(html);
         $("#chat-container").scrollTop($("#chat-container")[0].scrollHeight);
         $("#msginput").val("");
@@ -268,7 +242,6 @@
             const user = tags.match(/display-name=([^;]+)/)?.[1] || "User", color = tags.match(/color=([^;]+)/)?.[1] || "#9147ff";
             const msgId = tags.match(/id=([^;]+)/)?.[1], ts = tags.match(/tmi-sent-ts=([\d]+)/)?.[1];
             
-            // --- 重點修復：確保快取同時包含 ID 和 TS ---
             if (msgId) msgCache[msgId] = rawMsg;
             if (ts) msgCache[ts] = rawMsg;
 
@@ -277,10 +250,13 @@
                   pId = tags.match(/reply-parent-msg-id=([^;]+)/)?.[1],
                   pBody = tags.match(/reply-parent-msg-body=([^;]+)/)?.[1];
 
+            // 接收端關鍵：不論是系統標籤還是我的 [r] 標籤都應顯示引用框
             if(pUser) {
-                // 如果快取中有內容就用快取的，沒有則用 tags 給的 Body（Twitch 會把空格轉成 \s）
                 const displayBody = msgCache[pId] || (pBody ? pBody.replace(/\\s/g, " ") : "...");
                 replyHtml = `<div class="quote-box">@${pUser}: ${displayBody}</div>`;
+            } else {
+                const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
+                if(myR) replyHtml = `<div class="quote-box">@${myR[1]}: ${msgCache[myR[2]] || "..."}</div>`;
             }
 
             const cleanMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
