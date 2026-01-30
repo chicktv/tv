@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v5.2</title>
+    <title>Twitch Console v5.3</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -33,7 +33,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v5.2</div>
+    <div style="font-weight:bold;">Twitch Console v5.3</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -64,7 +64,10 @@
     const CHANNEL = "69nocondom";
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiSets = {}, customBadges = {}, msgCache = {};
-    let myName = "whitewing940920"; 
+    
+    // 預設身分資訊
+    let myLoginId = "justinfan123"; 
+    let myDisplayName = ""; 
 
     async function initApp() {
         if (window.location.hash) {
@@ -72,6 +75,16 @@
             if (token) {
                 if (window.opener) { window.opener.postMessage({ type: "TWITCH_TOKEN", token: token }, "*"); window.close(); return; }
                 ACCESS_TOKEN = token;
+                // 獲取當前登入者資訊
+                fetch('https://api.twitch.tv/helix/users', {
+                    headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID }
+                }).then(r => r.json()).then(d => {
+                    if(d.data && d.data[0]) {
+                        myLoginId = d.data[0].login;
+                        myDisplayName = d.data[0].display_name;
+                        $("#auth-area").html(`<b style="color:#00ff00;">● ${myDisplayName || myLoginId}</b>`);
+                    }
+                });
             }
         }
         await loadResources();
@@ -82,21 +95,19 @@
 
     function twitchLoginPopup() {
         const redirect = window.location.href.split('#')[0];
-        const url = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit`;
+        const url = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email`;
         window.open(url, "TwitchLogin", "width=500,height=600");
     }
 
     window.addEventListener("message", (e) => {
         if (e.data.type === "TWITCH_TOKEN") {
-            ACCESS_TOKEN = e.data.token;
-            $("#auth-area").html('<b style="color:#00ff00;">● 已登入</b>');
-            startChat();
+            window.location.hash = `#access_token=${e.data.token}`;
+            window.location.reload(); // 重新整理以觸發 API 獲取名稱
         }
     });
 
     async function loadResources() {
         try {
-            // 先載入 skuser_icon.txt 作為「常用」表情包
             const skData = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
             if (Array.isArray(skData)) {
                 emojiSets["常用"] = skData;
@@ -105,8 +116,6 @@
                     $(".emoji-tab").removeClass("active"); $(this).addClass("active"); renderEmojiList("常用");
                 }).appendTo("#emojiTabs");
             }
-
-            // 載入其餘 showset 資源
             const res = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
             for (const item of res.set) {
                 let name = (typeof item === 'object') ? item.name : item;
@@ -139,13 +148,16 @@
         if (!val || !socket || socket.readyState !== 1) return;
         socket.send(`PRIVMSG #${CHANNEL} :${val}`);
         
+        // 決定本地預覽要顯示的名字
+        const nameToShow = myDisplayName || myLoginId;
+        
         let msg = val, replyHtml = "";
         msg = msg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, (match, u, k) => {
             replyHtml = `<div class="quote-box">@${u}: ${msgCache[k] || "..."}</div>`;
             return ""; 
         });
 
-        const html = `<div class="chat-line" style="border-left: 2px solid var(--t-purp); opacity: 0.9;">${replyHtml}<b style="color:#efeff1">${myName}:</b> ${parseContent(msg)}</div>`;
+        const html = `<div class="chat-line" style="border-left: 2px solid var(--t-purp); opacity: 0.9;">${replyHtml}<b style="color:#efeff1">${nameToShow}:</b> ${parseContent(msg)}</div>`;
         $("#messages").append(html);
         $("#chat-container").scrollTop($("#chat-container")[0].scrollHeight);
         $("#msginput").val("");
@@ -161,8 +173,6 @@
         s = s.replace(/(https?:\/\/x\.com\/[^\s]+)/gi, '<a href="$1" target="_blank" style="color:#1da1f2; font-size:12px;">X 連結</a>');
         s = s.replace(/(https?:\/\/www\.instagram\.com\/(?:p|reels)\/([^/?#& ]+))/gi, '<iframe class="media-preview" src="https://www.instagram.com/p/$2/embed" width="200" height="280" frameborder="0"></iframe>');
         s = s.replace(/https?:\/\/store\.steampowered\.com\/app\/([0-9]+)/gi, '<iframe src="https://store.steampowered.com/widget/$1/" frameborder="0" width="200" height="190"></iframe>');
-        
-        // 解析表情文字
         return s.split(' ').map(w => {
             const src = altMap[w.toLowerCase()];
             return src ? `<img src="${src}" class="alt-emoji" title="${w}">` : w;
@@ -175,7 +185,7 @@
         socket.onopen = () => {
             socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
             socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
-            socket.send(`NICK justinfan${Math.floor(Math.random()*1000)}`);
+            socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan' + Math.floor(Math.random()*1000)}`);
             socket.send(`JOIN #${CHANNEL}`);
         };
         socket.onmessage = (e) => {
@@ -184,6 +194,11 @@
             const user = tags.match(/display-name=([^;]+)/)?.[1] || "User", color = tags.match(/color=([^;]+)/)?.[1] || "#9147ff";
             const badgeStr = tags.match(/badges=([^;]*)/)?.[1], msgId = tags.match(/id=([^;]+)/)?.[1], ts = tags.match(/tmi-sent-ts=([\d]+)/)?.[1];
             const cacheKey = ts || msgId;
+
+            // 如果收到的訊息是自己發出的，同步更新 DisplayName (如果是第一次收到)
+            if (user.toLowerCase() === myLoginId.toLowerCase() && !myDisplayName) {
+                myDisplayName = user;
+            }
 
             let msg = rawMsg, replyHtml = "";
             const pUser = tags.match(/reply-parent-display-name=([^;]+)/)?.[1], pMsg = tags.match(/reply-parent-msg-body=([^;]+)/)?.[1];
