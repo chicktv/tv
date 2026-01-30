@@ -2,35 +2,39 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Chat Ultimate - Popup Login</title>
+    <title>Twitch Chat Ultimate - Stable Live Only</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .header-bar { background: var(--t-alt); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
         #chat-container { flex-grow: 1; overflow-y: auto; padding: 15px; background: #000; }
-        .chat-line { margin-bottom: 12px; padding: 8px; border-radius: 4px; border-left: 3px solid transparent; cursor: pointer; }
+        .chat-line { margin-bottom: 12px; padding: 8px; border-radius: 4px; border-left: 3px solid transparent; cursor: pointer; transition: 0.2s; }
         .chat-line:hover { background: #1f1f23; border-left-color: var(--t-purp); }
         .badge { display: inline-block; width: 18px; height: 18px; margin-right: 4px; vertical-align: middle; }
         .username { font-weight: bold; margin-right: 5px; vertical-align: middle; }
+        
+        /* 尺寸限制 */
         .media-preview { max-width: 200px; max-height: 200px; border-radius: 6px; margin-top: 8px; display: block; border: 1px solid #444; object-fit: contain; }
-        .alt-emoji { max-width: 150px; max-height: 150px; vertical-align: middle; margin: 2px; object-fit: contain; }
+        .alt-emoji { max-width: 150px; max-height: 150px; height: auto; width: auto; vertical-align: middle; margin: 2px; object-fit: contain; }
         .quote-box { font-size: 12px; color: #adadb8; background: rgba(145, 71, 255, 0.1); padding: 8px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #e6d670; }
+
         #emojiPanel { position: fixed; display: none; width: 400px; height: 500px; background: #1f1f23; border: 1px solid #333; border-radius: 10px; z-index: 1000; left: 50%; top: 45%; transform: translate(-50%, -50%); flex-direction: column; box-shadow: 0 0 20px #000; }
         #emojiTabs { display: flex; gap: 5px; padding: 10px; overflow-x: auto; background: #000; border-bottom: 1px solid #333; }
         .emoji-tab { width: 35px; height: 35px; background-size: cover; cursor: pointer; border-radius: 4px; flex-shrink: 0; border: 1px solid #444; }
         #emojiContent { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
         .emoji-item { width: 45px; height: 45px; cursor: pointer; }
+
         .footer { padding: 15px; background: var(--t-alt); border-top: 1px solid #333; }
-        .tag-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        .tag-btn { background: #2f2f35; border: none; color: #efeff1; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .tag-row { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; }
+        .tag-btn { background: #2f2f35; border: none; color: #efeff1; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; border-bottom: 3px solid #555; white-space: nowrap; }
         #msginput { flex-grow: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 4px; outline: none; }
     </style>
 </head>
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-size:14px; font-weight:bold;">whitewing940920 Console</div>
+    <div style="font-size:14px; font-weight:bold;">whitewing940920 Live</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -45,14 +49,14 @@
 <div class="footer">
     <div class="tag-row">
         <button class="tag-btn" onclick="insertTag('[r]', ',REF[m]')">引用回覆</button>
-        <button class="tag-btn" onclick="insertTag('[s]', '[e]')">圖影</button>
+        <button class="tag-btn" onclick="insertTag('[s]', '[e]')">圖影直連</button>
         <button class="tag-btn" onclick="insertTag('[y]', '[t]')">YouTube</button>
-        <button class="tag-btn" onclick="insertTag('[a]', '[o]')">音訊</button>
+        <button class="tag-btn" onclick="insertTag('[a]', '[o]')">音訊標籤</button>
         <button class="tag-btn" onclick="$('#emojiPanel').toggle()">☺ 表情</button>
     </div>
     <div style="display:flex; gap:10px;">
-        <input id="msginput" type="text" placeholder="系統載入中..." autocomplete="off">
-        <button onclick="sendMessage()" style="background:var(--t-purp); color:white; border:none; padding:0 25px; border-radius:4px; cursor:pointer;">發送</button>
+        <input id="msginput" type="text" placeholder="連線中..." autocomplete="off">
+        <button onclick="sendMessage()" style="background:var(--t-purp); color:white; border:none; padding:0 25px; border-radius:4px; cursor:pointer; font-weight:bold;">發送</button>
     </div>
 </div>
 
@@ -62,11 +66,10 @@
     const REDIRECT_URI = window.location.origin + window.location.pathname;
 
     let ACCESS_TOKEN = "", LOGIN_NAME = "justinfan" + Math.floor(Math.random() * 10000);
-    let socket, altMap = {}, altMapLower = {}, emojiSets = {}, customBadges = {}, msgCache = {}, displayedIds = new Set();
+    let socket, altMap = {}, altMapLower = {}, emojiSets = {}, customBadges = {}, msgCache = {};
 
-    // 1. 初始化
     async function initApp() {
-        // 如果網頁帶有 hash (可能是彈窗返回)，處理完後直接關閉
+        // 處理彈窗 Token 傳回
         if (window.location.hash) {
             const token = new URLSearchParams(window.location.hash.substring(1)).get("access_token");
             if (window.opener && token) {
@@ -78,22 +81,19 @@
         
         await loadAllResources();
         await fetchBadges();
-        await loadHistory();
         startChat();
         $("#msginput").attr("placeholder", "輸入訊息...");
     }
 
-    // 2. 彈出式登入
+    // --- 彈窗登入控制 ---
     function twitchLoginPopup() {
-        const width = 500, height = 600;
+        const width = 500, height = 650;
         const left = (window.innerWidth / 2) - (width / 2);
         const top = (window.innerHeight / 2) - (height / 2);
         const url = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=chat:read+chat:edit`;
-        
         window.open(url, "TwitchLogin", `width=${width},height=${height},top=${top},left=${left}`);
     }
 
-    // 監聽彈窗傳回的 Token
     window.addEventListener("message", (event) => {
         if (event.origin !== window.location.origin) return;
         if (event.data.type === "TWITCH_TOKEN") {
@@ -103,37 +103,40 @@
     });
 
     async function updateUserInfo() {
-        const r = await fetch("https://api.twitch.tv/helix/users", { headers: { "Authorization": `Bearer ${ACCESS_TOKEN}`, "Client-Id": CLIENT_ID } });
-        const data = await r.json();
-        LOGIN_NAME = data.data[0].display_name;
-        $("#auth-area").html(`<span style="color:#0f0">●</span> ${LOGIN_NAME}`);
-        // 重新連接 Socket 以獲得發言權限
-        if(socket) socket.close();
-        startChat();
+        try {
+            const r = await fetch("https://api.twitch.tv/helix/users", { headers: { "Authorization": `Bearer ${ACCESS_TOKEN}`, "Client-Id": CLIENT_ID } });
+            const data = await r.json();
+            LOGIN_NAME = data.data[0].display_name;
+            $("#auth-area").html(`<span style="color:#0f0">●</span> ${LOGIN_NAME}`);
+            if(socket) socket.close();
+            startChat();
+        } catch(e) {}
     }
 
-    // --- 資源與歷史紀錄 (與前版相同) ---
+    // --- 資源載入 ---
     async function fetchBadges() {
         try { const r = await fetch("https://chicktv.github.io/tv/badges.txt"); customBadges = await r.json(); } catch(e){}
     }
 
     async function loadAllResources() {
-        const r = await fetch("https://chicktv.github.io/tv/showset.txt");
-        const data = await r.json();
-        for (let set of data.set) {
-            if (!set.name) continue;
-            emojiSets[set.name] = { icon: set.image, list: [] };
-            const res = await fetch(`https://chicktv.github.io/tv/${set.name}.txt`);
-            const d = await res.json();
-            if (d[set.name]) {
-                d[set.name].forEach(e => { 
-                    emojiSets[set.name].list.push(e); 
-                    altMap[e.alt] = e.src;
-                    altMapLower[e.alt.toLowerCase()] = e.src;
-                });
+        try {
+            const r = await fetch("https://chicktv.github.io/tv/showset.txt");
+            const data = await r.json();
+            for (let set of data.set) {
+                if (!set.name) continue;
+                emojiSets[set.name] = { icon: set.image, list: [] };
+                const res = await fetch(`https://chicktv.github.io/tv/${set.name}.txt`);
+                const d = await res.json();
+                if (d[set.name]) {
+                    d[set.name].forEach(e => { 
+                        emojiSets[set.name].list.push(e); 
+                        altMap[e.alt] = e.src;
+                        altMapLower[e.alt.toLowerCase()] = e.src;
+                    });
+                }
             }
-        }
-        renderEmojiUI();
+            renderEmojiUI();
+        } catch(e) {}
     }
 
     function renderEmojiUI() {
@@ -148,67 +151,7 @@
         });
     }
 
-    async function loadHistory() {
-        try {
-            const response = await fetch(`https://recent-messages.robotty.wtf/api/v2/recent-messages/${CHANNEL}?cleanchat=true`);
-            const data = await response.json();
-            if (data.messages) {
-                data.messages.forEach(raw => processRawIRC(raw, true));
-                $("#messages").append(`<div style="text-align:center; color:#555; font-size:11px; margin:10px;">--- 以上歷史訊息 ---</div>`);
-                scrollToBottom();
-            }
-        } catch (e) {}
-    }
-
-    function processRawIRC(data, isHistory = false) {
-        if (!data.includes('PRIVMSG')) return;
-        const tagMatch = data.match(/^@([^ ]+)/);
-        const tags = tagMatch ? tagMatch[1] : "";
-        const parts = data.split(` PRIVMSG #${CHANNEL} :`);
-        if (parts.length < 2) return;
-
-        let msg = parts[1].trim();
-        const ts = tags.match(/tmi-sent-ts=([\d]+)/)?.[1];
-        const msgId = tags.match(/id=([^;]+)/)?.[1];
-        if (msgId && displayedIds.has(msgId)) return;
-        if (msgId) displayedIds.add(msgId);
-
-        const badgeStr = tags.match(/badges=([^;]*)/)?.[1];
-        const user = tags.match(/display-name=([^;]+)/)?.[1] || "User";
-        const userColor = tags.match(/color=([^;]+)/)?.[1] || "#bf94ff";
-
-        // 引用、媒體、表情解析
-        if (msg.includes('[r]')) {
-            msg = msg.replace(/\[r\](.*?,.*?)\[m\]/gi, (m, c) => {
-                const [u, k] = c.split(',');
-                return `<div class="quote-box"><strong>@${u}</strong>: ${msgCache[k] || "訊息"}</div>`;
-            });
-        }
-        msg = msg.replace(/\[s\]\s*(.*?)\s*\[e\]/gi, (m, u) => u.match(/\.(mp4|webm)$/i) ? `<video src="${u}" class="media-preview" controls muted autoplay loop></video>` : `<img src="${u}" class="media-preview">`);
-        msg = msg.replace(/\[y\]\s*(.*?)\s*\[t\]/gi, (m, u) => {
-            let v = u.match(/(?:v=|\/shorts\/|youtu.be\/|embed\/)([^#&?]*)/);
-            return v ? `<iframe class="media-preview" src="https://www.youtube.com/embed/${v[1]}" frameborder="0" style="width:200px; height:150px;"></iframe>` : `[連結]`;
-        });
-        msg = msg.split(/(\s+)/).map(w => {
-            let t = w.trim();
-            let s = altMap[t] || altMapLower[t.toLowerCase()];
-            return s ? `<img src="${s}" title="${t}" class="alt-emoji">` : w;
-        }).join('');
-        msg = msg.replace(/\[a\]\s*(.*?)\s*\[o\]/gi, (m, u) => { if(!isHistory) new Audio(u).play().catch(()=>{}); return `🔊`; });
-
-        if(ts) msgCache[ts] = msg;
-        if(msgId) msgCache[msgId] = msg;
-
-        $("#messages").append(`<div class="chat-line" onclick="reply('${user}','${ts || msgId}')">${parseBadges(badgeStr)}<span class="username" style="color:${userColor}">${user}</span>: <span>${msg}</span></div>`);
-        if(!isHistory) scrollToBottom();
-    }
-
-    function parseBadges(bStr) {
-        if (!bStr || !customBadges) return "";
-        let h = ""; bStr.split(',').forEach(b => { if(customBadges[b]) h += `<img class="badge" src="${customBadges[b]}">`; });
-        return h;
-    }
-
+    // --- 核心即時訊息解析 ---
     function startChat() {
         socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
         socket.onopen = () => {
@@ -217,19 +160,89 @@
             socket.send(`NICK ${ACCESS_TOKEN ? 'anything' : LOGIN_NAME}`);
             socket.send(`JOIN #${CHANNEL}`);
         };
-        socket.onmessage = (e) => processRawIRC(e.data);
+        socket.onmessage = (e) => {
+            if (!e.data.includes('PRIVMSG')) return;
+            
+            const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
+            if (parts.length < 2) return;
+
+            let msg = parts[1].trim();
+            const tags = parts[0];
+            const ts = tags.match(/tmi-sent-ts=([\d]+)/)?.[1];
+            const msgId = tags.match(/id=([^;]+)/)?.[1];
+            const badgeStr = tags.match(/badges=([^;]*)/)?.[1];
+            const user = tags.match(/display-name=([^;]+)/)?.[1] || "User";
+            const userColor = tags.match(/color=([^;]+)/)?.[1] || "#bf94ff";
+
+            // 解析引用
+            if (msg.includes('[r]')) {
+                msg = msg.replace(/\[r\](.*?,.*?)\[m\]/gi, (m, c) => {
+                    const [u, k] = c.split(',');
+                    return `<div class="quote-box"><strong>@${u}</strong>: ${msgCache[k] || "訊息"}</div>`;
+                });
+            }
+
+            // 解析媒體
+            msg = msg.replace(/\[s\]\s*(.*?)\s*\[e\]/gi, (m, u) => u.match(/\.(mp4|webm)$/i) ? `<video src="${u}" class="media-preview" controls muted autoplay loop></video>` : `<img src="${u}" class="media-preview">`);
+            msg = msg.replace(/\[y\]\s*(.*?)\s*\[t\]/gi, (m, u) => {
+                let v = u.match(/(?:v=|\/shorts\/|youtu.be\/|embed\/)([^#&?]*)/);
+                return v ? `<iframe class="media-preview" src="https://www.youtube.com/embed/${v[1]}" frameborder="0" style="width:200px; height:150px;"></iframe>` : `[連結]`;
+            });
+
+            // 解析 Alt 表情 (不分大小寫)
+            let words = msg.split(/(\s+)/);
+            msg = words.map(w => {
+                let t = w.trim();
+                let s = altMap[t] || altMapLower[t.toLowerCase()];
+                return s ? `<img src="${s}" title="${t}" class="alt-emoji">` : w;
+            }).join('');
+
+            // 音訊
+            msg = msg.replace(/\[a\]\s*(.*?)\s*\[o\]/gi, (m, u) => { new Audio(u).play().catch(()=>{}); return `🔊`; });
+
+            // 存入緩存
+            if(ts) msgCache[ts] = msg;
+            if(msgId) msgCache[msgId] = msg;
+
+            // 渲染
+            const badgeHtml = "";
+            $("#messages").append(`
+                <div class="chat-line" onclick="reply('${user}','${ts || msgId}')">
+                    ${parseBadges(badgeStr)}
+                    <span class="username" style="color:${userColor}">${user}</span>: 
+                    <span>${msg}</span>
+                </div>`);
+            
+            const container = $("#chat-container");
+            container.scrollTop(container[0].scrollHeight);
+            if ($(".chat-line").length > 200) $(".chat-line").first().remove();
+        };
     }
 
-    function scrollToBottom() { const c = $("#chat-container"); c.scrollTop(c[0].scrollHeight); }
-    function sendMessage() { const v = $("#msginput").val(); if(v) { socket.send(`PRIVMSG #${CHANNEL} :${v}`); $("#msginput").val(""); } }
-    function reply(u, k) { $("#msginput").val(`[r]${u},${k}[m] @${u} `).focus(); }
+    function parseBadges(bStr) {
+        if (!bStr || !customBadges) return "";
+        let h = "";
+        bStr.split(',').forEach(b => {
+            if(customBadges[b]) h += `<img class="badge" src="${customBadges[b]}" title="${b}">`;
+        });
+        return h;
+    }
+
+    function sendMessage() {
+        const v = $("#msginput").val();
+        if (!v) return;
+        socket.send(`PRIVMSG #${CHANNEL} :${v}`);
+        $("#msginput").val("");
+    }
+
+    function reply(u, k) { $("#msginput").val(`[r]${u},${key}[m] @${u} `).focus(); }
     function insertAtCursor(v) { $("#msginput").val($("#msginput").val() + v).focus(); }
     function insertTag(s, e) {
         let el = document.getElementById("msginput"), st = el.selectionStart;
         el.value = el.value.slice(0, st) + s + el.value.slice(st, el.selectionEnd) + e + el.value.slice(el.selectionEnd);
         el.focus(); el.setSelectionRange(st + s.length, st + s.length);
     }
-    $(document).on('keypress', '#msginput', e => { if(e.which == 13) sendMessage(); });
+    $(document).on('keypress', '#msginput', e => { if (e.which == 13) sendMessage(); });
 </script>
 </body>
 </html>
