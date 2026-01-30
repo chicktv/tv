@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v7.4 - Reply Preview Fixed</title>
+    <title>Twitch Console v7.5 - Force Cache Fix</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -41,7 +41,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v7.4</div>
+    <div style="font-weight:bold;">Twitch Console v7.5</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -79,19 +79,12 @@
         const savedLogin = localStorage.getItem('twitch_my_login');
         const savedDisplay = localStorage.getItem('twitch_my_display');
         if (savedToken) {
-            ACCESS_TOKEN = savedToken;
-            myLoginId = savedLogin || "";
-            myDisplayName = savedDisplay || "";
-            updateAuthUI();
+            ACCESS_TOKEN = savedToken; myLoginId = savedLogin || ""; myDisplayName = savedDisplay || ""; updateAuthUI();
         }
         if (window.location.hash) {
             const params = new URLSearchParams(window.location.hash.substring(1));
             const token = params.get("access_token");
-            if (token) {
-                ACCESS_TOKEN = token;
-                localStorage.setItem('twitch_access_token', ACCESS_TOKEN);
-                await fetchUserInfo();
-            }
+            if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
             window.location.hash = "";
         }
         await loadResources();
@@ -105,10 +98,8 @@
             const r = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } });
             const d = await r.json();
             if(d.data && d.data[0]) {
-                myLoginId = d.data[0].login;
-                myDisplayName = d.data[0].display_name;
-                localStorage.setItem('twitch_my_login', myLoginId);
-                localStorage.setItem('twitch_my_display', myDisplayName);
+                myLoginId = d.data[0].login; myDisplayName = d.data[0].display_name;
+                localStorage.setItem('twitch_my_login', myLoginId); localStorage.setItem('twitch_my_display', myDisplayName);
                 updateAuthUI();
             }
         } catch(e) {}
@@ -207,20 +198,20 @@
         let msgToDisplay = val;
         let replyHtml = "";
         
-        // 發送端關鍵修復：重新解析 [r] 語法
         const rMatch = val.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
         if (rMatch) {
             const user = rMatch[1], key = rMatch[2];
+            // 嘗試從快取抓取引用文字
             replyHtml = `<div class="quote-box">@${user}: ${msgCache[key] || "..." }</div>`;
             msgToDisplay = val.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
         }
 
         socket.send(`PRIVMSG #${CHANNEL} :${val}`);
         
-        // 為自己的訊息建立臨時快取
-        const tempId = "self_" + Date.now();
-        msgCache[tempId] = msgToDisplay;
-
+        // 發送端重點：建立當前訊息的快取（使用時間戳與唯一標籤）
+        const nowTS = Date.now().toString();
+        msgCache[nowTS] = msgToDisplay;
+        
         const html = `<div class="chat-line">${replyHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> ${parseContent(msgToDisplay)}</div>`;
         $("#messages").append(html);
         $("#chat-container").scrollTop($("#chat-container")[0].scrollHeight);
@@ -242,6 +233,7 @@
             const user = tags.match(/display-name=([^;]+)/)?.[1] || "User", color = tags.match(/color=([^;]+)/)?.[1] || "#9147ff";
             const msgId = tags.match(/id=([^;]+)/)?.[1], ts = tags.match(/tmi-sent-ts=([\d]+)/)?.[1];
             
+            // 同步寫入快取
             if (msgId) msgCache[msgId] = rawMsg;
             if (ts) msgCache[ts] = rawMsg;
 
@@ -250,19 +242,27 @@
                   pId = tags.match(/reply-parent-msg-id=([^;]+)/)?.[1],
                   pBody = tags.match(/reply-parent-msg-body=([^;]+)/)?.[1];
 
-            // 接收端關鍵：不論是系統標籤還是我的 [r] 標籤都應顯示引用框
             if(pUser) {
-                const displayBody = msgCache[pId] || (pBody ? pBody.replace(/\\s/g, " ") : "...");
-                replyHtml = `<div class="quote-box">@${pUser}: ${displayBody}</div>`;
+                // 強制修復核心：如果 pBody 是 "..." 或沒抓到，則強制翻查快取
+                let bodyText = pBody ? pBody.replace(/\\s/g, " ") : "...";
+                if (bodyText === "..." && msgCache[pId]) bodyText = msgCache[pId];
+                
+                replyHtml = `<div class="quote-box">@${pUser}: ${bodyText}</div>`;
             } else {
+                // 處理自定義引用標籤 [r]
                 const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
-                if(myR) replyHtml = `<div class="quote-box">@${myR[1]}: ${msgCache[myR[2]] || "..."}</div>`;
+                if(myR) {
+                    let rText = msgCache[myR[2]] || "...";
+                    replyHtml = `<div class="quote-box">@${myR[1]}: ${rText}</div>`;
+                }
             }
 
             const cleanMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
-            const nameHtml = `<b style="color:${color}">${user}:</b>`;
+            const isSelf = (user.toLowerCase() === (myLoginId||'').toLowerCase());
+            const nameHtml = isSelf ? `<b class="self-name">${user}:</b>` : `<b style="color:${color}">${user}:</b>`;
             const badgeStr = tags.match(/badges=([^;]*)/)?.[1];
             const line = `<div class="chat-line"><div class="reply-btn" onclick="reply('${user}','${msgId || ts}')">RE</div>${replyHtml}${parseBadges(badgeStr)}${nameHtml} ${parseContent(cleanMsg)}</div>`;
+            
             $("#messages").append(line);
             $("#chat-container").scrollTop($("#chat-container")[0].scrollHeight);
         };
@@ -273,8 +273,7 @@
         input.addEventListener('paste', (e) => {
             const pasteData = (e.clipboardData || window.clipboardData).getData('text');
             if (!pasteData.match(/^https?:\/\//i)) return;
-            const start = input.selectionStart;
-            const textBefore = input.value.substring(0, start);
+            const start = input.selectionStart, textBefore = input.value.substring(0, start);
             if (textBefore.trim().endsWith('[s]')) { e.preventDefault(); insertAtCursor(pasteData + ' [e]'); }
             else if (textBefore.trim().endsWith('[y]')) { e.preventDefault(); insertAtCursor(pasteData + ' [t]'); }
         });
