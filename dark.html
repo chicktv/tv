@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.2 - Self Mention Highlight</title>
+    <title>Twitch Console v8.3 - Targeted Mention Highlight</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -27,19 +27,18 @@
         .chat-line:hover .reply-btn { display: flex; }
 
         /* 引用框基礎樣式 */
-        .quote-box { font-size: 12px; color: #adadb8; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #555; line-height: 1.4; display: block; }
-        .quote-user { font-weight: bold; color: #9147ff; margin-right: 5px; }
+        .quote-box { font-size: 12px; color: #adadb8; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #333; line-height: 1.4; display: block; }
+        .quote-user { font-weight: bold; color: #9147ff; margin-right: 5px; transition: all 0.2s; }
 
-        /* 當自己被回覆 (@) 時的提亮樣式 - 反選提亮 */
-        .quote-box.mention-self { 
-            background: #efeff1; /* 背景變亮 */
-            color: #000; /* 文字變黑 */
-            border-left: 4px solid var(--t-purp);
-            box-shadow: 0 0 10px rgba(145, 71, 255, 0.4);
-        }
-        .quote-box.mention-self .quote-user { 
-            color: #000; /* 引用者名稱在提亮模式下也設為黑色 */
-            text-decoration: underline;
+        /* 當自己被回覆 (@) 時，僅對 quote-user 進行反選提亮 */
+        .mention-self-tag { 
+            background-color: #9147ff;
+            color: #ffffff !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 2px;
         }
 
         /* 頁腳 */
@@ -59,7 +58,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v8.2</div>
+    <div style="font-weight:bold;">Twitch Console v8.3</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -167,7 +166,6 @@
 
     function parseContent(str) {
         let s = str, placeholders = [];
-        // [s] 圖片/MP4
         s = s.replace(/\[s\](.*?)\[e\]/gi, (m, content) => { 
             let id = `__PH_${placeholders.length}__`; 
             const url = content.trim();
@@ -176,16 +174,13 @@
                 : `<img src="${url}" class="media-preview" onclick="window.open('${url}','_blank')">`;
             placeholders.push(html); return id; 
         });
-        // [y] 影片
         s = s.replace(/\[y\](.*?)\[t\]/gi, (m, content) => {
             const url = content.trim(); let id = `__PH_${placeholders.length}__`; let html = "";
             if (url.toLowerCase().endsWith(".mp4")) { html = `<video class="media-preview" controls><source src="${url}" type="video/mp4"></video>`; }
             else { const v = url.match(/(?:v=|\/shorts\/|youtu.be\/)([^#&?]*)/)?.[1]; html = v ? `<iframe class="media-preview" width="250" height="140" src="https://www.youtube.com/embed/${v}" frameborder="0" allowfullscreen></iframe>` : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`; }
             placeholders.push(html); return id;
         });
-        // 連結
         s = s.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
-        // 表情
         let words = s.split(' ');
         s = words.map(w => { if(w.includes('__PH_')) return w; const src = altMap[w.toLowerCase()]; return src ? `<img src="${src}" class="alt-emoji">` : w; }).join(' ');
         placeholders.forEach((html, i) => { s = s.replace(`__PH_${i}__`, html); });
@@ -202,7 +197,6 @@
         if (pendingReply.id) {
             finalRawCommand = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
             let originalText = msgCache[pendingReply.id] || "...";
-            // 本地發送不觸發提亮
             replyDisplayHtml = `<div class="quote-box"><span class="quote-user">@${pendingReply.user}:</span>${originalText}</div>`;
         } else {
             finalRawCommand = `PRIVMSG #${CHANNEL} :${val}`;
@@ -239,32 +233,28 @@
             let replyHtml = "";
             const pUser = tags.match(/reply-parent-display-name=([^;]+)/)?.[1];
             const pBodyRaw = tags.match(/reply-parent-msg-body=([^;]+)/)?.[1];
-            
             let displayMsg = rawMsg;
 
-            // --- 重點：判斷是否被 @ 提亮 ---
-            let isMentioned = false;
+            // --- 修改後的提亮邏輯：僅針對 quote-user 標籤 ---
             if(pUser) {
-                // 檢查被回覆的人是否為自己
-                if (pUser === myDisplayName || pUser === myLoginId) {
-                    isMentioned = true;
-                }
-                
+                let isMe = (pUser === myDisplayName || pUser === myLoginId);
                 let pBody = pBodyRaw.replace(/\\s/g, " ");
-                // 加上 mention-self 類別進行反選提亮
-                replyHtml = `<div class="quote-box ${isMentioned ? 'mention-self' : ''}"><span class="quote-user">@${pUser}:</span>${pBody}</div>`;
+                
+                // 根據是否為自己，給予不同的 class
+                const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+                
+                replyHtml = `<div class="quote-box"><span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
                 
                 const mentionPrefix = `@${pUser} `;
-                if (displayMsg.startsWith(mentionPrefix)) {
-                    displayMsg = displayMsg.substring(mentionPrefix.length);
-                }
+                if (displayMsg.startsWith(mentionPrefix)) { displayMsg = displayMsg.substring(mentionPrefix.length); }
             } 
             else if (rawMsg.includes("[r]")) {
                 const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
                 if(myR) {
-                    if (myR[1] === myDisplayName || myR[1] === myLoginId) isMentioned = true;
+                    let isMe = (myR[1] === myDisplayName || myR[1] === myLoginId);
                     let body = msgCache[myR[2]] || "...";
-                    replyHtml = `<div class="quote-box ${isMentioned ? 'mention-self' : ''}"><span class="quote-user">@${myR[1]}:</span>${body}</div>`;
+                    const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+                    replyHtml = `<div class="quote-box"><span class="${userTagClass}">@${myR[1]}:</span>${body}</div>`;
                     displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
                 }
             }
