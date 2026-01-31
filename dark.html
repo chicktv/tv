@@ -53,6 +53,16 @@
         .show-del .delete-btn { display: block; }
 
         .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
+		 /* 音訊圖示按鈕樣式 */
+        .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; border: 1px solid rgba(145, 71, 255, 0.4); transition: all 0.2s ease; user-select: none; }
+        .audio-icon-btn:hover { background: rgba(145, 71, 255, 0.4); }
+        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
+        
+        @keyframes pulse-audio {
+            0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
+        }
     </style>
 </head>
 <body onload="initApp()">
