@@ -331,6 +331,14 @@
             };
         }
     };
+	
+	 function resetAudioState(btn) {
+        btn.dataset.isPlaying = "false";
+        btn.classList.remove('playing');
+        btn.innerHTML = '🔈';
+        btn.title = '點擊播放音訊';
+        btn.currentAudio = null;
+    }
 
     function parseContent(str) {
         let s = str, placeholders = [];
