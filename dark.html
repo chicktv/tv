@@ -291,6 +291,12 @@
         audioLists["音訊"].audios = saved;
         renderTabContent("音訊");
     };
+	
+	/* 新增：播放音訊的函數 */
+    window.playAudioInline = (url) => {
+        const audio = new Audio(url);
+        audio.play().catch(e => console.log("播放失敗:", e));
+    };
 
     function parseContent(str) {
         let s = str, placeholders = [];
@@ -307,9 +313,9 @@
             else html = `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`;
             placeholders.push(html); return id;
         });
-        s = s.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
+            s = s.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
             const url = content.trim(); let id = `__PH_${placeholders.length}__`;
-            let html = `<audio class="audio-player" controls><source src="${url}"></audio>`;
+            let html = `<span class="audio-icon-btn" onclick="playAudioInline('${url}')" title="點擊播放音訊">🔈</span>`;
             placeholders.push(html); return id;
         });
         s = s.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
