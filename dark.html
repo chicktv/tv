@@ -22,7 +22,7 @@
         .self-name { color: var(--t-purp); font-weight: bold; }
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; display: block; border: 1px solid #444; }
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
-        .alt-emoji { max-width: 120px !important; max-height: 120px !important; vertical-align: middle; margin: 2px; }
+        .alt-emoji { max-width: 120px !important; max-height: 120px !important; vertical-align: top; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
         .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
 		.reply-btn:hover {background-color: #3c3a39;}
@@ -292,10 +292,34 @@
         renderTabContent("音訊");
     };
 	
-	/* 新增：播放音訊的函數 */
-    window.playAudioInline = (url) => {
-        const audio = new Audio(url);
-        audio.play().catch(e => console.log("播放失敗:", e));
+	 window.handleAudioClick = (btn, url) => {
+        if (btn.dataset.isPlaying === "true") {
+            // 正在播放中，點擊即停止
+            if (btn.currentAudio) {
+                btn.currentAudio.pause();
+                btn.currentAudio.currentTime = 0;
+            }
+            resetAudioState(btn);
+        } else {
+            // 開始播放
+            const audioElem = new Audio(url);
+            btn.currentAudio = audioElem;
+            btn.dataset.isPlaying = "true";
+            btn.classList.add('playing');
+            btn.innerHTML = '🔊';
+            btn.title = '播放中...點擊停止';
+
+            audioElem.play().catch(error => {
+                console.error('音訊播放失敗:', error);
+                resetAudioState(btn);
+                btn.title = '播放失敗';
+                btn.innerHTML = '❌';
+            });
+
+            audioElem.onended = () => {
+                resetAudioState(btn);
+            };
+        }
     };
 
     function parseContent(str) {
@@ -313,9 +337,9 @@
             else html = `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`;
             placeholders.push(html); return id;
         });
-            s = s.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
+           s = s.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
             const url = content.trim(); let id = `__PH_${placeholders.length}__`;
-            let html = `<span class="audio-icon-btn" onclick="playAudioInline('${url}')" title="點擊播放音訊">🔈</span>`;
+            let html = `<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`;
             placeholders.push(html); return id;
         });
         s = s.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
