@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+    body {
+        background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        height: 98vh;
+        color: #eee;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: clamp(12px, 1vw, 16px); /* 添加基礎字體響應式縮放 */
+    }
+
+    #top-bar {
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.75em 1.25em; /* 改用em單位 */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        overflow: hidden;
+        min-height: 60px; /* 確保最小高度 */
+    }
+
+    .top-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        flex-wrap: nowrap;
+        gap: 0.625em; /* 改用em單位 */
+    }
+
+    #lists {
+        display: flex;
+        flex-wrap: nowrap; /* 禁止換行 */
+        gap: 0.5em; /* 改用em單位 */
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        flex: 1; /* 佔用可用空間 */
+        min-width: 0; /* 允許縮小 */
+        padding: 0.3125em 0; /* 改用em單位 */
+        -ms-overflow-style: none;  /* 隱藏IE滾動條 */
+        scrollbar-width: none;     /* 隱藏Firefox滾動條 */
+    }
+
+    #lists::-webkit-scrollbar {
+        display: none; /* 隱藏Chrome/Safari滾動條 */
+    }
+
+    .button-wrapper {
+        position: relative;
+        display: inline-flex;
+        flex-shrink: 0; /* 禁止按鈕縮小，讓內容縮小 */
+        margin-right: 0.3125em; /* 改用em單位 */
+    }
+
+    .status-button {
+        background: linear-gradient(145deg, #2d2d2d, #222);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #eee;
+        padding: 0.5em 1em; /* 改用em單位，會隨字體縮放 */
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: clamp(10px, 0.85vw, 14px); /* 響應式字體大小 */
+        min-height: 36px; /* 確保最小高度 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-button:hover {
+        background: linear-gradient(145deg, #383838, #2d2d2d);
+        transform: translateY(-1px);
+    }
+    
+    /* 捲軸樣式 */
+    #iframe::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #iframe::-webkit-scrollbar-track {
+        background: #1f1f23;
+    }
+    
+    #iframe::-webkit-scrollbar-thumb {
+        background: #3a3a3d;
+        border-radius: 4px;
+    }
+    
+    #iframe::-webkit-scrollbar-thumb:hover {
+        background: #53535f;
+    }
+    
+
+    .live {
+        color: #00ff88 !important;
+        animation: pulse-glow 1.5s infinite !important;
+        border: 2px solid #00ff88 !important;
+    }
+
+    .not-live {
+        color: #ff3333 !important;
+        border-color: #ff3333 !important;
+    }
+
+    .unknown {
+        color: #FFFFFF !important;
+        border-color: #FFFFFF !important;
+    }
+
+    .unknown2 {
+        color: #00ff88 !important;
+        animation: pulse-glow 1.5s infinite !important;
+        border: 2px solid #00ff88 !important;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% {
+            border-color: #00ff88;
+            box-shadow: 0 0 1px #00ff88, 0 0 2px #00ff88, 0 0 4px #00ff88;
+        }
+        50% {
+            border-color: #00cc66;
+            box-shadow: 0 0 4px #00ff88, 0 0 8px #00ff88, 0 0 16px #00ff88;
+        }
+    }
+
+    #input-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5em; /* 改用em單位 */
+        flex-wrap: nowrap; /* 禁止換行 */
+        overflow: hidden;
+        white-space: nowrap;
+        margin-top: 0.625em; /* 改用em單位 */
+        flex-shrink: 0; /* 禁止縮小 */
+        margin-left: auto; /* 推到右邊 */
+        padding-left: 0.625em; /* 改用em單位 */
+    }
+
+    #channel-selection {
+        display: none;
+        position: fixed;
+        top: 10px;
+        right: 80px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        color: #fff;
+        z-index: 1000;
+    }
+
+    input, select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: lime;
+        padding: 0.5em 0.75em; /* 改用em單位 */
+        transition: all 0.2s ease;
+        min-width: 5em; /* 改用em單位 */
+        font-size: clamp(12px, 0.9vw, 14px); /* 響應式字體大小 */
+        height: 36px; /* 統一高度 */
+        box-sizing: border-box; /* 確保padding不影響高度 */
+    }
+
+    #chatToggleBtn {
+        background: rgba(145, 71, 255, 0.8);
+    }
+
+    button {
+        background: linear-gradient(145deg, #3a3a3a, #2f2f2f);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #fff;
+        padding: 0.5em 0.875em; /* 改用em單位 */
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375em; /* 改用em單位 */
+        transition: all 0.2s ease;
+        font-size: clamp(12px, 0.9vw, 14px); /* 響應式字體大小 */
+        height: 36px; /* 統一高度 */
+        white-space: nowrap;
+        box-sizing: border-box; /* 確保padding不影響高度 */
+    }
+
+    #multi-stream-container-wrapper {
+        display: flex;
+        gap: 0.9375em; /* 改用em單位 */
+        padding: 0.9375em; /* 改用em單位 */
+        flex-grow: 1;
+        min-height: 70vh;
+    }
+
+    .video-wrapper {
+        flex: 3;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        padding: 0.9375em; /* 改用em單位 */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-height: 400px; /* 確保最小高度 */
+    }
+
+    .chat {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-height: 400px; /* 確保最小高度 */
+    }
+
+    .video {
+        width: 48%;
+        height: 48%;
+        border: none;
+    }
+
+    .video1 {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .full-screen-video {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    #multi-stream-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.625em; /* 改用em單位 */
+        height: 100%;
+    }
+    
+    /* 漢堡菜單相關樣式 */
+    #mobile-menu-btn {
+        display: none;
+        background: rgba(145, 71, 255, 0.8);
+    }
+    
+    #channel-menu {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.97);
+        z-index: 1000;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    #channel-menu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.9375em 1.25em; /* 改用em單位 */
+        background: rgba(0, 0, 0, 0.9);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        position: sticky;
+        top: 0;
+        z-index: 1001;
+    }
+    
+    #menu-channel-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625em; /* 改用em單位 */
+        padding: 0.9375em 1.25em; /* 改用em單位 */
+        height: calc(100% - 4.375em); /* 改用em單位，減去header高度 */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* 使滾動在行動裝置更流暢 */
+    }
+    
+    /* 漢堡菜單滾動條樣式 */
+    #menu-channel-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #menu-channel-list::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+    }
+    
+    #menu-channel-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+    }
+    
+    #menu-channel-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .menu-status-button {
+        width: 100%;
+        text-align: left;
+        padding: 0.75em 0.9375em; /* 改用em單位 */
+        margin-bottom: 0.3125em; /* 改用em單位 */
+        font-size: clamp(13px, 1vw, 15px); /* 響應式字體大小 */
+    }
+    
+    /* 狀態指示器（小圓點）*/
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.5em; /* 改用em單位 */
+    }
+    
+    .status-live {
+        background-color: #00ff88;
+        box-shadow: 0 0 5px #00ff88;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-not-live {
+        background-color: #ff3333;
+    }
+    
+    .status-unknown {
+        background-color: #cccccc;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    @media (max-width: 768px) {
+        body {
+            font-size: 14px; /* 手機上使用固定字體大小 */
+        }
+        
+        #multi-stream-container-wrapper {
+            flex-direction: column;
+            padding: 0.625em; /* 改用em單位 */
+            gap: 0.625em; /* 改用em單位 */
+        }
+
+        #input-container {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 0.3125em; /* 改用em單位 */
+            margin-top: 0.3125em; /* 改用em單位 */
+            width: 100%; /* 手機上全寬 */
+            justify-content: flex-start;
+        }
+        
+        #input-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .video-wrapper {
+            width: 100% !important;
+            min-height: 40vh;
+            padding: 0.625em; /* 改用em單位 */
+        }
+
+        .chat {
+            width: 100% !important;
+            min-height: 40vh;
+        }
+
+        #input-container {
+            display: flex;
+            align-items: center;
+            gap: 0.375em; /* 改用em單位 */
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-top: 0.625em; /* 改用em單位 */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        #lists {
+            display: none; /* 在手機隱藏原本的按鈕列 */
+            max-width: 100%;
+            padding-bottom: 0.625em; /* 改用em單位 */
+        }
+        
+        #mobile-menu-btn {
+            display: inline-flex; /* 只在手機顯示漢堡菜單按鈕 */
+            align-items: center;
+            justify-content: center;
+            padding: 0.5em 0.75em; /* 改用em單位 */
+            white-space: nowrap;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        /* 手機版輸入欄位調整 */
+        #input-container input, 
+        #input-container select {
+            min-width: 4em; /* 改用em單位 */
+            font-size: 13px;
+            padding: 0.375em 0.5em; /* 改用em單位 */
+            height: 32px;
+        }
+        
+        #input-container button {
+            padding: 0.375em 0.5em; /* 改用em單位 */
+            font-size: 13px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+        
+        /* 手機版按鈕列滾動優化 */
+        .top-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5em; /* 改用em單位 */
+        }
+        
+        #top-bar {
+            padding: 0.5em; /* 改用em單位 */
+            min-height: auto;
+        }
+    }
+    
+    /* 桌面裝置樣式 */
+    @media (min-width: 769px) {
+        #mobile-menu-btn {
+            display: none !important; /* 在桌面隱藏漢堡菜單按鈕 */
+        }
+        
+        #lists {
+            display: flex; /* 在桌面顯示原本的按鈕列 */
+        }
+        
+        /* 當按鈕太多時的自適應 */
+        @media (max-width: 1200px) {
+            .status-button {
+                font-size: clamp(9px, 0.75vw, 12px);
+                padding: 0.4em 0.8em;
+            }
+            
+            button, input, select {
+                font-size: clamp(11px, 0.8vw, 13px);
+                padding: 0.4em 0.7em;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .status-button {
+                font-size: clamp(8px, 0.65vw, 11px);
+                padding: 0.35em 0.7em;
+            }
+            
+            button, input, select {
+                font-size: clamp(10px, 0.7vw, 12px);
+                padding: 0.35em 0.6em;
+            }
+        }
+    }
+    
+    /* 極小桌面視窗適應 */
+    @media (max-width: 850px) and (min-width: 769px) {
+        #input-container {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        
+        #input-container input, 
+        #input-container select,
+        #input-container button {
+            min-width: 4em;
+            font-size: 11px;
+        }
+        
+        .status-button {
+            font-size: 10px;
+            padding: 0.3em 0.6em;
+        }
+    }
+</style>
+</head>
+<body>
+    <div id="top-bar">
+        <div class="top-container">
+            <div id="lists"></div>
+            <div id="input-container">
+                <button id="mobile-menu-btn" onclick="toggleChannelMenu()">☰ 頻道</button>
+                <input type="text" id="channel-name" placeholder="頻道名稱" size="5">
+                <input type="text" id="channel-id" placeholder="頻道ID" size="5">
+                <select id="channel-platform">
+                    <option value="twitch">Twitch</option>
+                    <option value="kick">Kick</option>
+                    <option value="ok">OK.ru</option>
+                    <option value="at">angelthump</option>
+                </select>
+                <button onclick="clickyClick()">加台</button>
+                <button onclick="editClick()">del台</button>
+                <button id="more-channels-btn" onclick="toggleChannelSelection()">看更台</button>
+                <button id="chatToggleBtn">chat(免插件)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 漢堡菜單彈出層 -->
+    <div id="channel-menu" style="display: none;">
+        <div id="channel-menu-header">
+            <h3 style="margin: 0; font-size: 1.2rem;">頻道列表 (共 <span id="channel-count">0</span> 個頻道)</h3>
+            <button onclick="toggleChannelMenu()" style="background: rgba(255, 50, 50, 0.7); padding: 8px 15px; font-size: 0.9rem;">✕ 關閉</button>
+        </div>
+        <div id="menu-channel-list"></div>
+    </div>
+    
+    <div id="channel-selection" style="display: none;">
+        <h3>選擇要觀看的台：</h3>
+        <div id="channel-options"></div>
+        <button onclick="watchSelectedChannels()">▶️ 開始觀看</button>
+    </div>
+    <div id="multi-stream-container-wrapper">
+        <div id="multi-stream-container" class="video-wrapper">
+            <iframe id="MyFrame" class="video1" src="https://ok.ru/videoembed/10268974521971?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
+        </div>
+        <iframe
+            class="chat"
+            id="chat_embed"
+            src="https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io"
+            allowfullscreen="true"
+            scrolling="yes">
+        </iframe>
+    </div>
+
+    <script>
+        let TWITCH_TOKEN = "";
+        let TWITCH_CLIENT_ID = "";
+        let apiChannels = []; 
+        let channels = [];
+        // 儲存頻道狀態的物件
+        let channelStatuses = {};
+        
+        async function loadTwitchCredentials() {
+            try {
+                const response = await fetch('https://chicktv.github.io/tv/token.txt');
+                const data = await response.text();
+                const lines = data.split('\n').map(line => line.trim());
+                
+                if (lines.length >= 2) {
+                    TWITCH_TOKEN = lines[0];
+                    TWITCH_CLIENT_ID = lines[1];
+                    console.log('Twitch credentials loaded successfully');
+                } else {
+                    console.error('Invalid token.txt format');
+                }
+            } catch (error) {
+                console.error('Error loading Twitch credentials:', error);
+            }
+        }
+
+        async function loadChannelsFromUrl() {
+            let txtChannels = [];
+            let apiChannels = [];
+
+     // ===== 步驟1：載入舊 txt 來源 =====
+try {
+    const response = await fetch('https://chicktv.github.io/tv/channels.txt');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.text();
+    const channelLines = data.split('\n').filter(line => line.trim());
+
+    txtChannels = channelLines.map(line => {
+        const parts = line.split(',').map(part => part.trim());
+        if (parts.length === 3) {
+            const [name, id, platform] = parts;
+            const channel = {
+                name: name.trim(),
+                id: id.trim(),
+                platform: platform.trim().toLowerCase()
+            };
+            channel._fromTxt = true;  // <<< 關鍵標記，確保不存
+            return channel;
+        }
+        return null;
+    }).filter(channel => channel !== null && channel.id);
+
+    console.log(`舊 txt 來源載入成功，共 ${txtChannels.length} 個頻道（已加 _fromTxt 標記）`);
+} catch (error) {
+    console.warn('舊 txt 來源載入失敗，將跳過', error);
+}
+
+            // 步驟2：載入新 API 來源
+            try {
+                const response = await fetch('https://api.codetabs.com/v1/proxy/?quest=https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+
+                if (data.channels && Array.isArray(data.channels)) {
+                    apiChannels = data.channels.map(item => {
+                        let platform = "";
+                        let id = (item.details || "").trim();
+
+                        if (item.platform === "vl") {
+                            platform = "kick";
+                        } else if (item.platform === "twitch") {
+                            platform = "twitch";
+                        } else if (item.platform === "okru") {
+                            platform = "ok";
+                        } else {
+                            return null;
+                        }
+
+                        const channel = {
+                            name: (item.displayname || id || "Unknown").trim(),
+                            id: id,
+                            platform: platform
+                        };
+
+                        channel._fromAPI = true;
+
+                        return channel;
+                    }).filter(channel => channel !== null && channel.id);
+
+                    console.log(`新 API 來源載入成功，共 ${apiChannels.length} 個頻道`);
+                } else {
+                    throw new Error("API 格式錯誤：缺少 channels");
+                }
+            } catch (error) {
+                console.warn('新 API 來源載入失敗，將跳過', error);
+            }
+
+            // 步驟3：載入 localStorage 自訂頻道
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
+
+            // 步驟4：合併並去重
+            let allChannels = [...storedChannels, ...txtChannels, ...apiChannels];
+            const seen = new Set();
+            channels = [];
+
+            for (const ch of allChannels) {
+                const normName = (ch.name || "").trim().toLowerCase();
+                const normPlatform = (ch.platform || "").trim().toLowerCase();
+                const key = `${normName}|${normPlatform}`;
+
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    channels.push(ch);
+                    // 初始化頻道狀態
+                    channelStatuses[ch.id] = 'unknown';
+                } else {
+                    const existingIndex = channels.findIndex(c => {
+                        const cName = (c.name || "").trim().toLowerCase();
+                        const cPlat = (c.platform || "").trim().toLowerCase();
+                        return `${cName}|${cPlat}` === key;
+                    });
+                    if (existingIndex !== -1 && ch._fromAPI) {
+                        channels[existingIndex] = ch;
+                    }
+                }
+            }
+
+            // 步驟5：特殊備援
+            if (channels.length === 0 && storedChannels.length > 0) {
+                console.warn('兩個線上來源皆失敗，使用 localStorage 純備援');
+                channels = [...storedChannels];
+            }
+
+            console.log(`最終頻道數：${channels.length} 個`);
+
+            // 步驟6：儲存自訂頻道
+            saveChannelsToStorage();
+            generateButtons();
+        }
+
+        function saveChannelsToStorage() {
+    // 嚴格只儲存完全沒有標記的（真正手動新增）
+    let customChannels1 = channels.filter(ch => !ch._fromAPI && !ch._fromTxt);
+
+    // 清除標記
+    customChannels1 = customChannels1.map(ch => {
+        const { _fromAPI, _fromTxt, ...cleanCh } = ch;
+        return cleanCh;
+    });
+
+    localStorage.setItem("customChannels1", JSON.stringify(customChannels1));  // 或你的 customChannels11
+    console.log(`已儲存 ${customChannels1.length} 個真正手動新增的自訂頻道（完全排除 API 和 txt 來源）`);
+}
+
+        function loadChannelsFromStorage() {
+            const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
+            channels = [...channels.filter(isDefaultChannel), ...storedChannels];
+        }
+
+        function isDefaultChannel(channel) {
+            return ["ww291603", "Eastsnake25", "collartv", "nanase-maru525", "jeukpo", "", "cobra2024", 
+                    "alancml", "mingpig930_2", "godzilla_2025", "yaubotai2", "3849262800563", "9013975129715"]
+                   .includes(channel.id);
+        }
+
+        function generateButtons() {
+            const container = document.getElementById("lists");
+            container.innerHTML = "";
+            
+            // 只在桌面裝置生成按鈕列
+            if (window.innerWidth > 768) {
+                channels.forEach(channel => addButton(channel));
+            }
+            
+            fetchAllStatuses();
+        }
+
+        function addButton(channel) {
+            const container = document.getElementById("lists");
+
+            const btn = document.createElement("button");
+            btn.className = "status-button";
+            btn.id = `btn-${channel.id}`;
+            btn.innerText = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
+
+            btn.onclick = () => {
+                console.log("Switching to stream for:", channel.name);
+                changeSrc(getStreamUrl(channel));
+            };
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.innerText = "刪除";
+            deleteBtn.style.display = "none";
+
+            deleteBtn.onclick = () => {
+                console.log("Deleting channel:", channel.name);
+                channels = channels.filter(ch => ch.id !== channel.id);
+                saveChannelsToStorage();
+                generateButtons();
+            };
+
+            const buttonWrapper = document.createElement("div");
+            buttonWrapper.appendChild(btn);
+            buttonWrapper.appendChild(deleteBtn);
+
+            container.appendChild(buttonWrapper);
+            
+            // 更新按鈕狀態
+            updateButtonStatus(channel.id);
+        }
+
+        // 漢堡菜單函數
+        function toggleChannelMenu() {
+            const menu = document.getElementById('channel-menu');
+            const listContainer = document.getElementById('menu-channel-list');
+            
+            if (menu.style.display === 'none') {
+                // 更新頻道數量顯示
+                document.getElementById('channel-count').textContent = channels.length;
+                
+                // 打開菜單，生成菜單內的按鈕
+                listContainer.innerHTML = '';
+                channels.forEach(channel => {
+                    const btn = document.createElement('button');
+                    btn.className = 'menu-status-button status-button';
+                    btn.id = `menu-btn-${channel.id}`;
+                    btn.style.width = '100%';
+                    
+                    // 添加狀態指示器
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = 'status-indicator';
+                    statusSpan.id = `menu-status-${channel.id}`;
+                    
+                    // 設置按鈕文字（包含狀態指示器）
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
+                    
+                    btn.appendChild(statusSpan);
+                    btn.appendChild(textSpan);
+                    
+                    btn.onclick = () => {
+                        changeSrc(getStreamUrl(channel));
+                        toggleChannelMenu();
+                    };
+                    listContainer.appendChild(btn);
+                    
+                    // 更新菜單按鈕狀態
+                    updateMenuButtonStatus(channel.id);
+                });
+                
+                menu.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // 防止背景滾動
+            } else {
+                // 關閉菜單
+                menu.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+        
+        // 更新菜單按鈕狀態
+        function updateMenuButtonStatus(channelId) {
+            const menuBtn = document.getElementById(`menu-btn-${channelId}`);
+            const statusIndicator = document.getElementById(`menu-status-${channelId}`);
+            
+            if (!menuBtn || !statusIndicator) return;
+            
+            // 根據 channelStatuses 更新狀態
+            const status = channelStatuses[channelId];
+            
+            // 移除所有狀態類別
+            menuBtn.classList.remove('live', 'not-live', 'unknown', 'unknown2');
+            statusIndicator.classList.remove('status-live', 'status-not-live', 'status-unknown');
+            
+            // 應用對應的狀態
+            if (status === 'live') {
+                menuBtn.classList.add('live');
+                statusIndicator.classList.add('status-live');
+            } else if (status === 'not-live') {
+                menuBtn.classList.add('not-live');
+                statusIndicator.classList.add('status-not-live');
+            } else if (status === 'unknown2') {
+                menuBtn.classList.add('unknown2');
+                statusIndicator.classList.add('status-unknown');
+            } else {
+                menuBtn.classList.add('unknown');
+                statusIndicator.classList.add('status-unknown');
+            }
+        }
+        
+        // 更新主按鈕狀態
+        function updateButtonStatus(channelId) {
+            const btn = document.getElementById(`btn-${channelId}`);
+            if (!btn) return;
+            
+            const status = channelStatuses[channelId];
+            
+            // 移除所有狀態類別
+            btn.classList.remove('live', 'not-live', 'unknown', 'unknown2');
+            
+            // 應用對應的狀態
+            if (status === 'live') {
+                btn.classList.add('live');
+            } else if (status === 'not-live') {
+                btn.classList.add('not-live');
+            } else if (status === 'unknown2') {
+                btn.classList.add('unknown2');
+            } else {
+                btn.classList.add('unknown');
+            }
+        }
+
+        function toggleChannelSelection() {
+            generateChannelOptions();
+            const selectionDiv = document.getElementById("channel-selection");
+            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
+        }
+
+        function watchSelectedChannels() {
+            const selectionDiv = document.getElementById("channel-selection");
+            selectionDiv.style.display = selectionDiv.style.display === "none" ? "block" : "none";
+            const container = document.getElementById("multi-stream-container");
+            container.innerHTML = "";
+
+            const checkboxes = document.querySelectorAll("#channel-options input:checked");
+            const selectedChannels = Array.from(checkboxes).map(cb => ({ 
+                id: cb.value, 
+                platform: cb.dataset.platform 
+            }));
+
+            selectedChannels.forEach(channel => {
+                const iframe = document.createElement("iframe");
+                iframe.className = selectedChannels.length === 1 ? "full-screen-video" : "video";
+                iframe.src = getStreamUrl(channel);
+                iframe.allowFullscreen = true;
+                container.appendChild(iframe);
+            });
+        }
+
+        function generateChannelOptions() {
+            const container = document.getElementById("channel-options");
+            container.innerHTML = "";
+            channels.forEach(channel => {
+                const label = document.createElement("label");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = channel.id;
+                checkbox.dataset.platform = channel.platform;
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(`${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`));
+                label.classList.add("not-live");
+                label.id = `status-${channel.id}`;
+                container.appendChild(label);
+                container.appendChild(document.createElement("br"));
+            });
+            fetchAllStatuses();
+        }
+
+        function getStreamUrl(channel) {
+            if (channel.platform === "kick") {
+                return `https://player.kick.com/${channel.id}`;
+            } else if (channel.platform === "twitch") {
+                return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+            } else if (channel.platform === "ok") {
+                return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
+            } else if (channel.platform === "at") { 
+                return `https://player.angelthump.com/?channel=${channel.id}`;    
+            }
+        }
+
+        function changeSrc(url) {
+            const container = document.getElementById("multi-stream-container");
+            container.innerHTML = `<iframe id="MyFrame" class="video1" src="${url}" frameborder="0" allowfullscreen></iframe>`;
+        }
+
+        async function fetchStatus(channel) {
+            const btn = document.getElementById(`btn-${channel.id}`);
+            const label = document.getElementById(`status-${channel.id}`);
+            let url = getPlatformUrl(channel);
+            
+            // angelthump 的狀態檢查
+            if (channel.platform === "m3u8" || channel.platform === "at") {
+                channelStatuses[channel.id] = 'unknown2';
+                updateButtonStatus(channel.id);
+                updateMenuButtonStatus(channel.id);
+                if (label) {
+                    label.classList.add("unknown2");
+                    label.classList.remove("live", "not-live");
+                }
+                return;
+            }
+
+            if (channel.platform === "ok") {
+                try {
+                    const response = await fetch(url);
+                    const html = await response.text();
+                    
+                    let isLive = false;
+
+                    // 提取 data-options 屬性
+                    const optionsMatch = html.match(/data-options="([^"]*flashvars[^"]*)"/);
+                    if (optionsMatch && optionsMatch[1]) {
+                        // 清理 HTML 實體並解析為 JSON
+                        const optionsStr = optionsMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+                        let options;
+                        try {
+                            options = JSON.parse(optionsStr);
+                        } catch (parseError) {
+                            console.error(`Failed to parse data-options for ${channel.id}:`, parseError);
+                        }
+
+                        if (options && options.flashvars) {
+                            const flashvars = options.flashvars;
+                            // 提取 metadata
+                            const metadataMatch = flashvars.metadata.match(/^\{.*\}$/);
+                            if (metadataMatch) {
+                                const metadataStr = metadataMatch[0];
+                                try {
+                                    const metadata = JSON.parse(metadataStr);
+                                    isLive = metadata.movie && metadata.movie.status === "ONLINE";
+                                } catch (parseError) {
+                                    console.error(`JSON parse error for metadata in ${channel.id}:`, parseError);
+                                    isLive = metadataStr.includes('status:"online"');
+                                }
+                            } else {
+                                isLive = flashvars.metadata.includes('status:"online"');
+                            }
+                        }
+                    } else {
+                        // 後備檢查整個 HTML
+                        isLive = html.includes('status:"online"');
+                    }
+
+                    if (isLive) {
+                        channelStatuses[channel.id] = 'live';
+                        updateButtonStatus(channel.id);
+                        updateMenuButtonStatus(channel.id);
+                        if (label) label.classList.add("live"), label.classList.remove("not-live");
+                    } else {
+                        channelStatuses[channel.id] = 'not-live';
+                        updateButtonStatus(channel.id);
+                        updateMenuButtonStatus(channel.id);
+                        if (label) label.classList.add("not-live"), label.classList.remove("live");
+                    }
+                } catch (error) {
+                    console.error(`Error fetching status for ${channel.name}:`, error);
+                    channelStatuses[channel.id] = 'unknown';
+                    updateButtonStatus(channel.id);
+                    updateMenuButtonStatus(channel.id);
+                    if (label) label.classList.add("not-live"), label.classList.remove("live");
+                }
+                return;
+            }
+
+            try {
+                const headers = channel.platform === "twitch" ? {
+                    "Authorization": `Bearer ${TWITCH_TOKEN}`,
+                    "Client-Id": TWITCH_CLIENT_ID
+                } : {};
+
+                const response = await fetch(url, { headers });
+                const data = await response.json();
+                let isLive = false;
+
+                if (channel.platform === "kick") {
+                    isLive = data.livestream && data.livestream.is_live;
+                } else if (channel.platform === "twitch") {
+                    isLive = data.data && data.data.length > 0 || 
+                          (data.pagination && data.pagination.cursor);
+                }
+
+                if (isLive) {
+                    channelStatuses[channel.id] = 'live';
+                    updateButtonStatus(channel.id);
+                    updateMenuButtonStatus(channel.id);
+                    if (label) label.classList.add("live"), label.classList.remove("not-live");
+                } else {
+                    channelStatuses[channel.id] = 'not-live';
+                    updateButtonStatus(channel.id);
+                    updateMenuButtonStatus(channel.id);
+                    if (label) label.classList.add("not-live"), label.classList.remove("live");
+                }
+            } catch (error) {
+                console.error(`Error fetching status for ${channel.name}:`, error);
+                channelStatuses[channel.id] = 'unknown';
+                updateButtonStatus(channel.id);
+                updateMenuButtonStatus(channel.id);
+                if (label) label.classList.add("not-live"), label.classList.remove("live");
+            }
+        }
+
+        function getPlatformUrl(channel) {
+            if (channel.platform === "kick") {
+                return `https://kick.com/api/v2/channels/${channel.id}`;
+            } else if (channel.platform === "twitch") {
+                return `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
+            } else if (channel.platform === "ok") {
+                return `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+            } else {
+                return "";
+            }
+        }
+
+        function fetchAllStatuses() {
+            if (!TWITCH_TOKEN || !TWITCH_CLIENT_ID) {
+                console.warn('Twitch credentials not loaded yet, skipping status fetch');
+                return;
+            }
+            channels.forEach(channel => fetchStatus(channel));
+        }
+
+        function cleardata() {
+            const inputchannelname = document.getElementById("channel-name");
+            inputchannelname.value = ``;
+            const inputchannelid = document.getElementById("channel-id");
+            inputchannelid.value = ``;
+        }
+
+        function clickyClick() {
+    const name = document.getElementById("channel-name").value.trim();
+    const id = document.getElementById("channel-id").value.trim();
+    const platform = document.getElementById("channel-platform").value.toLowerCase();
+
+    if (!name || !id || !platform) {
+        alert("請填完整資料");
+        return;
+    }
+
+    const existingChannelIndex = channels.findIndex(ch => 
+        ch.name.toLowerCase() === name.toLowerCase() && 
+        ch.platform.toLowerCase() === platform
+    );
+
+    let newChannel = { name, id, platform };
+
+    // 強制清除任何標記，確保是純自訂
+    delete newChannel._fromAPI;
+    delete newChannel._fromTxt;
+
+    if (existingChannelIndex > -1) {
+        // 更新現有（可能覆蓋官方，但我們允許使用者強制更新）
+        channels[existingChannelIndex] = newChannel;
+    } else {
+        channels.push(newChannel);
+    }
+
+    saveChannelsToStorage();  // 立即儲存
+    generateButtons();
+    cleardata();
+}
+
+        function editClick() {
+            const deleteButtons = document.querySelectorAll("button");
+            deleteButtons.forEach(btn => {
+                if (btn.innerText === "刪除") {
+                    btn.style.display = "inline";
+                }
+            });
+        }
+        
+        // changechat
+        if (typeof changechatSrc !== 'function') {
+            function changechatSrc(url) {
+                const iframe = document.getElementById('chat_embed');
+                if (iframe) {
+                    iframe.src = url;
+                } else {
+                    window.open(url, 'chat', 'width=400,height=800');
+                }
+            }
+        }
+        
+        let isSK = true;
+        document.getElementById('chatToggleBtn').addEventListener('click', function() {
+            if (isSK) {
+                changechatSrc('https://chicktv.github.io/tv/chat.html');
+                this.textContent = 'TCHAT';
+            } else {
+                changechatSrc('https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io');
+                this.textContent = 'CCHAT';
+            }
+            isSK = !isSK;
+        });
+        
+        // 視窗大小改變時重新生成按鈕
+        window.addEventListener('resize', function() {
+            generateButtons();
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadTwitchCredentials();
+            loadChannelsFromStorage();
+            await loadChannelsFromUrl();
+            setInterval(fetchAllStatuses, 480000);
+        });
+    </script>
+</body>
+</html>
