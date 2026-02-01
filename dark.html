@@ -229,6 +229,7 @@
             }
             
             myBadges = badgeList.join(',');
+			localStorage.setItem('user_badges_list', myBadges); // 儲存起來
         } catch (e) {
             console.error("獲取徽章失敗:", e);
             myBadges = ""; // 如果失敗，設置為空
