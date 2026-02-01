@@ -145,7 +145,7 @@
     // 修改：msgCache 現在儲存包含 display name 的物件
     let userCache = {}; // 新增：快取 user id 對應的 display name
     
-    let myLoginId = "", myDisplayName = ""; 
+    let myLoginId = "", myDisplayName = "", myBadgeStr = ""; // 新增 myBadgeStr 儲存自己的徽章
     let pendingReply = { id: null, user: null, displayName: null }; // 新增 displayName
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
@@ -574,16 +574,13 @@
             user: { login: myLoginId, displayName: myDisplayName },
             displayName: myDisplayName
         };
-
-        // --- 修正處：獲取目前頻道的 badge ---
-        // 注意：因為本地發送時沒有伺服器回傳的 tags，這裡預設顯示 broadcaster (如果是開台者) 或一般 badge。
-        // 若要精確顯示，通常會從 localStorage 或 API 預存自己的 badge 狀態。
-        let selfBadges = "";
-        if (myLoginId === CHANNEL) {
-            selfBadges = renderBadges("broadcaster/1");
-        }
         
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${selfBadges}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+        // 修正：手動新增訊息時呼叫 renderBadges(myBadgeStr)
+        $("#messages").append(`<div class="chat-line ts-${selfTs}">
+            ${replyDisplay}
+            ${renderBadges(myBadgeStr)}
+            <b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
+        </div>`);
         
         // 限制訊息數量
         limitMessages();
@@ -632,6 +629,15 @@
         };
         socket.onmessage = (e) => {
             if (e.data.startsWith('PING')) { socket.send('PONG :tmi.twitch.tv'); return; }
+
+            // 新增：捕捉 USERSTATE 以獲取自己的徽章資訊
+            if (e.data.includes('USERSTATE')) {
+                const tags = e.data.split(' ')[0];
+                const badges = getTagValue(tags, "badges");
+                if (badges) myBadgeStr = badges;
+                return;
+            }
+
             if (!e.data.includes('PRIVMSG')) return;
             const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
             const tags = parts[0], rawMsg = parts[1].trim();
@@ -640,6 +646,9 @@
             const user = getTagValue(tags, "display-name") || "User";
             const userLogin = getTagValue(tags, "login") || user.toLowerCase();
             const color = getTagValue(tags, "color") || "#9147ff";
+
+            // 新增：避免重複顯示自己剛送出的訊息 (因為 sendMessage 已經手動 append 了)
+            if (userLogin === myLoginId) return;
             
             // 快取用戶資訊
             userCache[userLogin] = user;
@@ -708,7 +717,7 @@
                     
                     let body = parseContent(rawBody); 
                     
-                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${body}</div>`;
+                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${body}</div>`;
                     
                     displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
                 }
