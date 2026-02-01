@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.4 - Full Feature Edition</title>
+    <title>Twitch Console v8.44 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -14,6 +14,62 @@
         #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
+        /* 統一控制媒體嵌入大小 */
+        #chat-container .media-preview,
+        #chat-container iframe.media-preview,
+        #chat-container iframe[src*="youtube.com"],
+        #chat-container iframe[src*="youtube-nocookie.com"],
+        #chat-container iframe[src*="youtu.be"],
+        #chat-container iframe[src*="facebook.com"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container .twitter-tweet-container,
+        #chat-container iframe[src*="store.steampowered.com"],
+        #chat-container iframe[src*="threads.com"] {
+            width: 300px !important;
+            height: 400px !important;
+            max-width: 300px !important;
+            max-height: 400px !important;
+            border-radius: 8px !important;
+            border: 1px solid #444 !important;
+            margin: 5px 0 !important;
+        }
+
+        /* 針對YouTube的特殊調整 */
+        #chat-container iframe[src*="youtube.com"],
+        #chat-container iframe[src*="youtube-nocookie.com"] {
+            min-height: 400px !important;
+        }
+
+        /* 針對Twitter的特殊調整 */
+        #chat-container blockquote.twitter-tweet {
+            min-height: 400px !important;
+        }
+
+        /* 針對Threads的特殊調整 */
+        #chat-container iframe[src*="threads.com"] {
+            min-height: 400px !important;
+            background: #FFF !important;
+        }
+
+        /* 針對Steam的特殊調整 */
+        #chat-container iframe[src*="store.steampowered.com"] {
+            min-height: 400px !important;
+        }
+
+        /* 圖片保持原有比例，不強制設定高度 */
+        #chat-container img.media-preview {
+            height: auto !important;
+            max-height: 250px !important;
+            min-height: auto !important;
+        }
+
+        /* 影片標籤保持原有比例 */
+        #chat-container video.media-preview {
+            height: auto !important;
+            max-height: 250px !important;
+            min-height: auto !important;
+        }
+
         .header-bar { background: var(--t-alt); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
         #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #000; scroll-behavior: smooth; }
         .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
@@ -21,6 +77,7 @@
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
         .self-name { color: var(--t-purp); font-weight: bold; }
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
+		
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
         .alt-emoji { max-width: 120px !important; max-height: 120px !important; vertical-align: top; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
@@ -144,7 +201,7 @@
     let msgCache = {}; 
     let userCache = {}; 
     
-    let myLoginId = "", myDisplayName = "", myBadges = "";
+    let myLoginId = "", myDisplayName = "", myBadges = ""; // 新增 myBadges 變數
     let pendingReply = { id: null, user: null, displayName: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
@@ -156,9 +213,6 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
-    // 用於追蹤 Twitter 腳本是否已加載
-    window.twitterWidgetsLoaded = false;
-    
     function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
@@ -167,7 +221,7 @@
             ACCESS_TOKEN = savedToken; 
             myLoginId = localStorage.getItem('twitch_my_login') || ""; 
             myDisplayName = localStorage.getItem('twitch_my_display') || ""; 
-            myBadges = localStorage.getItem('twitch_my_badges') || "";
+            myBadges = localStorage.getItem('twitch_my_badges') || ""; // 讀取保存的 badge
             updateAuthUI(); 
         }
         if (window.location.hash) {
@@ -389,7 +443,7 @@
             b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
             const number = Math.floor((Math.random() * 1000) + 1);
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<div style="max-width: 400px;"><a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()" style="max-height: 250px; max-width: 100%;"/></a></div>`);
+            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
             return id;
         });
 
@@ -403,40 +457,20 @@
             if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
                 let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
                 let t = getParameterByName('t', b);
-                e = `<div style="max-width: 400px;"><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;font-size: 12px;">Youtube <i class="material-icons" style="font-size: 16px;float: right;">open_in_new</i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0" allowfullscreen style="width:100%; height:225px;"></iframe></div>`;
+                e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
             } else if (b.match(/twitter|https:\/\/x.com/g)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                
-                // 修改：限制 Twitter/X 嵌入的尺寸
-                e = `<div style="max-width: 400px; margin: 5px 0;">
-                        <div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;font-size: 12px;display: flex; justify-content: space-between; align-items: center;">
-                            <span>Twitter/X</span>
-                            <a href="${twUrl}" target="_blank" style="color:white; text-decoration:none;">
-                                <i class="material-icons" style="font-size: 16px;">open_in_new</i>
-                            </a>
-                        </div>
-                        <div style="height: 250px; overflow: hidden; border: 1px solid #444; border-top: none; border-radius: 0 0 5px 5px;">
-                            <blockquote class="twitter-tweet" data-dnt="true" data-theme="dark">
-                                <a href="${twUrl}"></a>
-                            </blockquote>
-                        </div>
-                     </div>`;
+                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
             } else if (b.match(/www.threads.com/g)) {
                 let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
-                e = threadUrl ? `<div style="max-width: 400px;"><iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="250" style="background:#FFF;border-radius:12px;width:100%;border:1px solid #444;"></iframe></div>` : b;
-            } else if (b.match(/\.(webm|mp4)$/g) || b.match(/\.(webm|mp4)\?/g)) {
-                const number = Math.floor((Math.random() * 100000) + 1);
-                e = `<div style="max-width: 400px;"><a class="skpopimg skimg" data-fancybox href="${b}" target="_blank"><video id="${number}" onclick="vodgif(${number});" autoplay="true" loop="true" playsinline="true" muted="true" style="max-height: 200px; max-width: 100%;" src="${b}"></video></a></div>`;
+                e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
+            } else if (b.match(/\.(webm|mp4)/g)) {
+                e = `<video class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
             } else if (b.match(/steampowered|steamcommunity/g)) {
-                const number = Math.floor((Math.random() * 100000) + 1);
-                burl = b.match("app/([0-9]+)");
-                if (burl) {
-                    e = `<div style="max-width: 400px;"><iframe id="${number}" width="100%" height="190px" src="https://store.steampowered.com/widget/${burl[1]}/" frameborder="0" allowfullscreen></iframe><a href="steam://store/${burl[1]}" target="_blank"><div style="color: #d2efa9;text-shadow: 1px 1px 2px rgba( 0, 0, 0, 0.3 );text-align: center;padding: 0px 11px;line-height: 34px;border-radius: 2px;text-transform: unset;background: #75b022;font-size: 12px;">以Steam程式查看商店頁面</div></a></div>`;
-                } else {
-                    e = b;
-                }
+                let appId = b.match("app/([0-9]+)");
+                e = appId ? `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"  src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0"></iframe>` : b;
             } else {
-                e = `<div style="max-width: 400px;"><a class="skpopimg skimg" data-fancybox="gallery" href="${b}" target="_blank"><img id="${number}" alt="[s]${b}[e]" src="${b}" style="max-height: 250px; max-width: 100%;vertical-align: middle;" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a></div>`;
+                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
             }
             placeholders.push(e);
             return id;
@@ -448,53 +482,18 @@
             let id = `__PH_${placeholders.length}__`;
             let e = "";
             if (b.match(/facebook/g)) {
-                console.log(b);
-                const fbvideoid = b.match("videos/(.*?)");
-                console.log(fbvideoid);
-                if (fbvideoid) {
-                    const fbvideoid = fbvideoid[1];
-                    e = `<div style="max-width: 400px;"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;font-size: 12px;">Facebook <i class="facebookclosevideo material-icons" data-fbid="${fbvideoid}" class="material-icons" style="cursor:pointer;font-size: 16px;float: right;" >close</i> <i class="material-icons" data-fancybox data-type="iframe" data-src="https://www.facebook.com/plugins/video.php?href=${b}&amp;show_text=0&amp;width=300&height=200" href="javascript:;" style="cursor:pointer;font-size: 16px;float: right;">open_in_new</i></div><div style="min-width: 250px;text-align: center;line-height: 200px;height: 200px;box-shadow: none;color: white;position: relative;overflow: hidden;background: black;cursor: pointer;" data-fbid="${b}" class="facebookvideo ${fbvideoid}"><div style="Background-image: url();position: absolute;color: white;z-index: 0;width: 100%;height: 100%;opacity: 0.5;background-size: contain;background-repeat: no-repeat;background-position: center;"></div><div>播放</div></div></div>`;
-                } else {
-                    e = b;
-                }
-            } else if (b.match(/twitter|https:\/\/x.com/g)) {
-                b = b.replace('https://x.com', 'https://twitter.com');
-                
-                // 修改：限制 Twitter/X 嵌入的尺寸
-                e = `<div style="max-width: 400px; margin: 5px 0;">
-                        <div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;font-size: 12px;display: flex; justify-content: space-between; align-items: center;">
-                            <span>Twitter/X</span>
-                            <a href="${b}" target="_blank" style="color:white; text-decoration:none;">
-                                <i class="material-icons" style="font-size: 16px;">open_in_new</i>
-                            </a>
-                        </div>
-                        <div style="height: 250px; overflow: hidden; border: 1px solid #444; border-top: none; border-radius: 0 0 5px 5px;">
-                            <blockquote class="twitter-tweet" data-dnt="true" data-theme="dark">
-                                <a href="${b}"></a>
-                            </blockquote>
-                        </div>
-                     </div>`;
-            } else if (b.match(/www.threads.com/g)) {
-                $('body').append('<script async src="https://www.threads.com/embed.js"></script>');
-                url = b.match(/@[\w.]+\/post\/[\w]+/);
-                if (url && url[0]) {
-                    e = `<div style="max-width: 400px;"><iframe class="text-post-media threads-embed" id="text-post-embed-0" src="https://www.threads.com/${url[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="250" data-text-app-payload-id="tp-initial" scrolling="no" style="background: #FFF;width:100%;padding:0;border:none;border-radius:12px;"></iframe></div>`;
-                    setTimeout("scroller('700')", 2000);
-                }
-            } else if (b.match(/\.(webm|mp4)$/g) || b.match(/\.(webm|mp4)\?/g)) {
-                const number = Math.floor((Math.random() * 100000) + 1);
-                e = `<div style="max-width: 400px;"><a class="skpopimg skimg" data-fancybox href="${b}" target="_blank"><video id="${number}" autoplay="" loop="" playsinline="true" muted="" style="max-height: 200px; max-width: 100%;" src="${b}"></video></a></div>`;
-            } else if (b.match(/img|jpg|png|gif|jpeg/g)) {
-                const number = Math.floor((Math.random() * 1000) + 1);
-                e = `<div style="max-width: 400px;"><a class="skpopimg skimg" data-fancybox="gallery" href="${b}" target="_blank"><img id="${number}" alt="[s]${b}[e]" src="${b}" style="max-height: 250px; max-width: 100%;vertical-align: middle;" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a></div>`;
-            } else {
-                if (b.match(/watch\?/g)) {
-                    var b = getParameterByName('v', b);
-                } else {
-                    b = b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                }
-                const t = getParameterByName('t', b);
-                e = `<div style="max-width: 400px;"><a data-fancybox style="text-decoration: none;" href="https://www.youtube.com/watch?v=${b}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;font-size: 12px;">Youtube <i class="material-icons" style="font-size: 16px;float: right;">open_in_new</i></div></a><iframe width="100%" height="225" src="https://www.youtube.com/embed/${b}?start=${t}" frameborder="0" allowfullscreen style="vertical-align: middle;"></iframe></div>`;
+                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
+            } else if (b.match(/youtu/g)) {
+                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+                e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+            } 
+              else if (b.match(/\.(webm|mp4)/g)) {
+                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
+				 else if (b.match(/twitter|https:\/\/x.com/g)) {
+                let twUrl = b.replace('https://x.com', 'https://twitter.com');
+                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
+            else {
+                e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
             }
             placeholders.push(e);
             return id;
@@ -511,7 +510,7 @@
         let htmlMatch = extractTagAndUrl(a);
         if (htmlMatch) {
             let b = htmlMatch.url;
-            let e = `<div style="max-width: 400px;"><a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a></div>`;
+            let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
             a = a.replace(htmlMatch.match[0], e);
         }
 
@@ -526,30 +525,6 @@
 
         // 最後還原所有預留佔位符
         placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
-        
-        // 如果內容包含 Twitter 嵌入，加載 Twitter 腳本
-        if (a.includes('twitter-tweet')) {
-            // 檢查是否已經加載過 Twitter 腳本
-            if (!window.twitterWidgetsLoaded) {
-                const script = document.createElement('script');
-                script.src = 'https://platform.twitter.com/widgets.js';
-                script.async = true;
-                script.onload = () => {
-                    window.twitterWidgetsLoaded = true;
-                    // 如果 twttr 可用，調用 load 方法
-                    if (typeof twttr !== 'undefined' && twttr.widgets && twttr.widgets.load) {
-                        twttr.widgets.load();
-                    }
-                };
-                document.head.appendChild(script);
-            } else if (typeof twttr !== 'undefined' && twttr.widgets && twttr.widgets.load) {
-                // 如果已經加載過，直接調用 load 方法
-                setTimeout(() => {
-                    twttr.widgets.load();
-                }, 100);
-            }
-        }
-        
         return a;
     }
 
