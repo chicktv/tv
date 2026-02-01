@@ -108,10 +108,9 @@
         .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
         .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
 
-/* 滾動到最底按鈕 */
-#scroll-to-bottom-btn {position: absolute;bottom: 80px; /* 位於輸入框上方 */left: 50%;transform: translateX(-50%);background: rgba(145, 71, 255, 0.9); /* Twitch 紫色 */color: white;border: none;padding: 8px 16px; border-radius: 20px; cursor: pointer;z-index: 1000;font-weight: bold;display: none; /* 初始隱藏 */box-shadow: 0 4px 12px rgba(0,0,0,0.5);transition: background 0.2s;}
-#scroll-to-bottom-btn:hover {background: #a970ff;}
-
+        /* 滾動到最底按鈕 */
+        #scroll-to-bottom-btn {position: absolute;bottom: 80px; left: 50%;transform: translateX(-50%);background: rgba(145, 71, 255, 0.9); color: white;border: none;padding: 8px 16px; border-radius: 20px; cursor: pointer;z-index: 1000;font-weight: bold;display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5);transition: background 0.2s;}
+        #scroll-to-bottom-btn:hover {background: #a970ff;}
 
         /* 關鍵修正：確保 ✕ 出現 */
         .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
@@ -124,6 +123,67 @@
         .audio-icon-btn:hover { background: rgba(145, 71, 255, 0.4); }
         .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
         
+        /* 登入彈出視窗樣式 */
+        #loginPopup {
+            position: fixed;
+            display: none;
+            width: 400px;
+            height: 500px;
+            background: var(--t-alt);
+            border: 2px solid var(--t-purp);
+            border-radius: 12px;
+            z-index: 9999;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        
+        .popup-header {
+            padding: 12px 16px;
+            background: #26262c;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .popup-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .popup-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .popup-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .popup-close:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
         @keyframes pulse-audio {
             0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
@@ -133,10 +193,18 @@
 </head>
 <body onload="initApp()">
 
+<!-- 登入彈出視窗 -->
+<div id="loginPopup">
+    <div class="popup-header">
+        <b style="font-size:14px;">Twitch 登入</b>
+        <button class="popup-close" onclick="closeLoginPopup()">✕</button>
+    </div>
+    <iframe id="loginIframe" class="popup-iframe" allow="clipboard-write"></iframe>
+</div>
+
 <div class="header-bar">
-    
-    <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button></div>
-	<div style="font-weight:bold;"></div>
+    <div style="font-weight:bold;"></div>
+	<div id="auth-area"><button onclick="openLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button></div>
 </div>
 
 <div id="chat-container"><div id="messages"></div><button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button></div>
@@ -171,7 +239,6 @@
                     </svg></button>
                     </div>
     </div>
-	
 </div>
 
 <script>
@@ -215,6 +282,10 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
+    // 登入彈出視窗相關變數
+    let loginPopup = null;
+    let loginCheckInterval = null;
+    
     function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
@@ -226,16 +297,41 @@
             myBadges = localStorage.getItem('twitch_my_badges') || ""; // 讀取保存的 badge
             updateAuthUI(); 
         }
-        if (window.location.hash) {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const token = params.get("access_token");
-            if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
-            window.location.hash = "";
-        }
+        
+        // 監聽來自彈出視窗的訊息
+        window.addEventListener('message', handleLoginMessage, false);
+        
         await fetchBadges();
         await loadResources();
         setupAutoTag();
         startChat();
+    }
+
+    // 處理登入訊息的函數
+    function handleLoginMessage(event) {
+        // 確保訊息來自信任的來源
+        if (event.origin !== window.location.origin) {
+            return;
+        }
+        
+        if (event.data.type === 'twitch_login_success') {
+            const token = event.data.access_token;
+            if (token) {
+                ACCESS_TOKEN = token;
+                localStorage.setItem('twitch_access_token', ACCESS_TOKEN);
+                
+                // 關閉彈出視窗
+                closeLoginPopup();
+                
+                // 獲取用戶資訊
+                fetchUserInfo().then(() => {
+                    updateAuthUI();
+                    startChat();
+                });
+            }
+        } else if (event.data.type === 'twitch_login_cancel') {
+            closeLoginPopup();
+        }
     }
 
     async function fetchUserInfo() {
@@ -243,16 +339,97 @@
             const r = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } });
             const d = await r.json();
             if(d.data && d.data[0]) {
-                myLoginId = d.data[0].login; myDisplayName = d.data[0].display_name;
-                localStorage.setItem('twitch_my_login', myLoginId); localStorage.setItem('twitch_my_display', myDisplayName);
+                myLoginId = d.data[0].login; 
+                myDisplayName = d.data[0].display_name;
+                localStorage.setItem('twitch_my_login', myLoginId); 
+                localStorage.setItem('twitch_my_display', myDisplayName);
                 updateAuthUI();
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error('取得用戶資訊失敗:', e);
+        }
     }
 
-    function updateAuthUI() { if (myDisplayName) { $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`); } }
-    function logout() { localStorage.clear(); window.location.reload(); }
-    function twitchLoginPopup() { const redirect = window.location.href.split('#')[0]; window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email`; }
+    function updateAuthUI() { 
+        if (myDisplayName) { 
+            $("#auth-area").html(`
+                <span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span>
+                <button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>
+            `); 
+        } 
+    }
+    
+    function logout() { 
+        localStorage.clear(); 
+        ACCESS_TOKEN = "";
+        myLoginId = "";
+        myDisplayName = "";
+        myBadges = "";
+        $("#auth-area").html(`<button onclick="openLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button>`);
+        if (socket) socket.close();
+        startChat(); // 重新以匿名身份連接
+    }
+
+    // 開啟登入彈出視窗
+    function openLoginPopup() {
+        const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
+        
+        // 顯示彈出視窗
+        $("#loginPopup").show();
+        
+        // 設定 iframe 的來源為 Twitch 登入頁面
+        $("#loginIframe").attr("src", twitchAuthUrl);
+        
+        // 開始檢查 iframe 的 URL
+        startLoginCheck();
+    }
+
+    // 關閉登入彈出視窗
+    function closeLoginPopup() {
+        $("#loginPopup").hide();
+        $("#loginIframe").attr("src", "about:blank");
+        
+        // 停止檢查
+        if (loginCheckInterval) {
+            clearInterval(loginCheckInterval);
+            loginCheckInterval = null;
+        }
+    }
+
+    // 開始檢查 iframe 中的登入狀態
+    function startLoginCheck() {
+        // 每500毫秒檢查一次 iframe 的 URL
+        loginCheckInterval = setInterval(function() {
+            try {
+                const iframe = document.getElementById('loginIframe');
+                const iframeUrl = iframe.contentWindow.location.href;
+                
+                // 檢查 URL 中是否有 access_token
+                if (iframeUrl.includes('access_token')) {
+                    // 從 URL 中提取 access_token
+                    const hash = iframeUrl.split('#')[1];
+                    const params = new URLSearchParams(hash);
+                    const token = params.get('access_token');
+                    
+                    if (token) {
+                        // 發送訊息給父視窗
+                        window.postMessage({
+                            type: 'twitch_login_success',
+                            access_token: token
+                        }, window.location.origin);
+                    }
+                }
+                
+                // 檢查是否取消登入（返回到原頁面）
+                if (iframeUrl === window.location.href || iframeUrl === 'about:blank') {
+                    closeLoginPopup();
+                }
+            } catch (e) {
+                // 忽略跨域錯誤
+            }
+        }, 500);
+    }
 
     async function loadResources() {
         try {
@@ -281,7 +458,9 @@
                     list.forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
                 });
             }
-        } catch(e){}
+        } catch(e){
+            console.error('載入資源失敗:', e);
+        }
     }
 
     async function loadAudioData() {
@@ -792,7 +971,7 @@
                     
                     let body = parseContent(rawBody); 
                     
-                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${body}</div>`;
+                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${body}</div>`;
                     
                     displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
                 }
