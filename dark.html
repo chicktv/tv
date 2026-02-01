@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.5 - Full Feature Edition</title>
+    <title>Twitch Console v8.4 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -142,7 +142,6 @@
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiLists = {}, audioLists = {}, customBadges = {};
     let msgCache = {}; 
-    // 修改：msgCache 現在儲存包含 display name 的物件
     let userCache = {}; // 新增：快取 user id 對應的 display name
     
     let myLoginId = "", myDisplayName = ""; 
@@ -157,21 +156,26 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
-    // 預設徽章映射
+    // 預設徽章映射 - 更新為包含版本號
     const defaultBadges = {
-        'broadcaster': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/3',
-        'subscriber': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/3',
-        'premium': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/3',
-        'vip': 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/3',
-        'moderator': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3',
-        'founder': 'https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d9/3',
-        'bits': 'https://static-cdn.jtvnw.net/badges/v1/73dc41b2-6c0b-4960-b7c9-22d69d42d3a5/3',
-        'bits-leader': 'https://static-cdn.jtvnw.net/badges/v1/4d4e6f07-6d3b-4d6b-a6f9-9744e2b7a168/3',
-        'turbo': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4fed-b1e0-87cd8e1f5b6d/3',
-        'partner': 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/3'
+        'broadcaster/1': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/3',
+        'subscriber/1': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/3',
+        'premium/1': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/3',
+        'vip/1': 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/3',
+        'moderator/1': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3',
+        'founder/1': 'https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d9/3',
+        'bits/1': 'https://static-cdn.jtvnw.net/badges/v1/73dc41b2-6c0b-4960-b7c9-22d69d42d3a5/3',
+        'bits-leader/1': 'https://static-cdn.jtvnw.net/badges/v1/4d4e6f07-6d3b-4d6b-a6f9-9744e2b7a168/3',
+        'turbo/1': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4fed-b1e0-87cd8e1f5b6d/3',
+        'partner/1': 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/3'
     };
 
-    function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
+    function getTagValue(tags, key) { 
+        if (!tags) return null;
+        const regex = new RegExp(`${key}=([^;\\s]+)`); 
+        const match = tags.match(regex); 
+        return match ? match[1] : null; 
+    }
 
     async function initApp() {
         const savedToken = localStorage.getItem('twitch_access_token');
@@ -187,7 +191,6 @@
             if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
             window.location.hash = "";
         }
-        await fetchBadges();
         await loadResources();
         setupAutoTag();
         startChat();
@@ -216,6 +219,9 @@
 
     async function loadResources() {
         try {
+            // 先加載徽章
+            await fetchBadges();
+            
             const skData = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
             if (Array.isArray(skData)) {
                 emojiLists["常用"] = { emojis: skData, image: skData[0].src };
@@ -560,21 +566,28 @@
         return fallbackName || userId;
     }
 
-    // 修改過的徽章渲染函數，結合預設徽章
+    // 簡化的徽章渲染函數 - 修正版，直接使用完整的徽章鍵
     function renderBadges(badgeStr) {
         if (!badgeStr) return "";
         let html = "";
+        const badges = badgeStr.split(',');
         
-        badgeStr.split(',').forEach(b => {
-            const key = b.split('/')[0];
-            let url = customBadges[key];
-            if (!url) {
-                url = defaultBadges[key];
-            }
-            if (url) {
-                html += `<img class="badge" src="${url}" title="${key}">`;
+        badges.forEach(badge => {
+            if (!badge) return;
+            
+            // 直接使用完整的徽章鍵（如 "broadcaster/1"）
+            let badgeKey = badge.trim();
+            
+            // 檢查是否有自訂徽章
+            if (customBadges[badgeKey]) {
+                html += `<img class="badge" src="${customBadges[badgeKey]}" title="${badgeKey.split('/')[0]}">`;
+            } 
+            // 檢查預設徽章
+            else if (defaultBadges[badgeKey]) {
+                html += `<img class="badge" src="${defaultBadges[badgeKey]}" title="${badgeKey.split('/')[0]}">`;
             }
         });
+        
         return html;
     }
 
@@ -612,12 +625,11 @@
             displayName: myDisplayName
         };
         
-        // 為自己添加徽章（如果是頻道主）
-        let selfBadgeStr = "";
+        // 為自己添加徽章
+        let badgeHtml = "";
         if (myLoginId === CHANNEL) {
-            selfBadgeStr = "broadcaster/1";
+            badgeHtml = `<img class="badge" src="${customBadges['broadcaster/1'] || defaultBadges['broadcaster/1']}" title="創作者">`;
         }
-        const badgeHtml = renderBadges(selfBadgeStr);
         
         $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-msg-id="${selfTs}">
             <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName || myLoginId}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
@@ -756,9 +768,8 @@
                 }
             }
             
-            // 使用改良的徽章渲染函數
-            const badgeStr = badges || "";
-            const badgeHtml = renderBadges(badgeStr);
+            // 渲染徽章
+            const badgeHtml = renderBadges(badges);
             
             const line = `<div class="chat-line ts-${ts} id-${msgId}" data-msg-id="${msgId}">
                 <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
@@ -796,8 +807,11 @@
     function fetchBadges() { 
         return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => { 
             customBadges = d; 
-            // 將預設徽章合併到 customBadges，如果沒有對應的徽章
+            // 合併預設徽章到自訂徽章（確保有基本的徽章）
             Object.assign(customBadges, defaultBadges);
+        }).catch(() => {
+            // 如果加載失敗，使用預設徽章
+            customBadges = {...defaultBadges};
         }); 
     }
     
