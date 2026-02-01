@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.48 - Full Feature Edition</title>
+    <title>Twitch Console v8.4 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -140,8 +140,8 @@
     let userCache = {}; 
     
     let myLoginId = "", myDisplayName = ""; 
-    let myBadgesStr = ""; // 新增：用於快取自己的徽章字串
-    let myColor = "#9147ff"; // 新增：快取自己的顏色
+    let myBadgesStr = localStorage.getItem('twitch_my_badges') || ""; // 改為從快取讀取
+    let myColor = localStorage.getItem('twitch_my_color') || "#9147ff"; 
     
     let pendingReply = { id: null, user: null, displayName: null }; 
     let isDeleteMode = false;
@@ -156,6 +156,9 @@
     function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
+        // 先讀取徽章數據，確保後續渲染正常
+        await fetchBadges();
+        
         const savedToken = localStorage.getItem('twitch_access_token');
         if (savedToken) { 
             ACCESS_TOKEN = savedToken; 
@@ -169,7 +172,6 @@
             if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
             window.location.hash = "";
         }
-        await fetchBadges();
         await loadResources();
         setupAutoTag();
         startChat();
@@ -183,9 +185,9 @@
                 myLoginId = d.data[0].login; myDisplayName = d.data[0].display_name;
                 localStorage.setItem('twitch_my_login', myLoginId); localStorage.setItem('twitch_my_display', myDisplayName);
                 
-                // 如果登入者是頻道主，預設給予 broadcaster 徽章 (之後會隨 PRIVMSG 更新)
+                // 如果登入者是頻道主，預設賦予 broadcaster 徽章 (之後會隨 PRIVMSG 更新)
                 if (myLoginId.toLowerCase() === CHANNEL.toLowerCase()) {
-                    myBadgesStr = "broadcaster/1";
+                    if (!myBadgesStr) myBadgesStr = "broadcaster/1";
                 }
                 
                 updateAuthUI();
@@ -493,14 +495,11 @@
         const selfTs = Date.now().toString(); let finalCmd = "", replyDisplay = "";
         
         if (pendingReply.id) {
-            // 發送端同時帶入原生 ID 與自訂標籤以維持最大相容性
             finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :[r]${pendingReply.user},${pendingReply.id}[m] ${val}`;
-            
             const repliedMsg = msgCache[pendingReply.id];
             let rawQuote = (repliedMsg && typeof repliedMsg === 'object') ? repliedMsg.content : (repliedMsg || "...");
             let parsedQuote = parseContent(rawQuote);
             const displayNameToShow = pendingReply.displayName || pendingReply.user;
-            
             replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
         } else {
             finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
@@ -508,11 +507,10 @@
         
         socket.send(finalCmd); 
         
-        // --- 修正：手動新增時也帶入徽章 ---
+        // 使用讀取到的自己的徽章與顏色
         const myFullBadgesHtml = renderBadges(myBadgesStr);
         const myNameHtml = `<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b>`;
         
-        // 標記為 pending 以防 echo 重複
         const tempMsgId = "pending-" + selfTs;
         msgCache[tempMsgId] = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName };
         
@@ -557,53 +555,43 @@
             const color = getTagValue(tags, "color") || "#9147ff";
             const badgeStr = getTagValue(tags, "badges") || "";
 
-            // --- 修正：更新自己的徽章資訊 ---
+            // 更新並儲存自己的設定
             if (userLogin.toLowerCase() === myLoginId.toLowerCase()) {
                 myBadgesStr = badgeStr;
                 myColor = color;
-                // 檢查是否已有 pending 訊息，有的話就移除手動的（稍後由系統統一新增），避免重複
-                $(".pending-msg").remove();
+                localStorage.setItem('twitch_my_badges', myBadgesStr);
+                localStorage.setItem('twitch_my_color', myColor);
+                $(".pending-msg").remove(); // 移除手動產生的訊息，改由系統渲染
             }
             
             userCache[userLogin] = user;
             if (msgId) msgCache[msgId] = { content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user };
-            msgCache[ts] = { content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user };
             
             let replyHtml = "", displayMsg = rawMsg;
             const pUser = getTagValue(tags, "reply-parent-display-name");
             const pId = getTagValue(tags, "reply-parent-msg-id");
             const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
             
-            // --- 模式 1: Twitch 原生回覆顯示 ---
             if (pUser && pId) {
                 let isMe = (pUser === myDisplayName || pUser === myLoginId);
                 let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
                 let pBody = parseContent(originalText); 
                 const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                
                 replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
-                
                 const mention = `@${pUser} `;
                 if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
                 if (displayMsg.includes("[r]")) displayMsg = displayMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
-            } 
-            // --- 模式 2: 自訂 [r] 標籤回覆顯示 (全功能版) ---
-            else if (rawMsg.includes("[r]")) {
+            } else if (rawMsg.includes("[r]")) {
                 const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
                 if(myR) {
                     const userIdFromTag = myR[1];
                     const repliedMsgId = myR[2];
-                    
                     let repliedMsg = msgCache[repliedMsgId];
                     let rawBody = (repliedMsg && typeof repliedMsg === 'object') ? repliedMsg.content : (repliedMsg || "...");
                     let displayNameToShow = userCache[userIdFromTag] || userIdFromTag;
-                    
                     let isMe = (displayNameToShow === myDisplayName || userIdFromTag === myLoginId);
                     const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                    
-                    let body = parseContent(rawBody); 
-                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${body}</div>`;
-                    
+                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${parseContent(rawBody)}</div>`;
                     displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
                 }
             }
