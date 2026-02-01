@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.4 - Full Feature Edition</title>
+    <title>Twitch Console v8.48 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -140,6 +140,9 @@
     let userCache = {}; 
     
     let myLoginId = "", myDisplayName = ""; 
+    let myBadgesStr = ""; // 新增：用於快取自己的徽章字串
+    let myColor = "#9147ff"; // 新增：快取自己的顏色
+    
     let pendingReply = { id: null, user: null, displayName: null }; 
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
@@ -179,6 +182,12 @@
             if(d.data && d.data[0]) {
                 myLoginId = d.data[0].login; myDisplayName = d.data[0].display_name;
                 localStorage.setItem('twitch_my_login', myLoginId); localStorage.setItem('twitch_my_display', myDisplayName);
+                
+                // 如果登入者是頻道主，預設給予 broadcaster 徽章 (之後會隨 PRIVMSG 更新)
+                if (myLoginId.toLowerCase() === CHANNEL.toLowerCase()) {
+                    myBadgesStr = "broadcaster/1";
+                }
+                
                 updateAuthUI();
             }
         } catch(e) {}
@@ -498,8 +507,21 @@
         }
         
         socket.send(finalCmd); 
-        msgCache[selfTs] = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName };
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+        
+        // --- 修正：手動新增時也帶入徽章 ---
+        const myFullBadgesHtml = renderBadges(myBadgesStr);
+        const myNameHtml = `<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b>`;
+        
+        // 標記為 pending 以防 echo 重複
+        const tempMsgId = "pending-" + selfTs;
+        msgCache[tempMsgId] = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName };
+        
+        $("#messages").append(`<div class="chat-line ts-${selfTs} pending-msg" data-temp-id="${tempMsgId}">
+            ${replyDisplay}
+            ${myFullBadgesHtml}
+            ${myNameHtml} 
+            <span>${parseContent(val)}</span>
+        </div>`);
         
         limitMessages();
         if (isAtBottom) {
@@ -533,6 +555,15 @@
             const user = getTagValue(tags, "display-name") || "User";
             const userLogin = getTagValue(tags, "login") || user.toLowerCase();
             const color = getTagValue(tags, "color") || "#9147ff";
+            const badgeStr = getTagValue(tags, "badges") || "";
+
+            // --- 修正：更新自己的徽章資訊 ---
+            if (userLogin.toLowerCase() === myLoginId.toLowerCase()) {
+                myBadgesStr = badgeStr;
+                myColor = color;
+                // 檢查是否已有 pending 訊息，有的話就移除手動的（稍後由系統統一新增），避免重複
+                $(".pending-msg").remove();
+            }
             
             userCache[userLogin] = user;
             if (msgId) msgCache[msgId] = { content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user };
@@ -577,7 +608,6 @@
                 }
             }
             
-            const badgeStr = getTagValue(tags, "badges");
             const line = `<div class="chat-line ts-${ts} id-${msgId}" data-msg-id="${msgId}">
                 <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
                 ${replyHtml}
