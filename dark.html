@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.4 - Full Feature Edition</title>
+    <title>Twitch Console v8.5 - Debug Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -73,7 +73,7 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;">Twitch Console v8.4</div>
+    <div style="font-weight:bold;">Twitch Console v8.5 [DEBUG]</div>
     <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入 Twitch</button></div>
 </div>
 
@@ -133,14 +133,14 @@
         }
     }
 
-    const CHANNEL = "69nocondom";
+    const CHANNEL = "whitewing940920";
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiLists = {}, audioLists = {}, customBadges = {};
     let msgCache = {}; 
     let userCache = {}; 
     
     let myLoginId = "", myDisplayName = ""; 
-    let myBadgesStr = localStorage.getItem('twitch_my_badges') || ""; // 改為從快取讀取
+    let myBadgesStr = localStorage.getItem('twitch_my_badges') || ""; 
     let myColor = localStorage.getItem('twitch_my_color') || "#9147ff"; 
     
     let pendingReply = { id: null, user: null, displayName: null }; 
@@ -156,22 +156,33 @@
     function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
-        // 先讀取徽章數據，確保後續渲染正常
+        console.log("[Debug] 初始化應用中...");
+        
+        // 先讀取徽章數據
         await fetchBadges();
+        console.log("[Debug] 徽章對照表載入完畢, 項目數量:", Object.keys(customBadges).length);
         
         const savedToken = localStorage.getItem('twitch_access_token');
         if (savedToken) { 
             ACCESS_TOKEN = savedToken; 
             myLoginId = localStorage.getItem('twitch_my_login') || ""; 
             myDisplayName = localStorage.getItem('twitch_my_display') || ""; 
+            console.log("[Debug] 從快取讀取到 Token 與身份:", { myLoginId, myDisplayName, myBadgesStr });
             updateAuthUI(); 
         }
+        
         if (window.location.hash) {
             const params = new URLSearchParams(window.location.hash.substring(1));
             const token = params.get("access_token");
-            if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
+            if (token) { 
+                console.log("[Debug] 偵測到 URL Hash Token，正在獲取使用者資訊...");
+                ACCESS_TOKEN = token; 
+                localStorage.setItem('twitch_access_token', ACCESS_TOKEN); 
+                await fetchUserInfo(); 
+            }
             window.location.hash = "";
         }
+        
         await loadResources();
         setupAutoTag();
         startChat();
@@ -183,16 +194,18 @@
             const d = await r.json();
             if(d.data && d.data[0]) {
                 myLoginId = d.data[0].login; myDisplayName = d.data[0].display_name;
-                localStorage.setItem('twitch_my_login', myLoginId); localStorage.setItem('twitch_my_display', myDisplayName);
+                localStorage.setItem('twitch_my_login', myLoginId); 
+                localStorage.setItem('twitch_my_display', myDisplayName);
+                console.log("[Debug] API 獲取使用者成功:", myDisplayName);
                 
-                // 如果登入者是頻道主，預設賦予 broadcaster 徽章 (之後會隨 PRIVMSG 更新)
                 if (myLoginId.toLowerCase() === CHANNEL.toLowerCase()) {
                     if (!myBadgesStr) myBadgesStr = "broadcaster/1";
                 }
-                
                 updateAuthUI();
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("[Debug] fetchUserInfo 錯誤:", e);
+        }
     }
 
     function updateAuthUI() { if (myDisplayName) { $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`); } }
@@ -201,6 +214,7 @@
 
     async function loadResources() {
         try {
+            console.log("[Debug] 正在加載表情與音訊資源...");
             const skData = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
             if (Array.isArray(skData)) {
                 emojiLists["常用"] = { emojis: skData, image: skData[0].src };
@@ -226,7 +240,9 @@
                     list.forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
                 });
             }
-        } catch(e){}
+        } catch(e){
+            console.warn("[Debug] loadResources 部分加載失敗:", e);
+        }
     }
 
     async function loadAudioData() {
@@ -494,6 +510,8 @@
         const val = $("#msginput").val(); if (!val || !socket || socket.readyState !== 1) return;
         const selfTs = Date.now().toString(); let finalCmd = "", replyDisplay = "";
         
+        console.log("[Debug] 手動發送訊息:", val);
+        
         if (pendingReply.id) {
             finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :[r]${pendingReply.user},${pendingReply.id}[m] ${val}`;
             const repliedMsg = msgCache[pendingReply.id];
@@ -507,7 +525,6 @@
         
         socket.send(finalCmd); 
         
-        // 使用讀取到的自己的徽章與顏色
         const myFullBadgesHtml = renderBadges(myBadgesStr);
         const myNameHtml = `<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b>`;
         
@@ -536,8 +553,10 @@
 
     function startChat() {
         if(socket) socket.close();
+        console.log("[Debug] WebSocket 正在連接...");
         socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
         socket.onopen = () => {
+            console.log("[Debug] WebSocket 已連線，發送認證與 CAP...");
             socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
             socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
             socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan'+Math.floor(Math.random()*1000)}`);
@@ -546,6 +565,7 @@
         socket.onmessage = (e) => {
             if (e.data.startsWith('PING')) { socket.send('PONG :tmi.twitch.tv'); return; }
             if (!e.data.includes('PRIVMSG')) return;
+            
             const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
             const tags = parts[0], rawMsg = parts[1].trim();
             const msgId = getTagValue(tags, "id");
@@ -555,13 +575,14 @@
             const color = getTagValue(tags, "color") || "#9147ff";
             const badgeStr = getTagValue(tags, "badges") || "";
 
-            // 更新並儲存自己的設定
+            // --- 偵錯日誌 ---
             if (userLogin.toLowerCase() === myLoginId.toLowerCase()) {
+                console.log("[Debug] 收到自己的訊息標籤:", { tags, badgeStr, color });
                 myBadgesStr = badgeStr;
                 myColor = color;
                 localStorage.setItem('twitch_my_badges', myBadgesStr);
                 localStorage.setItem('twitch_my_color', myColor);
-                $(".pending-msg").remove(); // 移除手動產生的訊息，改由系統渲染
+                $(".pending-msg").remove(); 
             }
             
             userCache[userLogin] = user;
@@ -612,7 +633,10 @@
                 setTimeout(() => { if (isAtBottom) container.scrollTop = container.scrollHeight; setTimeout(() => { isAutoScrolling = false; }, 100); }, 100);
             }
         };
-        socket.onclose = () => { setTimeout(startChat, 3000); };
+        socket.onclose = () => { 
+            console.warn("[Debug] WebSocket 連線中斷，3秒後重連...");
+            setTimeout(startChat, 3000); 
+        };
     }
     
     function renderBadges(badgeStr) {
@@ -621,12 +645,23 @@
         badgeStr.split(',').forEach(b => {
             const key = b.split('/')[0];
             const url = customBadges[b] || customBadges[key];
-            if (url) html += `<img class="badge" src="${url}">`;
+            if (url) {
+                html += `<img class="badge" src="${url}">`;
+            } else {
+                console.log(`[Debug] 徽章未對應到圖標: ${b}`);
+            }
         });
         return html;
     }
 
-    function fetchBadges() { return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => { customBadges = d; }); }
+    function fetchBadges() { 
+        return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => { 
+            customBadges = d; 
+        }).fail(() => {
+            console.error("[Debug] 無法讀取 badges.txt，請檢查路徑或 CORS 權限");
+        }); 
+    }
+    
     function setupAutoTag() { 
         document.getElementById('msginput').addEventListener('paste', (e) => {
             const data = (e.clipboardData || window.clipboardData).getData('text');
