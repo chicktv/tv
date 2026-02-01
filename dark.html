@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.454 - Full Feature Edition</title>
+    <title>Twitch Console v8.44 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -211,6 +211,10 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
+    // 登入相關變數
+    let loginWindow = null;
+    let loginCheckInterval = null;
+    
     function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
@@ -222,16 +226,51 @@
             myBadges = localStorage.getItem('twitch_my_badges') || "";
             updateAuthUI(); 
         }
-        if (window.location.hash) {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const token = params.get("access_token");
-            if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
-            window.location.hash = "";
-        }
+        
+        // 監聽來自彈出視窗的訊息
+        window.addEventListener('message', handleLoginMessage);
+        
         await fetchBadges();
         await loadResources();
         setupAutoTag();
         startChat();
+    }
+
+    // 處理來自彈出視窗的訊息
+    function handleLoginMessage(event) {
+        // 檢查來源是否是我們自己的頁面
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data && event.data.type === 'TWITCH_AUTH_SUCCESS') {
+            const token = event.data.access_token;
+            if (token) {
+                ACCESS_TOKEN = token;
+                localStorage.setItem('twitch_access_token', ACCESS_TOKEN);
+                
+                // 關閉登入視窗
+                if (loginWindow) {
+                    loginWindow.close();
+                }
+                
+                // 停止檢查
+                if (loginCheckInterval) {
+                    clearInterval(loginCheckInterval);
+                    loginCheckInterval = null;
+                }
+                
+                // 獲取用戶資訊
+                fetchUserInfo().then(() => {
+                    updateAuthUI();
+                    startChat();
+                });
+            }
+        } else if (event.data && event.data.type === 'TWITCH_AUTH_CLOSE') {
+            // 彈出視窗關閉了
+            if (loginCheckInterval) {
+                clearInterval(loginCheckInterval);
+                loginCheckInterval = null;
+            }
+        }
     }
 
     async function fetchUserInfo() {
@@ -266,12 +305,157 @@
         startChat();
     }
 
-    // 最簡單的彈出視窗登入
+    // 開啟彈出視窗登入
     function twitchLoginPopup() {
-        const redirect = window.location.origin + window.location.pathname;
-        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
+        // 構建一個特殊的中間頁面URL，用來接收token並傳遞給父視窗
+        const callbackUrl = window.location.origin + window.location.pathname + '?twitch_callback=true';
         
-        window.open(twitchAuthUrl, 'Twitch登入', 'width=500,height=700');
+        // Twitch OAuth 授權 URL
+        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
+        
+        // 開啟彈出視窗
+        loginWindow = window.open(
+            twitchAuthUrl, 
+            'Twitch登入',
+            'width=500,height=700,scrollbars=yes,resizable=yes'
+        );
+        
+        if (!loginWindow) {
+            alert('彈出視窗被瀏覽器阻止了！請允許彈出視窗。');
+            return;
+        }
+        
+        // 開始檢查彈出視窗狀態
+        startLoginCheck();
+    }
+
+    // 開始檢查彈出視窗狀態
+    function startLoginCheck() {
+        if (loginCheckInterval) {
+            clearInterval(loginCheckInterval);
+        }
+        
+        loginCheckInterval = setInterval(function() {
+            try {
+                // 檢查視窗是否已關閉
+                if (loginWindow && loginWindow.closed) {
+                    clearInterval(loginCheckInterval);
+                    loginCheckInterval = null;
+                    
+                    // 通知主視窗登入視窗已關閉
+                    window.postMessage({ type: 'TWITCH_AUTH_CLOSE' }, window.location.origin);
+                    return;
+                }
+                
+                // 檢查彈出視窗的 URL 是否有 access_token
+                const popupUrl = loginWindow.location.href;
+                
+                // 檢查是否有錯誤
+                if (popupUrl.includes('error=')) {
+                    clearInterval(loginCheckInterval);
+                    loginCheckInterval = null;
+                    loginWindow.close();
+                    alert('登入失敗：' + getParameterByName('error_description', popupUrl) || '未知錯誤');
+                    return;
+                }
+                
+                // 檢查是否有 access_token
+                if (popupUrl.includes('access_token')) {
+                    const hash = popupUrl.split('#')[1];
+                    if (hash) {
+                        const params = new URLSearchParams(hash);
+                        const token = params.get('access_token');
+                        
+                        if (token) {
+                            // 發送訊息給彈出視窗，讓它處理token
+                            loginWindow.postMessage({ 
+                                type: 'TWITCH_TOKEN_RECEIVED',
+                                access_token: token
+                            }, window.location.origin);
+                        }
+                    }
+                }
+            } catch (e) {
+                // 忽略跨域錯誤，這通常發生在彈出視窗還在Twitch登入頁面時
+            }
+        }, 500);
+    }
+
+    // 檢查是否在回調頁面中
+    function checkIfCallbackPage() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('twitch_callback') === 'true') {
+            // 這是一個回調頁面
+            handleCallbackPage();
+            return true;
+        }
+        return false;
+    }
+
+    // 處理回調頁面
+    function handleCallbackPage() {
+        // 監聽來自父視窗的訊息
+        window.addEventListener('message', function(event) {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'TWITCH_TOKEN_RECEIVED') {
+                const token = event.data.access_token;
+                
+                // 將token發送回父視窗
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'TWITCH_AUTH_SUCCESS',
+                        access_token: token
+                    }, window.location.origin);
+                    
+                    // 關閉這個回調頁面
+                    setTimeout(() => {
+                        window.close();
+                    }, 500);
+                }
+            }
+        });
+        
+        // 顯示簡短訊息
+        document.body.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#0e0e10; color:white;">
+                <div style="text-align:center;">
+                    <div style="font-size:24px; margin-bottom:20px;">🎮</div>
+                    <div style="font-size:16px; margin-bottom:10px;">登入成功！</div>
+                    <div style="font-size:12px; color:#adadb8;">正在返回聊天室...</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 在初始化時檢查是否為回調頁面
+    if (checkIfCallbackPage()) {
+        // 如果是回調頁面，停止執行其他初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 額外檢查URL hash中是否有token（某些情況下可能直接重定向到回調頁面）
+            if (window.location.hash.includes('access_token')) {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const token = params.get('access_token');
+                
+                if (token && window.opener) {
+                    window.opener.postMessage({
+                        type: 'TWITCH_AUTH_SUCCESS',
+                        access_token: token
+                    }, window.location.origin);
+                    
+                    // 清除URL避免洩漏
+                    window.location.hash = '';
+                    
+                    setTimeout(() => {
+                        window.close();
+                    }, 500);
+                }
+            }
+        });
+        
+        // 不要執行正常的初始化
+        throw new Error('This is a callback page');
     }
 
     async function loadResources() {
