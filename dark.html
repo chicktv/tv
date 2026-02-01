@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.4 - Full Feature Edition</title>
+    <title>Twitch Console v8.6 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -142,6 +142,7 @@
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiLists = {}, audioLists = {}, customBadges = {};
     let msgCache = {}; 
+    // 修改：msgCache 現在儲存包含 display name 的物件
     let userCache = {}; // 新增：快取 user id 對應的 display name
     
     let myLoginId = "", myDisplayName = ""; 
@@ -156,26 +157,13 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
-    // 預設徽章映射 - 更新為包含版本號
-    const defaultBadges = {
-        'broadcaster/1': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/3',
-        'subscriber/1': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/3',
-        'premium/1': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/3',
-        'vip/1': 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/3',
-        'moderator/1': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3',
-        'founder/1': 'https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d9/3',
-        'bits/1': 'https://static-cdn.jtvnw.net/badges/v1/73dc41b2-6c0b-4960-b7c9-22d69d42d3a5/3',
-        'bits-leader/1': 'https://static-cdn.jtvnw.net/badges/v1/4d4e6f07-6d3b-4d6b-a6f9-9744e2b7a168/3',
-        'turbo/1': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4fed-b1e0-87cd8e1f5b6d/3',
-        'partner/1': 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/3'
-    };
-
-    function getTagValue(tags, key) { 
-        if (!tags) return null;
-        const regex = new RegExp(`${key}=([^;\\s]+)`); 
-        const match = tags.match(regex); 
-        return match ? match[1] : null; 
-    }
+    // 全域徽章
+    let globalBadges = {};
+    
+    // 自己的徽章
+    let myBadges = "";
+    
+    function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
         const savedToken = localStorage.getItem('twitch_access_token');
@@ -191,6 +179,7 @@
             if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
             window.location.hash = "";
         }
+        await fetchGlobalBadges(); // 只載入全域徽章
         await loadResources();
         setupAutoTag();
         startChat();
@@ -208,20 +197,72 @@
         } catch(e) {}
     }
 
-    function updateAuthUI() { 
-        if (myDisplayName) { 
-            $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`); 
-        } 
-    }
-    
+    function updateAuthUI() { if (myDisplayName) { $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`); } }
     function logout() { localStorage.clear(); window.location.reload(); }
     function twitchLoginPopup() { const redirect = window.location.href.split('#')[0]; window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email`; }
 
+    // 只載入全域徽章
+    async function fetchGlobalBadges() {
+        try {
+            // 使用 Twitch 全域徽章 API
+            const response = await fetch('https://api.twitch.tv/helix/chat/badges/global', {
+                headers: {
+                    'Client-Id': CLIENT_ID,
+                    'Authorization': `Bearer ${ACCESS_TOKEN}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                globalBadges = {};
+                
+                // 處理全域徽章數據
+                data.data.forEach(badgeSet => {
+                    const set_id = badgeSet.set_id;
+                    const versions = badgeSet.versions;
+                    
+                    Object.keys(versions).forEach(version => {
+                        const key = `${set_id}/${version}`;
+                        globalBadges[key] = versions[version].image_url_1x;
+                    });
+                });
+                
+                // 同時也儲存到 customBadges 用於渲染
+                customBadges = globalBadges;
+            } else {
+                console.warn('無法載入全域徽章，使用預設徽章');
+                await loadDefaultBadges();
+            }
+        } catch (e) {
+            console.error('載入全域徽章失敗:', e);
+            await loadDefaultBadges();
+        }
+    }
+    
+    // 載入預設徽章（備用）
+    async function loadDefaultBadges() {
+        try {
+            const d = await $.getJSON("https://chicktv.github.io/tv/badges.txt");
+            // 只保留全域徽章（根據常見的全域徽章名稱過濾）
+            const globalBadgeNames = ['admin', 'bits', 'broadcaster', 'global_mod', 'moderator', 'subscriber', 'staff', 'turbo', 'premium', 'vip', 'partner'];
+            
+            globalBadges = {};
+            for (const [key, value] of Object.entries(d)) {
+                const badgeName = key.split('/')[0];
+                if (globalBadgeNames.includes(badgeName)) {
+                    globalBadges[key] = value;
+                }
+            }
+            customBadges = globalBadges;
+        } catch(e) {
+            console.error('載入預設徽章失敗:', e);
+            globalBadges = {};
+            customBadges = {};
+        }
+    }
+
     async function loadResources() {
         try {
-            // 先加載徽章
-            await fetchBadges();
-            
             const skData = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
             if (Array.isArray(skData)) {
                 emojiLists["常用"] = { emojis: skData, image: skData[0].src };
@@ -566,25 +607,28 @@
         return fallbackName || userId;
     }
 
-    // 簡化的徽章渲染函數 - 修正版，直接使用完整的徽章鍵
+    // 渲染徽章（只顯示全域徽章）
     function renderBadges(badgeStr) {
         if (!badgeStr) return "";
         let html = "";
-        const badges = badgeStr.split(',');
         
-        badges.forEach(badge => {
-            if (!badge) return;
+        // 分割徽章字串（格式如：subscriber/12,premium/1）
+        badgeStr.split(',').forEach(badge => {
+            const badgeKey = badge.trim();
+            if (!badgeKey) return;
             
-            // 直接使用完整的徽章鍵（如 "broadcaster/1"）
-            let badgeKey = badge.trim();
-            
-            // 檢查是否有自訂徽章
-            if (customBadges[badgeKey]) {
-                html += `<img class="badge" src="${customBadges[badgeKey]}" title="${badgeKey.split('/')[0]}">`;
-            } 
-            // 檢查預設徽章
-            else if (defaultBadges[badgeKey]) {
-                html += `<img class="badge" src="${defaultBadges[badgeKey]}" title="${badgeKey.split('/')[0]}">`;
+            // 檢查是否為全域徽章
+            if (globalBadges[badgeKey]) {
+                const url = globalBadges[badgeKey];
+                html += `<img class="badge" src="${url}" title="${badgeKey}">`;
+            } else {
+                // 如果不是全域徽章，但我們可以嘗試使用基本名稱查找
+                const badgeName = badgeKey.split('/')[0];
+                const baseKey = `${badgeName}/0`;
+                if (globalBadges[baseKey]) {
+                    const url = globalBadges[baseKey];
+                    html += `<img class="badge" src="${url}" title="${badgeName}">`;
+                }
             }
         });
         
@@ -592,8 +636,11 @@
     }
 
     function sendMessage() {
-        const val = $("#msginput").val(); if (!val || !socket || socket.readyState !== 1) return;
-        const selfTs = Date.now().toString(); let finalCmd = "", replyDisplay = "";
+        const val = $("#msginput").val(); 
+        if (!val || !socket || socket.readyState !== 1) return;
+        
+        const selfTs = Date.now().toString(); 
+        let finalCmd = "", replyDisplay = "";
         
         if (pendingReply.id) {
             finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
@@ -625,18 +672,20 @@
             displayName: myDisplayName
         };
         
-        // 為自己添加徽章
-        let badgeHtml = "";
-        if (myLoginId === CHANNEL) {
-            badgeHtml = `<img class="badge" src="${customBadges['broadcaster/1'] || defaultBadges['broadcaster/1']}" title="創作者">`;
-        }
+        // 顯示自己的徽章
+        const badgeHtml = renderBadges(myBadges);
         
-        $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-msg-id="${selfTs}">
-            <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName || myLoginId}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
-            ${replyDisplay}
-            ${badgeHtml}
-            <b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
-        </div>`);
+        $("#messages").append(`
+            <div class="chat-line ts-${selfTs}">
+                <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')">
+                    <img src="https://chicktv.github.io/tv/re2.png" width="35" height="35">
+                </div>
+                ${replyDisplay}
+                ${badgeHtml}
+                <b class="self-name">${myDisplayName || myLoginId}:</b> 
+                <span>${parseContent(val)}</span>
+            </div>
+        `);
         
         // 限制訊息數量
         limitMessages();
@@ -671,7 +720,8 @@
                 }
             }, 300);
         }
-        cancelReply(); $("#msginput").val("");
+        cancelReply(); 
+        $("#msginput").val("");
     }
 
     function startChat() {
@@ -685,6 +735,17 @@
         };
         socket.onmessage = (e) => {
             if (e.data.startsWith('PING')) { socket.send('PONG :tmi.twitch.tv'); return; }
+            
+            // 處理 USERSTATE 訊息來獲取自己的徽章
+            if (e.data.includes('USERSTATE')) {
+                const tags = e.data.split(' ')[0];
+                const badgeStr = getTagValue(tags, "badges");
+                if (badgeStr) {
+                    myBadges = badgeStr;
+                }
+                return;
+            }
+            
             if (!e.data.includes('PRIVMSG')) return;
             const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
             const tags = parts[0], rawMsg = parts[1].trim();
@@ -693,7 +754,9 @@
             const user = getTagValue(tags, "display-name") || "User";
             const userLogin = getTagValue(tags, "login") || user.toLowerCase();
             const color = getTagValue(tags, "color") || "#9147ff";
-            const badges = getTagValue(tags, "badges");
+            
+            // 獲取徽章
+            const badgeStr = getTagValue(tags, "badges");
             
             // 快取用戶資訊
             userCache[userLogin] = user;
@@ -768,8 +831,8 @@
                 }
             }
             
-            // 渲染徽章
-            const badgeHtml = renderBadges(badges);
+            // 只渲染全域徽章
+            const badgeHtml = renderBadges(badgeStr);
             
             const line = `<div class="chat-line ts-${ts} id-${msgId}" data-msg-id="${msgId}">
                 <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
@@ -804,17 +867,6 @@
         socket.onclose = () => { setTimeout(startChat, 3000); };
     }
 
-    function fetchBadges() { 
-        return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => { 
-            customBadges = d; 
-            // 合併預設徽章到自訂徽章（確保有基本的徽章）
-            Object.assign(customBadges, defaultBadges);
-        }).catch(() => {
-            // 如果加載失敗，使用預設徽章
-            customBadges = {...defaultBadges};
-        }); 
-    }
-    
     function setupAutoTag() { 
         document.getElementById('msginput').addEventListener('paste', (e) => {
             const data = (e.clipboardData || window.clipboardData).getData('text');
