@@ -9,10 +9,10 @@
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         /* --- Webkit Scrollbar 樣式 --- */
-        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar { width: 8px; height: 8px; }
-        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
+        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
+        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
         /* 統一控制媒體嵌入大小 */
         #chat-container .media-preview,
@@ -79,7 +79,7 @@
         .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
         
         /* --- 根據圖片優化輸入區佈局 --- */
-        .footer { background: #0e0e10; padding: 10px 15px 20px 15px; border-top: 0px solid rgba(255, 255, 255, 0.05); }
+        .footer { background: #0e0e10; padding: 10px 15px 20px 15px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
         
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
         
@@ -131,6 +131,71 @@
         #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
         #loginBtn:hover { background: #772ce8; }
         #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
+        
+        /* @提及選單樣式 - 類似Twitch */
+        #mention-list {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 300px;
+            max-height: 350px;
+            background: var(--t-alt);
+            border: 1px solid #333;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        
+        .mention-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--t-text);
+            font-size: 14px;
+        }
+        
+        .mention-item:hover, .mention-item.selected {
+            background: rgba(145, 71, 255, 0.2);
+        }
+        
+        .mention-item .badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .mention-item .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .mention-item .display-name {
+            font-weight: 600;
+            color: var(--t-purp);
+        }
+        
+        .mention-item .login-name {
+            color: #adadb8;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        
+        .mention-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #adadb8;
+            border-bottom: 1px solid #333;
+            margin-bottom: 4px;
+            background: rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body onload="initApp()">
@@ -151,6 +216,9 @@
     <div id="messages"></div>
     <button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button>
 </div>
+
+<!-- @提及選單 -->
+<div id="mention-list"></div>
 
 <div id="emojiPanel">
     <div style="padding:12px; display:flex; justify-content:space-between; background:#26262c; border-radius: 12px 12px 0 0; align-items:center;">
@@ -184,7 +252,6 @@
         </div>
 
         <div class="action-bar">
-		
             <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
         </div>
     </div>
@@ -219,6 +286,12 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
+    // @提及相關變數
+    let recentUsers = [];
+    let mentionListVisible = false;
+    let mentionSelectedIndex = 0;
+    let mentionSearchTerm = "";
+    
     // ===================== 輔助函數 =====================
     function getParameterByName(name, url) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -247,7 +320,7 @@
         return match ? match[1] : null; 
     }
 
-    // ===================== 登入系統 (從 test3.html 整合) =====================
+    // ===================== 登入系統 =====================
     function checkLogin() {
         const saved = localStorage.getItem('twitch_token');
         if (saved) {
@@ -362,10 +435,245 @@
         await loadResources();
         setupAutoTag();
         
+        // 綁定@提及相關事件
+        setupMentionEvents();
+        
         // 如果沒有token，先開始匿名聊天
         if (!ACCESS_TOKEN) {
             startChat();
         }
+    }
+
+    // ===================== @提及功能 =====================
+    function setupMentionEvents() {
+        const msgInput = document.getElementById('msginput');
+        
+        // 監聽輸入事件，檢測@輸入
+        msgInput.addEventListener('input', function(e) {
+            handleMentionInput(e);
+        });
+        
+        // 監聽鍵盤事件，處理上下箭頭和Enter選擇
+        msgInput.addEventListener('keydown', function(e) {
+            handleMentionKeydown(e);
+        });
+        
+        // 點擊其他地方時隱藏提及列表
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#mention-list') && !e.target.closest('#msginput')) {
+                hideMentionList();
+            }
+        });
+    }
+    
+    function handleMentionInput(e) {
+        const input = e.target;
+        const cursorPos = input.selectionStart;
+        const textBeforeCursor = input.value.substring(0, cursorPos);
+        
+        // 尋找最後一個@符號
+        const lastAtPos = textBeforeCursor.lastIndexOf('@');
+        
+        if (lastAtPos === -1 || textBeforeCursor.substring(lastAtPos).includes(' ')) {
+            // 沒有@符號或者@後面有空格，隱藏提及列表
+            hideMentionList();
+            return;
+        }
+        
+        // 取得@後面的搜索詞
+        mentionSearchTerm = textBeforeCursor.substring(lastAtPos + 1, cursorPos).toLowerCase();
+        
+        // 更新最近用戶列表（從msgCache中獲取）
+        updateRecentUsersList();
+        
+        // 過濾用戶
+        const filteredUsers = recentUsers.filter(user => {
+            return user.displayName.toLowerCase().includes(mentionSearchTerm) || 
+                   user.login.toLowerCase().includes(mentionSearchTerm);
+        });
+        
+        if (filteredUsers.length > 0 && mentionSearchTerm.length > 0) {
+            showMentionList(filteredUsers, lastAtPos);
+        } else {
+            hideMentionList();
+        }
+    }
+    
+    function handleMentionKeydown(e) {
+        if (!mentionListVisible) return;
+        
+        const mentionItems = document.querySelectorAll('.mention-item');
+        if (mentionItems.length === 0) return;
+        
+        switch(e.key) {
+            case 'ArrowUp':
+                e.preventDefault();
+                mentionSelectedIndex = (mentionSelectedIndex - 1 + mentionItems.length) % mentionItems.length;
+                updateMentionSelection();
+                break;
+                
+            case 'ArrowDown':
+                e.preventDefault();
+                mentionSelectedIndex = (mentionSelectedIndex + 1) % mentionItems.length;
+                updateMentionSelection();
+                break;
+                
+            case 'Enter':
+            case 'Tab':
+                e.preventDefault();
+                if (mentionSelectedIndex >= 0 && mentionSelectedIndex < mentionItems.length) {
+                    selectMentionUser(mentionItems[mentionSelectedIndex]);
+                }
+                break;
+                
+            case 'Escape':
+                hideMentionList();
+                break;
+        }
+    }
+    
+    function updateRecentUsersList() {
+        recentUsers = [];
+        const seenLogins = new Set();
+        
+        // 從msgCache中提取最近的用戶（最多50個）
+        Object.values(msgCache)
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .forEach(msg => {
+                if (msg.user && msg.displayName && !seenLogins.has(msg.user.login)) {
+                    seenLogins.add(msg.user.login);
+                    recentUsers.push({
+                        login: msg.user.login,
+                        displayName: msg.displayName,
+                        badges: msg.badges,
+                        avatar: msg.avatar || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
+                    });
+                }
+            });
+        
+        // 限制最多顯示50個用戶
+        recentUsers = recentUsers.slice(0, 50);
+    }
+    
+    function showMentionList(users, atPosition) {
+        const mentionList = document.getElementById('mention-list');
+        mentionList.innerHTML = '';
+        
+        if (users.length === 0) {
+            hideMentionList();
+            return;
+        }
+        
+        // 添加標題
+        const header = document.createElement('div');
+        header.className = 'mention-header';
+        header.textContent = `選擇用戶 (${users.length})`;
+        mentionList.appendChild(header);
+        
+        // 添加用戶項目
+        users.forEach((user, index) => {
+            const item = document.createElement('div');
+            item.className = 'mention-item';
+            if (index === 0) item.classList.add('selected');
+            
+            // 徽章
+            let badgeHtml = '';
+            if (user.badges) {
+                badgeHtml = renderBadges(user.badges);
+            }
+            
+            item.innerHTML = `
+                <img class="user-avatar" src="${user.avatar}" alt="${user.displayName}">
+                ${badgeHtml}
+                <span class="display-name">${user.displayName}</span>
+                <span class="login-name">@${user.login}</span>
+            `;
+            
+            item.dataset.login = user.login;
+            item.dataset.displayName = user.displayName;
+            
+            item.addEventListener('click', () => selectMentionUser(item));
+            mentionList.appendChild(item);
+        });
+        
+        // 顯示提及列表
+        mentionList.style.display = 'block';
+        mentionListVisible = true;
+        mentionSelectedIndex = 0;
+        
+        // 定位提及列表
+        positionMentionList(atPosition);
+    }
+    
+    function positionMentionList(atPosition) {
+        const mentionList = document.getElementById('mention-list');
+        const input = document.getElementById('msginput');
+        const footer = document.querySelector('.footer');
+        
+        // 計算@符號的位置
+        const textBeforeAt = input.value.substring(0, atPosition);
+        const tempSpan = document.createElement('span');
+        tempSpan.style.font = window.getComputedStyle(input).font;
+        tempSpan.style.visibility = 'hidden';
+        tempSpan.style.position = 'absolute';
+        tempSpan.style.whiteSpace = 'pre-wrap';
+        tempSpan.textContent = textBeforeAt;
+        document.body.appendChild(tempSpan);
+        
+        const atX = tempSpan.offsetWidth;
+        const atY = -5; // 稍微向上偏移
+        
+        document.body.removeChild(tempSpan);
+        
+        // 設定位置
+        mentionList.style.left = atX + 'px';
+        mentionList.style.bottom = (footer.offsetHeight + 10) + 'px';
+    }
+    
+    function updateMentionSelection() {
+        const mentionItems = document.querySelectorAll('.mention-item');
+        mentionItems.forEach((item, index) => {
+            if (index === mentionSelectedIndex) {
+                item.classList.add('selected');
+                // 滾動到可見區域
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+    
+    function selectMentionUser(item) {
+        const input = document.getElementById('msginput');
+        const cursorPos = input.selectionStart;
+        const textBeforeCursor = input.value.substring(0, cursorPos);
+        const lastAtPos = textBeforeCursor.lastIndexOf('@');
+        
+        if (lastAtPos !== -1) {
+            const login = item.dataset.login;
+            const displayName = item.dataset.displayName;
+            
+            // 替換@後面的文本為用戶名
+            const newText = input.value.substring(0, lastAtPos) + '@' + displayName + ' ' + input.value.substring(cursorPos);
+            input.value = newText;
+            
+            // 移動游標到用戶名後面
+            const newCursorPos = lastAtPos + displayName.length + 2; // +1 for @, +1 for space
+            input.selectionStart = input.selectionEnd = newCursorPos;
+            
+            // 隱藏提及列表
+            hideMentionList();
+            
+            // 聚焦回輸入框
+            input.focus();
+        }
+    }
+    
+    function hideMentionList() {
+        const mentionList = document.getElementById('mention-list');
+        mentionList.style.display = 'none';
+        mentionListVisible = false;
+        mentionSelectedIndex = 0;
     }
 
     // ===================== 資源載入 =====================
@@ -821,7 +1129,9 @@
             content: val,
             user: { login: myLoginId, displayName: myDisplayName },
             displayName: myDisplayName,
-            badges: myBadgeStr
+            badges: myBadgeStr,
+            avatar: myAvatar,
+            timestamp: Date.now()
         };
         
         // 修改這一行，添加 badgeHtml
@@ -911,14 +1221,18 @@
                     content: rawMsg,
                     user: { login: userLogin, displayName: user },
                     displayName: user,
-                    badges: badgeStr
+                    badges: badgeStr,
+                    avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+                    timestamp: parseInt(ts)
                 };
             }
             msgCache[ts] = {
                 content: rawMsg,
                 user: { login: userLogin, displayName: user },
                 displayName: user,
-                badges: badgeStr
+                badges: badgeStr,
+                avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+                timestamp: parseInt(ts)
             };
             
             let replyHtml = "", displayMsg = rawMsg;
