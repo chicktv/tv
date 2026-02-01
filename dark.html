@@ -157,6 +157,20 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
+    // 預設徽章映射
+    const defaultBadges = {
+        'broadcaster': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/3',
+        'subscriber': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/3',
+        'premium': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/3',
+        'vip': 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/3',
+        'moderator': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3',
+        'founder': 'https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d9/3',
+        'bits': 'https://static-cdn.jtvnw.net/badges/v1/73dc41b2-6c0b-4960-b7c9-22d69d42d3a5/3',
+        'bits-leader': 'https://static-cdn.jtvnw.net/badges/v1/4d4e6f07-6d3b-4d6b-a6f9-9744e2b7a168/3',
+        'turbo': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4fed-b1e0-87cd8e1f5b6d/3',
+        'partner': 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/3'
+    };
+
     function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
@@ -191,7 +205,12 @@
         } catch(e) {}
     }
 
-    function updateAuthUI() { if (myDisplayName) { $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`); } }
+    function updateAuthUI() { 
+        if (myDisplayName) { 
+            $("#auth-area").html(`<span style="color:#00ff00; font-weight:bold; margin-right:10px;">● ${myDisplayName}</span><button onclick="logout()" style="background:#444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">登出</button>`); 
+        } 
+    }
+    
     function logout() { localStorage.clear(); window.location.reload(); }
     function twitchLoginPopup() { const redirect = window.location.href.split('#')[0]; window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email`; }
 
@@ -541,6 +560,24 @@
         return fallbackName || userId;
     }
 
+    // 修改過的徽章渲染函數，結合預設徽章
+    function renderBadges(badgeStr) {
+        if (!badgeStr) return "";
+        let html = "";
+        
+        badgeStr.split(',').forEach(b => {
+            const key = b.split('/')[0];
+            let url = customBadges[key];
+            if (!url) {
+                url = defaultBadges[key];
+            }
+            if (url) {
+                html += `<img class="badge" src="${url}" title="${key}">`;
+            }
+        });
+        return html;
+    }
+
     function sendMessage() {
         const val = $("#msginput").val(); if (!val || !socket || socket.readyState !== 1) return;
         const selfTs = Date.now().toString(); let finalCmd = "", replyDisplay = "";
@@ -575,7 +612,19 @@
             displayName: myDisplayName
         };
         
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+        // 為自己添加徽章（如果是頻道主）
+        let selfBadgeStr = "";
+        if (myLoginId === CHANNEL) {
+            selfBadgeStr = "broadcaster/1";
+        }
+        const badgeHtml = renderBadges(selfBadgeStr);
+        
+        $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-msg-id="${selfTs}">
+            <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName || myLoginId}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
+            ${replyDisplay}
+            ${badgeHtml}
+            <b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
+        </div>`);
         
         // 限制訊息數量
         limitMessages();
@@ -632,6 +681,7 @@
             const user = getTagValue(tags, "display-name") || "User";
             const userLogin = getTagValue(tags, "login") || user.toLowerCase();
             const color = getTagValue(tags, "color") || "#9147ff";
+            const badges = getTagValue(tags, "badges");
             
             // 快取用戶資訊
             userCache[userLogin] = user;
@@ -706,11 +756,14 @@
                 }
             }
             
-            const badgeStr = getTagValue(tags, "badges");
+            // 使用改良的徽章渲染函數
+            const badgeStr = badges || "";
+            const badgeHtml = renderBadges(badgeStr);
+            
             const line = `<div class="chat-line ts-${ts} id-${msgId}" data-msg-id="${msgId}">
                 <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
                 ${replyHtml}
-                ${renderBadges(badgeStr)}
+                ${badgeHtml}
                 <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
             </div>`;
             $("#messages").append(line);
@@ -739,19 +792,15 @@
         };
         socket.onclose = () => { setTimeout(startChat, 3000); };
     }
-    
-    function renderBadges(badgeStr) {
-        if (!badgeStr) return "";
-        let html = "";
-        badgeStr.split(',').forEach(b => {
-            const key = b.split('/')[0];
-            const url = customBadges[b] || customBadges[key];
-            if (url) html += `<img class="badge" src="${url}">`;
-        });
-        return html;
-    }
 
-    function fetchBadges() { return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => { customBadges = d; }); }
+    function fetchBadges() { 
+        return $.getJSON("https://chicktv.github.io/tv/badges.txt", d => { 
+            customBadges = d; 
+            // 將預設徽章合併到 customBadges，如果沒有對應的徽章
+            Object.assign(customBadges, defaultBadges);
+        }); 
+    }
+    
     function setupAutoTag() { 
         document.getElementById('msginput').addEventListener('paste', (e) => {
             const data = (e.clipboardData || window.clipboardData).getData('text');
