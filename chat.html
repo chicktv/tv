@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <title>Chickchat</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
+   <style>
+        :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         /* --- Webkit Scrollbar 樣式 --- */
-        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar { width: 8px; height: 8px; }
-        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
+        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
+        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
         /* 統一控制媒體嵌入大小 */
         #chat-container .media-preview,
@@ -35,37 +35,24 @@
 			object-fit: fill !important;
         }
 
-        /* 針對YouTube的特殊調整 */
+        /* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
         #chat-container iframe[src*="youtube.com"],
-        #chat-container iframe[src*="youtube-nocookie.com"] {
-            min-height: 400px !important;
-        }
-
-        /* 針對Twitter的特殊調整 */
-        #chat-container blockquote.twitter-tweet {
-            min-height: 400px !important;
-        }
-
-        /* 針對Threads的特殊調整 */
-        #chat-container iframe[src*="threads.com"] {
-            min-height: 400px !important;
-            background: #FFF !important;
-        }
-
-        /* 針對Steam的特殊調整 */
+        #chat-container iframe[src*="youtube-nocookie.com"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container iframe[src*="threads.com"],
         #chat-container iframe[src*="store.steampowered.com"] {
             min-height: 400px !important;
         }
 
-        /* 圖片保持原有比例，不強制設定高度 */
+        #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
+
+        /* 圖片與影片保持原有比例 */
         #chat-container img.media-preview {
             height: auto !important;
             max-height: 250px !important;
             min-height: auto !important;
 			object-fit: fill !important;
         }
-
-        /* 影片標籤保持原有比例 */
         #chat-container video.media-preview {
             height: auto !important;
             max-height: 250px !important;
@@ -73,7 +60,7 @@
         }
 
         .header-bar { background: var(--t-alt); padding: 5px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #000; scroll-behavior: smooth; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; }
         .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
@@ -90,39 +77,45 @@
         .quote-box:hover { background: rgba(255,255,255,0.15); }
         .quote-user { color: #adadb8; margin-right: 5px; }
         .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
-        .footer {  background: #1f1f23;padding: 1px 1px;border-top: 1px solid rgba(255, 255, 255, 0.1); }
-        .chat-input-wrapper {display: flex;align-items: flex-start;background: #0e0e10;border-radius: 4px;padding: 5px 5px;position: relative;}
+        
+        /* --- 根據圖片優化輸入區佈局 --- */
+        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
+        
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
-        #input-container {background: #1f1f23;padding: 1px 1px;border-top: 1px solid rgba(255, 255, 255, 0.1);}
-        #msginput { flex: 1;background: transparent;color: #efeff1;font-size: 14px;outline: none;flex-wrap: wrap;resize: none;min-height: 40px;max-height: 120px;font-family: inherit;line-height: 1.4;padding: 8px 0;border-radius: 0.2rem; }
-        #sendbtn { background: transparent;border: none;color: #9147ff;cursor: pointer;padding: 4px;border-radius: 4px;display: flex;align-items: center;justify-content: center;}
-        #sendbtn:hover {background: #3a3a3d;}
-        .chat-buttons {display: flex;gap: 8px;margin-top: 5px; color: #ffd400;}
-        .tool-btn { padding: 1px 1px; background: #2f2f35; color: #ccc; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px; }
+        
+        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
+        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
+        .tool-link:hover { color: #fff; }
+        .tool-link svg { margin-left: 4px; }
+
+        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
+        .input-box-wrapper { position: relative; width: 100%; border: 1px solid #f7e7e7; border-radius: 6px; background: #000; overflow: hidden; }
+        #msginput { width: 100%; background: transparent; color: #efeff1; font-size: 14px; border: none; outline: none; padding: 12px 15px; box-sizing: border-box; font-family: inherit; overflow-wrap: break-word; max-height: calc(5lh + 20px); overflow: hidden auto;white-space: pre-wrap;}
+        #msginput:disabled { cursor: not-allowed; }
+
+        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
+        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        #sendbtn:hover { background: #a970ff; }
+        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
         
         /* 表情面板 */
         #emojiPanel { position: fixed; display: none; width: 450px; height: 500px; background: #1f182e; border: 2px solid #443a5a; border-radius: 12px; z-index: 5000; left: 50%; top: 50%; transform: translate(-50%, -50%); flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x: auto;border-bottom: 1px solid #26262c;}
         #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
         .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
-        .emoji-item {  position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
         .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
         .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
         .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
 
         /* 滾動到最底按鈕 */
-        #scroll-to-bottom-btn {position: absolute;bottom: 80px; /* 位於輸入框上方 */left: 50%;transform: translateX(-50%);background: rgba(145, 71, 255, 0.9); /* Twitch 紫色 */color: white;border: none;padding: 8px 16px; border-radius: 20px; cursor: pointer;z-index: 1000;font-weight: bold;display: none; /* 初始隱藏 */box-shadow: 0 4px 12px rgba(0,0,0,0.5);transition: background 0.2s;}
+        #scroll-to-bottom-btn {position: absolute;bottom: 120px; left: 50%;transform: translateX(-50%);background: rgba(145, 71, 255, 0.9);color: white;border: none;padding: 8px 16px; border-radius: 20px; cursor: pointer;z-index: 1000;font-weight: bold;display: none;box-shadow: 0 4px 12px rgba(0,0,0,0.5);transition: background 0.2s;}
         #scroll-to-bottom-btn:hover {background: #a970ff;}
 
-        /* 關鍵修正：確保 ✕ 出現 */
         .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-        /* 當父層有 .show-del 時顯示按鈕 */
         .show-del .delete-btn { display: block; }
-
         .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
-         /* 音訊圖示按鈕樣式 */
         .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
-        .audio-icon-btn:hover { background: rgba(145, 71, 255, 0.4); }
         .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
         
         @keyframes pulse-audio {
@@ -131,15 +124,78 @@
             100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
         }
         
-        /* ========== 登入相關樣式 ========== */
         #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
         #userInfo img { width: 30px; height: 30px; border-radius: 50%; }
         #logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
         #logoutBtn:hover { background: #c51614; }
         #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
         #loginBtn:hover { background: #772ce8; }
-        #loginBtn:disabled { background: #464649; cursor: not-allowed; }
         #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
+        
+        /* @提及選單樣式 - 類似Twitch */
+        #mention-list {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 300px;
+            max-height: 350px;
+            background: var(--t-alt);
+            border: 1px solid #333;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        
+        .mention-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--t-text);
+            font-size: 14px;
+        }
+        
+        .mention-item:hover, .mention-item.selected {
+            background: rgba(145, 71, 255, 0.2);
+        }
+        
+        .mention-item .badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .mention-item .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .mention-item .display-name {
+            font-weight: 600;
+            color: var(--t-purp);
+        }
+        
+        .mention-item .login-name {
+            color: #adadb8;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        
+        .mention-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #adadb8;
+            border-bottom: 1px solid #333;
+            margin-bottom: 4px;
+            background: rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body onload="initApp()">
@@ -156,7 +212,13 @@
     </div>
 </div>
 
-<div id="chat-container"><div id="messages"></div><button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button></div>
+<div id="chat-container">
+    <div id="messages"></div>
+    <button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button>
+</div>
+
+<!-- @提及選單 -->
+<div id="mention-list"></div>
 
 <div id="emojiPanel">
     <div style="padding:12px; display:flex; justify-content:space-between; background:#26262c; border-radius: 12px 12px 0 0; align-items:center;">
@@ -172,21 +234,26 @@
         正在回覆 <span id="replying-to-user" style="color:#9147ff; font-weight:bold;"></span> 
         <span onclick="cancelReply()" style="float:right; cursor:pointer; color:#efeff1;">✕ 取消回覆</span>
     </div>
-    <div style="position: relative;display: flex;gap: 0px;background: #000;">
-        <button class="tool-btn" onclick="insertTagOnly('[s] ')">圖片</button>
-        <button class="tool-btn" onclick="insertTagOnly('[y] ')">影片</button>
-        <button class="tool-btn" onclick="insertTagOnly('[a] ')">音訊</button>
-        <button class="tool-btn" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                    </svg></button>
-    </div>
-    <div id="input-container">
-    <div class="chat-input-wrapper">
-        <input id="msginput" type="text" placeholder="傳送訊息..." autocomplete="off" disabled>
-        <div class="chat-buttons"><button id="sendbtn" onclick="sendMessage()" disabled><svg width="20" height="40" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2.93 4.26l14.76-2.66c.95-.17 1.73.61 1.56 1.56L15.74 17.1c-.20 1.09-1.57 1.41-2.23.49l-3.14-4.37-2.66 2.66c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l2.66-2.66L1.44 6.49c-.92-.66-.60-2.03.49-2.23z"/>
-                    </svg></button>
-                    </div>
+    
+    <div class="input-section">
+        <div class="tool-bar">
+            <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
+            <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
+            <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
+            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="#FFFF00">
+                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                </svg>
+            </button>
+        </div>
+        
+       <div class="input-box-wrapper">
+            <textarea id="msginput" placeholder="傳送訊息..." autocomplete="off" disabled></textarea>
+        </div>
+
+        <div class="action-bar">
+            <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
+        </div>
     </div>
 </div>
 
@@ -219,6 +286,12 @@
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
+    // @提及相關變數
+    let recentUsers = [];
+    let mentionListVisible = false;
+    let mentionSelectedIndex = 0;
+    let mentionSearchTerm = "";
+    
     // ===================== 輔助函數 =====================
     function getParameterByName(name, url) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -247,7 +320,7 @@
         return match ? match[1] : null; 
     }
 
-    // ===================== 登入系統 (從 test3.html 整合) =====================
+    // ===================== 登入系統 =====================
     function checkLogin() {
         const saved = localStorage.getItem('twitch_token');
         if (saved) {
@@ -362,10 +435,245 @@
         await loadResources();
         setupAutoTag();
         
+        // 綁定@提及相關事件
+        setupMentionEvents();
+        
         // 如果沒有token，先開始匿名聊天
         if (!ACCESS_TOKEN) {
             startChat();
         }
+    }
+
+    // ===================== @提及功能 =====================
+    function setupMentionEvents() {
+        const msgInput = document.getElementById('msginput');
+        
+        // 監聽輸入事件，檢測@輸入
+        msgInput.addEventListener('input', function(e) {
+            handleMentionInput(e);
+        });
+        
+        // 監聽鍵盤事件，處理上下箭頭和Enter選擇
+        msgInput.addEventListener('keydown', function(e) {
+            handleMentionKeydown(e);
+        });
+        
+        // 點擊其他地方時隱藏提及列表
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#mention-list') && !e.target.closest('#msginput')) {
+                hideMentionList();
+            }
+        });
+    }
+    
+    function handleMentionInput(e) {
+        const input = e.target;
+        const cursorPos = input.selectionStart;
+        const textBeforeCursor = input.value.substring(0, cursorPos);
+        
+        // 尋找最後一個@符號
+        const lastAtPos = textBeforeCursor.lastIndexOf('@');
+        
+        if (lastAtPos === -1 || textBeforeCursor.substring(lastAtPos).includes(' ')) {
+            // 沒有@符號或者@後面有空格，隱藏提及列表
+            hideMentionList();
+            return;
+        }
+        
+        // 取得@後面的搜索詞
+        mentionSearchTerm = textBeforeCursor.substring(lastAtPos + 1, cursorPos).toLowerCase();
+        
+        // 更新最近用戶列表（從msgCache中獲取）
+        updateRecentUsersList();
+        
+        // 過濾用戶
+        const filteredUsers = recentUsers.filter(user => {
+            return user.displayName.toLowerCase().includes(mentionSearchTerm) || 
+                   user.login.toLowerCase().includes(mentionSearchTerm);
+        });
+        
+        if (filteredUsers.length > 0 && mentionSearchTerm.length > 0) {
+            showMentionList(filteredUsers, lastAtPos);
+        } else {
+            hideMentionList();
+        }
+    }
+    
+    function handleMentionKeydown(e) {
+        if (!mentionListVisible) return;
+        
+        const mentionItems = document.querySelectorAll('.mention-item');
+        if (mentionItems.length === 0) return;
+        
+        switch(e.key) {
+            case 'ArrowUp':
+                e.preventDefault();
+                mentionSelectedIndex = (mentionSelectedIndex - 1 + mentionItems.length) % mentionItems.length;
+                updateMentionSelection();
+                break;
+                
+            case 'ArrowDown':
+                e.preventDefault();
+                mentionSelectedIndex = (mentionSelectedIndex + 1) % mentionItems.length;
+                updateMentionSelection();
+                break;
+                
+            case 'Enter':
+            case 'Tab':
+                e.preventDefault();
+                if (mentionSelectedIndex >= 0 && mentionSelectedIndex < mentionItems.length) {
+                    selectMentionUser(mentionItems[mentionSelectedIndex]);
+                }
+                break;
+                
+            case 'Escape':
+                hideMentionList();
+                break;
+        }
+    }
+    
+    function updateRecentUsersList() {
+        recentUsers = [];
+        const seenLogins = new Set();
+        
+        // 從msgCache中提取最近的用戶（最多50個）
+        Object.values(msgCache)
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .forEach(msg => {
+                if (msg.user && msg.displayName && !seenLogins.has(msg.user.login)) {
+                    seenLogins.add(msg.user.login);
+                    recentUsers.push({
+                        login: msg.user.login,
+                        displayName: msg.displayName,
+                        badges: msg.badges,
+                        avatar: msg.avatar || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
+                    });
+                }
+            });
+        
+        // 限制最多顯示50個用戶
+        recentUsers = recentUsers.slice(0, 50);
+    }
+    
+    function showMentionList(users, atPosition) {
+        const mentionList = document.getElementById('mention-list');
+        mentionList.innerHTML = '';
+        
+        if (users.length === 0) {
+            hideMentionList();
+            return;
+        }
+        
+        // 添加標題
+        const header = document.createElement('div');
+        header.className = 'mention-header';
+        header.textContent = `選擇用戶 (${users.length})`;
+        mentionList.appendChild(header);
+        
+        // 添加用戶項目
+        users.forEach((user, index) => {
+            const item = document.createElement('div');
+            item.className = 'mention-item';
+            if (index === 0) item.classList.add('selected');
+            
+            // 徽章
+            let badgeHtml = '';
+            if (user.badges) {
+                badgeHtml = renderBadges(user.badges);
+            }
+            
+            item.innerHTML = `
+                <img class="user-avatar" src="${user.avatar}" alt="${user.displayName}">
+                ${badgeHtml}
+                <span class="display-name">${user.displayName}</span>
+                <span class="login-name">@${user.login}</span>
+            `;
+            
+            item.dataset.login = user.login;
+            item.dataset.displayName = user.displayName;
+            
+            item.addEventListener('click', () => selectMentionUser(item));
+            mentionList.appendChild(item);
+        });
+        
+        // 顯示提及列表
+        mentionList.style.display = 'block';
+        mentionListVisible = true;
+        mentionSelectedIndex = 0;
+        
+        // 定位提及列表
+        positionMentionList(atPosition);
+    }
+    
+    function positionMentionList(atPosition) {
+        const mentionList = document.getElementById('mention-list');
+        const input = document.getElementById('msginput');
+        const footer = document.querySelector('.footer');
+        
+        // 計算@符號的位置
+        const textBeforeAt = input.value.substring(0, atPosition);
+        const tempSpan = document.createElement('span');
+        tempSpan.style.font = window.getComputedStyle(input).font;
+        tempSpan.style.visibility = 'hidden';
+        tempSpan.style.position = 'absolute';
+        tempSpan.style.whiteSpace = 'pre-wrap';
+        tempSpan.textContent = textBeforeAt;
+        document.body.appendChild(tempSpan);
+        
+        const atX = tempSpan.offsetWidth;
+        const atY = -5; // 稍微向上偏移
+        
+        document.body.removeChild(tempSpan);
+        
+        // 設定位置
+        mentionList.style.left = atX + 'px';
+        mentionList.style.bottom = (footer.offsetHeight + 10) + 'px';
+    }
+    
+    function updateMentionSelection() {
+        const mentionItems = document.querySelectorAll('.mention-item');
+        mentionItems.forEach((item, index) => {
+            if (index === mentionSelectedIndex) {
+                item.classList.add('selected');
+                // 滾動到可見區域
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+    
+    function selectMentionUser(item) {
+        const input = document.getElementById('msginput');
+        const cursorPos = input.selectionStart;
+        const textBeforeCursor = input.value.substring(0, cursorPos);
+        const lastAtPos = textBeforeCursor.lastIndexOf('@');
+        
+        if (lastAtPos !== -1) {
+            const login = item.dataset.login;
+            const displayName = item.dataset.displayName;
+            
+            // 替換@後面的文本為用戶名
+            const newText = input.value.substring(0, lastAtPos) + '@' + displayName + ' ' + input.value.substring(cursorPos);
+            input.value = newText;
+            
+            // 移動游標到用戶名後面
+            const newCursorPos = lastAtPos + displayName.length + 2; // +1 for @, +1 for space
+            input.selectionStart = input.selectionEnd = newCursorPos;
+            
+            // 隱藏提及列表
+            hideMentionList();
+            
+            // 聚焦回輸入框
+            input.focus();
+        }
+    }
+    
+    function hideMentionList() {
+        const mentionList = document.getElementById('mention-list');
+        mentionList.style.display = 'none';
+        mentionListVisible = false;
+        mentionSelectedIndex = 0;
     }
 
     // ===================== 資源載入 =====================
@@ -821,7 +1129,9 @@
             content: val,
             user: { login: myLoginId, displayName: myDisplayName },
             displayName: myDisplayName,
-            badges: myBadgeStr
+            badges: myBadgeStr,
+            avatar: myAvatar,
+            timestamp: Date.now()
         };
         
         // 修改這一行，添加 badgeHtml
@@ -911,14 +1221,18 @@
                     content: rawMsg,
                     user: { login: userLogin, displayName: user },
                     displayName: user,
-                    badges: badgeStr
+                    badges: badgeStr,
+                    avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+                    timestamp: parseInt(ts)
                 };
             }
             msgCache[ts] = {
                 content: rawMsg,
                 user: { login: userLogin, displayName: user },
                 displayName: user,
-                badges: badgeStr
+                badges: badgeStr,
+                avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+                timestamp: parseInt(ts)
             };
             
             let replyHtml = "", displayMsg = rawMsg;
