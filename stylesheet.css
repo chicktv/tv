@@ -1,0 +1,18 @@
+@font-face {
+    font-family: 'DFXingShu-B5';
+    src: url('DFXingShu-W5-WIN-BF.woff2') format('woff2'),
+        url('DFXingShu-W5-WIN-BF.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DFPXingShu-B5';
+    src: url('DFXingShu-W5-WINP-BF.woff2') format('woff2'),
+        url('DFXingShu-W5-WINP-BF.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
