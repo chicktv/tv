@@ -21,6 +21,7 @@
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
         .self-name { color: var(--t-purp); font-weight: bold; }
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
+		.twitter-tweet { max-width: 250px !important; max-height: 300px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
         .alt-emoji { max-width: 120px !important; max-height: 120px !important; vertical-align: top; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
@@ -138,7 +139,7 @@
         }
     }
 
-    const CHANNEL = "whitewing940920";
+    const CHANNEL = "69nocondom";
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiLists = {}, audioLists = {}, customBadges = {};
     let msgCache = {}; 
@@ -400,7 +401,7 @@
             if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
                 let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
                 let t = getParameterByName('t', b);
-                e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;">Youtube <i class="material-icons" style="font-size: 20px;float: right;">open_in_new</i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
+                e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
             } else if (b.match(/twitter|https:\/\/x.com/g)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
                 e = `<blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
