@@ -404,7 +404,7 @@
                 e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
             } else if (b.match(/twitter|https:\/\/x.com/g)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<blockquote class="media-preview"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
+                e = `<blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
             } else if (b.match(/www.threads.com/g)) {
                 let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
                 e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
@@ -435,7 +435,7 @@
                 e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
 				 else if (b.match(/twitter|https:\/\/x.com/g)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<blockquote class="media-preview"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
+                e = `<blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
             else {
                 e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
             }
