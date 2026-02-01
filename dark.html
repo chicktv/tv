@@ -134,8 +134,9 @@
 <body onload="initApp()">
 
 <div class="header-bar">
-    <div style="font-weight:bold;"></div>
-    <div id="auth-area"></div>
+    
+    <div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button></div>
+	<div style="font-weight:bold;"></div>
 </div>
 
 <div id="chat-container"><div id="messages"></div><button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button></div>
@@ -170,7 +171,7 @@
                     </svg></button>
                     </div>
     </div>
-	<button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button>
+	
 </div>
 
 <script>
