@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Chickchat</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-   <style>
+    <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
@@ -28,11 +28,11 @@
             width: auto !important;
             height: auto !important;
             max-width: 250px !important;
-            max-height: 300px !important;
+            max-height: 250px !important;
             border-radius: 8px !important;
             border: 0px solid #444 !important;
             margin: 5px 0 !important;
-			object-fit: fill !important;
+            object-fit: fill !important;
         }
 
         /* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
@@ -51,7 +51,7 @@
             height: auto !important;
             max-height: 250px !important;
             min-height: auto !important;
-			object-fit: fill !important;
+            object-fit: fill !important;
         }
         #chat-container video.media-preview {
             height: auto !important;
@@ -60,7 +60,7 @@
         }
 
         .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
         .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
@@ -108,9 +108,40 @@
         .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
         .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
 
-        /* 滾動到最底按鈕 */
-        #scroll-to-bottom-btn {position: absolute;bottom: 120px; left: 50%;transform: translateX(-50%);background: rgba(145, 71, 255, 0.9);color: white;border: none;padding: 8px 16px; border-radius: 20px; cursor: pointer;z-index: 1000;font-weight: bold;display: none;box-shadow: 0 4px 12px rgba(0,0,0,0.5);transition: background 0.2s;}
-        #scroll-to-bottom-btn:hover {background: #a970ff;}
+        /* ========== 新添加：捲動到底部按鈕 ========== */
+        #scrollToBottomBtn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(145, 71, 255, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+        
+        #scrollToBottomBtn:hover {
+            background: rgba(145, 71, 255, 1);
+            transform: scale(1.1);
+        }
+        
+        #scrollToBottomBtn:active {
+            transform: scale(0.95);
+        }
+        
+        #scrollToBottomBtn svg {
+            width: 24px;
+            height: 24px;
+        }
 
         .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
         .show-del .delete-btn { display: block; }
@@ -214,7 +245,8 @@
 
 <div id="chat-container">
     <div id="messages"></div>
-    <button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button>
+    <!-- 修改這裡：使用test3.html的滾動按鈕 -->
+    <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
 </div>
 
 <!-- @提及選單 -->
@@ -247,7 +279,7 @@
             </button>
         </div>
         
-       <div class="input-box-wrapper">
+        <div class="input-box-wrapper">
             <textarea id="msginput" placeholder="傳送訊息..." autocomplete="off" disabled></textarea>
         </div>
 
@@ -280,8 +312,13 @@
     let pendingReply = { id: null, user: null, displayName: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
-    let isAtBottom = true;
-    let isAutoScrolling = false;
+    
+    // ===================== 從test3.html移植的捲動控制變數 =====================
+    let autoScroll = true;
+    let userScrolling = false;
+    let scrollTimeout = null;
+    const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+    
     const MAX_MESSAGES = 100;
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
@@ -318,6 +355,80 @@
         const regex = new RegExp(`${key}=([^;\\s]+)`); 
         const match = tags.match(regex); 
         return match ? match[1] : null; 
+    }
+
+    // ===================== 從test3.html移植的捲動控制功能 =====================
+    function checkScrollPosition() {
+        const chat = document.getElementById('chat-container');
+        // 檢查用戶是否在底部（距離底部小於50px視為在底部）
+        const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
+        
+        if (isAtBottom) {
+            // 用戶在底部，啟用自動滾動
+            autoScroll = true;
+            hideScrollButton();
+        } else {
+            // 用戶不在底部，暫停自動滾動
+            autoScroll = false;
+            showScrollButton();
+        }
+    }
+
+    function showScrollButton() {
+        scrollToBottomBtn.style.display = 'flex';
+    }
+
+    function hideScrollButton() {
+        scrollToBottomBtn.style.display = 'none';
+    }
+
+    function scrollToBottom() {
+        const chat = document.getElementById('chat-container');
+        chat.scrollTop = chat.scrollHeight;
+        autoScroll = true;
+        hideScrollButton();
+        
+        // 確保滾動到最底部
+        setTimeout(() => {
+            chat.scrollTop = chat.scrollHeight;
+        }, 50);
+    }
+
+    // 監聽捲動事件
+    function setupScrollListener() {
+        const chat = document.getElementById('chat-container');
+        chat.addEventListener('scroll', () => {
+            // 清除之前的計時器
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            
+            // 設置新的計時器，在停止滾動後檢查位置
+            scrollTimeout = setTimeout(() => {
+                checkScrollPosition();
+            }, 150);
+        });
+    }
+
+    // 強制滾動解決方案
+    function forceScrollToBottom() {
+        // 只有在啟用自動滾動時才滾動
+        if (autoScroll) {
+            const chat = document.getElementById('chat-container');
+            chat.scrollTop = chat.scrollHeight;
+            
+            const maxAttempts = 10;
+            let attempts = 0;
+            
+            const scrollInterval = setInterval(() => {
+                chat.scrollTop = chat.scrollHeight;
+                attempts++;
+                
+                if (attempts >= maxAttempts) {
+                    clearInterval(scrollInterval);
+                }
+            }, 100);
+        }
     }
 
     // ===================== 登入系統 =====================
@@ -429,6 +540,12 @@
         // 綁定事件
         document.getElementById('loginBtn').onclick = loginWithPopup;
         document.getElementById('logoutBtn').onclick = logout;
+        
+        // 綁定滾動按鈕
+        scrollToBottomBtn.addEventListener('click', scrollToBottom);
+        
+        // 初始化捲動監聽
+        setupScrollListener();
         
         // 載入資源
         await fetchBadges();
@@ -1017,23 +1134,8 @@
             // 等待 DOM 更新完成
             setTimeout(() => {
                 // 當所有媒體載入完成後，檢查是否需要滾動
-                if (isAtBottom && !isAutoScrolling) {
-                    const container = $("#chat-container")[0];
-                    // 標記為自動滾動，避免觸發按鈕顯示
-                    isAutoScrolling = true;
-                    // 強制滾動到最底部
-                    container.scrollTop = container.scrollHeight;
-                    
-                    // 雙重保險：延遲後再次滾動
-                    setTimeout(() => {
-                        if (isAtBottom && !isAutoScrolling) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                        // 重置自動滾動標記
-                        setTimeout(() => {
-                            isAutoScrolling = false;
-                        }, 100);
-                    }, 100);
+                if (autoScroll) {
+                    forceScrollToBottom();
                 }
                 // 重置計數器
                 mediaLoadCount = 0;
@@ -1140,36 +1242,11 @@
         // 限制訊息數量
         limitMessages();
         
-        if (isAtBottom) {
-            const container = $("#chat-container")[0];
-            // 標記為自動滾動
-            isAutoScrolling = true;
-            // 立即滾動一次
-            container.scrollTop = container.scrollHeight;
-            
-            // 等待 DOM 更新和圖片載入
-            setTimeout(() => {
-                if (isAtBottom) {
-                    container.scrollTop = container.scrollHeight;
-                }
-                // 重置自動滾動標記
-                setTimeout(() => {
-                    isAutoScrolling = false;
-                }, 100);
-            }, 50);
-            
-            // 再次檢查，確保圖片載入後滾動
-            setTimeout(() => {
-                if (isAtBottom) {
-                    isAutoScrolling = true;
-                    container.scrollTop = container.scrollHeight;
-                    // 重置自動滾動標記
-                    setTimeout(() => {
-                        isAutoScrolling = false;
-                    }, 100);
-                }
-            }, 300);
+        // 使用新的滾動邏輯
+        if (autoScroll) {
+            forceScrollToBottom();
         }
+        
         cancelReply(); 
         $("#msginput").val("");
     }
@@ -1299,23 +1376,9 @@
             // 限制訊息數量
             limitMessages();
             
-            // 立即滾動一次
-            if (isAtBottom) {
-                const container = $("#chat-container")[0];
-                // 標記為自動滾動
-                isAutoScrolling = true;
-                container.scrollTop = container.scrollHeight;
-                
-                // 雙重保險：延遲後再次滾動，確保圖片載入後也滾動
-                setTimeout(() => {
-                    if (isAtBottom) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                    // 重置自動滾動標記
-                    setTimeout(() => {
-                        isAutoScrolling = false;
-                    }, 100);
-                }, 100);
+            // 使用新的滾動邏輯
+            if (autoScroll) {
+                forceScrollToBottom();
             }
         };
         
@@ -1359,18 +1422,6 @@
         }
     }
     
-    function scrollToBottom() {
-        const container = document.getElementById('chat-container');
-        // 標記為手動滾動到底部
-        isAutoScrolling = false;
-        container.scrollTo({
-            top: container.scrollHeight,
-            behavior: 'smooth' 
-        });
-        isAtBottom = true;
-        $("#scroll-to-bottom-btn").fadeOut();
-    }
-    
     function insertTagOnly(s) { 
         const i = $("#msginput")[0], st = i.selectionStart; 
         i.value = i.value.substring(0, st) + s + i.value.substring(i.selectionEnd); 
@@ -1403,28 +1454,6 @@
     $(document).on('keypress', '#msginput', e => { 
         if (e.which == 13) sendMessage(); 
     });
-    
-    // 滾動監聽
-    const container = document.getElementById('chat-container');
-    container.addEventListener('scroll', () => {
-        // 如果是自動滾動，不處理按鈕顯示/隱藏
-        if (isAutoScrolling) {
-            return;
-        }
-        
-        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-        
-        if (distanceFromBottom > 100) {
-            // 用戶手動向上滾動了
-            isAtBottom = false;
-            $("#scroll-to-bottom-btn").fadeIn();
-        } else {
-            // 用戶回到最底部了
-            isAtBottom = true;
-            $("#scroll-to-bottom-btn").fadeOut();
-        }
-    });
-
 </script>
 </body>
 </html>
