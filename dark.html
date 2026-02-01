@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.44 - Full Feature Edition</title>
+    <title>Twitch Console v8.454 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -123,82 +123,6 @@
         .audio-icon-btn:hover { background: rgba(145, 71, 255, 0.4); }
         .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
         
-        /* 登入彈出視窗樣式 */
-        #loginPopup {
-            position: fixed;
-            display: none;
-            width: 400px;
-            height: 600px;
-            background: var(--t-alt);
-            border: 2px solid var(--t-purp);
-            border-radius: 12px;
-            z-index: 9999;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-        }
-        
-        .popup-header {
-            padding: 12px 16px;
-            background: #26262c;
-            border-radius: 12px 12px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
-        }
-        
-        .popup-content {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        
-        .popup-message {
-            color: #adadb8;
-            margin: 20px 0;
-            font-size: 14px;
-        }
-        
-        .popup-close {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 20px;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-        }
-        
-        .popup-close:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        
-        /* 載入動畫 */
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: #9147ff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
         @keyframes pulse-audio {
             0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
@@ -208,27 +132,9 @@
 </head>
 <body onload="initApp()">
 
-<!-- 登入彈出視窗 -->
-<div id="loginPopup">
-    <div class="popup-header">
-        <b style="font-size:14px;">Twitch 登入</b>
-        <button class="popup-close" onclick="closeLoginPopup()">✕</button>
-    </div>
-    <div class="popup-content">
-        <div class="loading-spinner"></div>
-        <div class="popup-message">
-            正在開啟 Twitch 登入頁面...<br><br>
-            如果沒有自動彈出，請點擊下方的按鈕手動開啟。
-        </div>
-        <button onclick="openTwitchAuthWindow()" style="background:var(--t-purp); color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; font-weight:bold; margin-top:10px;">
-            手動開啟 Twitch 登入
-        </button>
-    </div>
-</div>
-
 <div class="header-bar">
     <div style="font-weight:bold;"></div>
-	<div id="auth-area"><button onclick="openLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button></div>
+	<div id="auth-area"><button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button></div>
 </div>
 
 <div id="chat-container"><div id="messages"></div><button id="scroll-to-bottom-btn" onclick="scrollToBottom()">↓ 更多訊息</button></div>
@@ -302,19 +208,10 @@
     let isAutoScrolling = false;
     const MAX_MESSAGES = 100;
     
-    // 圖片/影片載入計數器
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
-    // 登入相關變數
-    let authWindow = null;
-    let authCheckInterval = null;
-    
-    function getTagValue(tags, key) { 
-        const regex = new RegExp(`${key}=([^;\\s]+)`); 
-        const match = tags.match(regex); 
-        return match ? match[1] : null; 
-    }
+    function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
 
     async function initApp() {
         const savedToken = localStorage.getItem('twitch_access_token');
@@ -325,27 +222,12 @@
             myBadges = localStorage.getItem('twitch_my_badges') || "";
             updateAuthUI(); 
         }
-        
-        // 檢查 URL hash 中是否有 token（從彈出視窗重定向回來的）
         if (window.location.hash) {
             const params = new URLSearchParams(window.location.hash.substring(1));
             const token = params.get("access_token");
-            if (token) { 
-                ACCESS_TOKEN = token; 
-                localStorage.setItem('twitch_access_token', ACCESS_TOKEN); 
-                
-                // 清除 hash，避免瀏覽器歷史記錄問題
-                window.location.hash = "";
-                
-                // 獲取用戶資訊
-                await fetchUserInfo();
-                updateAuthUI();
-                
-                // 顯示成功訊息
-                alert("Twitch 登入成功！");
-            }
+            if (token) { ACCESS_TOKEN = token; localStorage.setItem('twitch_access_token', ACCESS_TOKEN); await fetchUserInfo(); }
+            window.location.hash = "";
         }
-        
         await fetchBadges();
         await loadResources();
         setupAutoTag();
@@ -354,23 +236,14 @@
 
     async function fetchUserInfo() {
         try {
-            const r = await fetch('https://api.twitch.tv/helix/users', { 
-                headers: { 
-                    'Authorization': `Bearer ${ACCESS_TOKEN}`, 
-                    'Client-Id': CLIENT_ID 
-                } 
-            });
+            const r = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } });
             const d = await r.json();
             if(d.data && d.data[0]) {
-                myLoginId = d.data[0].login; 
-                myDisplayName = d.data[0].display_name;
-                localStorage.setItem('twitch_my_login', myLoginId); 
-                localStorage.setItem('twitch_my_display', myDisplayName);
+                myLoginId = d.data[0].login; myDisplayName = d.data[0].display_name;
+                localStorage.setItem('twitch_my_login', myLoginId); localStorage.setItem('twitch_my_display', myDisplayName);
                 updateAuthUI();
             }
-        } catch(e) {
-            console.error('取得用戶資訊失敗:', e);
-        }
+        } catch(e) {}
     }
 
     function updateAuthUI() { 
@@ -388,85 +261,17 @@
         myLoginId = "";
         myDisplayName = "";
         myBadges = "";
-        $("#auth-area").html(`<button onclick="openLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button>`);
+        $("#auth-area").html(`<button onclick="twitchLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button>`);
         if (socket) socket.close();
         startChat();
     }
 
-    // 開啟登入彈出視窗
-    function openLoginPopup() {
-        $("#loginPopup").show();
+    // 最簡單的彈出視窗登入
+    function twitchLoginPopup() {
+        const redirect = window.location.origin + window.location.pathname;
+        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
         
-        // 延遲一點開啟 Twitch 視窗，讓用戶看到提示
-        setTimeout(openTwitchAuthWindow, 500);
-    }
-
-    // 關閉登入彈出視窗
-    function closeLoginPopup() {
-        $("#loginPopup").hide();
-        
-        // 停止檢查
-        if (authCheckInterval) {
-            clearInterval(authCheckInterval);
-            authCheckInterval = null;
-        }
-    }
-
-    // 開啟 Twitch 授權視窗
-    function openTwitchAuthWindow() {
-        // 構建重定向 URL
-        const redirectUri = window.location.origin + window.location.pathname;
-        
-        // Twitch OAuth 授權 URL
-        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
-        
-        // 開啟新視窗
-        authWindow = window.open(
-            twitchAuthUrl, 
-            'Twitch登入',
-            'width=500,height=700,scrollbars=yes,resizable=yes'
-        );
-        
-        if (!authWindow) {
-            alert('彈出視窗被瀏覽器阻止了！請允許彈出視窗，或點擊瀏覽器網址列旁邊的彈出視窗圖示。');
-            closeLoginPopup();
-            return;
-        }
-        
-        // 開始檢查授權視窗是否已關閉
-        startAuthCheck();
-    }
-
-    // 開始檢查授權狀態
-    function startAuthCheck() {
-        if (authCheckInterval) {
-            clearInterval(authCheckInterval);
-        }
-        
-        authCheckInterval = setInterval(function() {
-            try {
-                // 檢查視窗是否已關閉
-                if (authWindow && authWindow.closed) {
-                    clearInterval(aCheckInterval);
-                    authCheckInterval = null;
-                    
-                    // 檢查是否已登入（用戶可能已成功登入）
-                    if (localStorage.getItem('twitch_access_token')) {
-                        closeLoginPopup();
-                    } else {
-                        // 用戶取消了登入或關閉了視窗
-                        setTimeout(() => {
-                            if (!localStorage.getItem('twitch_access_token')) {
-                                alert('Twitch 登入已取消或未完成。');
-                            }
-                        }, 100);
-                    }
-                    closeLoginPopup();
-                }
-            } catch (e) {
-                // 忽略跨域錯誤
-            }
-        }, 500);
+        window.open(twitchAuthUrl, 'Twitch登入', 'width=500,height=700');
     }
 
     async function loadResources() {
@@ -496,9 +301,7 @@
                     list.forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
                 });
             }
-        } catch(e){
-            console.error('載入資源失敗:', e);
-        }
+        } catch(e){}
     }
 
     async function loadAudioData() {
