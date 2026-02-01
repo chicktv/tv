@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Console v8.4 - Full Feature Edition</title>
+    <title>Twitch Console v8.8 - Full Feature Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; }
@@ -116,7 +116,6 @@
 </div>
 
 <script>
-    // --- 新增輔助邏輯 (getParameterByName & extractTagAndUrl) ---
     function getParameterByName(name, url) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
         var regexS = "[\\?&]" + name + "=([^&#]*)";
@@ -142,18 +141,16 @@
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let ACCESS_TOKEN = "", socket, altMap = {}, emojiLists = {}, audioLists = {}, customBadges = {};
     let msgCache = {}; 
-    // 修改：msgCache 現在儲存包含 display name 的物件
-    let userCache = {}; // 新增：快取 user id 對應的 display name
+    let userCache = {}; 
     
-    let myLoginId = "", myDisplayName = "", myBadgeStr = ""; // 新增 myBadgeStr 儲存自己的徽章
-    let pendingReply = { id: null, user: null, displayName: null }; // 新增 displayName
+    let myLoginId = "", myDisplayName = ""; 
+    let pendingReply = { id: null, user: null, displayName: null }; 
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
-    let isAtBottom = true; // 預設是在底部
-    let isAutoScrolling = false; // 新增：標記是否為自動滾動
-    const MAX_MESSAGES = 100; // 設定最多保留100條訊息
+    let isAtBottom = true; 
+    let isAutoScrolling = false; 
+    const MAX_MESSAGES = 100; 
     
-    // 圖片/影片載入計數器，用於確保所有媒體載入完成後才滾動
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
@@ -377,11 +374,8 @@
         btn.currentAudio = null;
     }
 
-    // --- 整合核心解析邏輯 (parseContent) ---
     function parseContent(str) {
         let a = str, placeholders = [];
-
-        // 1. 處理大寫 [S]...E] (原創簡易圖片)
         a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
             b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
             const number = Math.floor((Math.random() * 1000) + 1);
@@ -389,14 +383,11 @@
             placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
             return id;
         });
-
-        // 2. 處理小寫 [s]...e] (新邏輯增強版)
         a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`;
             let e = "";
             const number = Math.floor((Math.random() * 1000) + 1);
-
             if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
                 let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
                 let t = getParameterByName('t', b);
@@ -418,8 +409,6 @@
             placeholders.push(e);
             return id;
         });
-
-        // 3. 處理影片標籤 [y]...[t] (新邏輯)
         a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`;
@@ -438,23 +427,17 @@
             placeholders.push(e);
             return id;
         });
-
-        // 4. 處理音訊標籤 [a]...[o]
         a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
             const url = content.trim(); let id = `__PH_${placeholders.length}__`;
             placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`);
             return id;
         });
-
-        // 5. 處理自動解析 HTML 連結中的標籤 (extractTagAndUrl 新邏輯)
         let htmlMatch = extractTagAndUrl(a);
         if (htmlMatch) {
             let b = htmlMatch.url;
             let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
             a = a.replace(htmlMatch.match[0], e);
         }
-
-        // 6. 處理一般網址與自訂表情
         a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
         let words = a.split(' ');
         a = words.map(w => { 
@@ -462,159 +445,55 @@
             const src = altMap[w.toLowerCase()]; 
             return src ? `<img src="${src}" class="alt-emoji">` : w; 
         }).join(' ');
-
-        // 最後還原所有預留佔位符
         placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
         return a;
     }
 
-    // 媒體載入完成的回調函數 - 改善版
     function onMediaLoaded() {
         mediaLoadCount++;
-        
-        // 清除之前的計時器
-        if (mediaLoadTimer) {
-            clearTimeout(mediaLoadTimer);
-        }
-        
-        // 設置新的計時器，等待更多媒體載入
+        if (mediaLoadTimer) clearTimeout(mediaLoadTimer);
         mediaLoadTimer = setTimeout(() => {
-            // 等待 DOM 更新完成
             setTimeout(() => {
-                // 當所有媒體載入完成後，檢查是否需要滾動
                 if (isAtBottom && !isAutoScrolling) {
                     const container = $("#chat-container")[0];
-                    // 標記為自動滾動，避免觸發按鈕顯示
                     isAutoScrolling = true;
-                    // 強制滾動到最底部
                     container.scrollTop = container.scrollHeight;
-                    
-                    // 雙重保險：延遲後再次滾動
                     setTimeout(() => {
-                        if (isAtBottom && !isAutoScrolling) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                        // 重置自動滾動標記
-                        setTimeout(() => {
-                            isAutoScrolling = false;
-                        }, 100);
+                        if (isAtBottom && !isAutoScrolling) container.scrollTop = container.scrollHeight;
+                        setTimeout(() => { isAutoScrolling = false; }, 100);
                     }, 100);
                 }
-                // 重置計數器
                 mediaLoadCount = 0;
             }, 50);
-        }, 150); // 等待150ms，讓多個媒體有時間載入
+        }, 150);
     }
 
-    // 限制訊息數量函數
     function limitMessages() {
         const $messages = $("#messages");
         const $children = $messages.children();
         if ($children.length > MAX_MESSAGES) {
-            // 移除超出100條的訊息（從最舊的開始移除）
             $children.slice(0, $children.length - MAX_MESSAGES).remove();
         }
     }
 
-    // 獲取用戶的 display name (從快取或實際資料)
-    function getUserDisplayName(userId, fallbackName) {
-        // 如果已經有 display name，直接返回
-        if (userCache[userId]) {
-            return userCache[userId];
-        }
-        
-        // 否則嘗試從現有訊息中尋找
-        const userMessages = Object.keys(msgCache).filter(key => {
-            const msg = msgCache[key];
-            return msg && msg.user && (msg.user.login === userId || msg.user.displayName === userId || msg.user === userId);
-        });
-        
-        if (userMessages.length > 0) {
-            const latestMsg = msgCache[userMessages[userMessages.length - 1]];
-            if (latestMsg && latestMsg.displayName) {
-                userCache[userId] = latestMsg.displayName;
-                return latestMsg.displayName;
-            }
-        }
-        
-        // 如果找不到，返回 fallbackName
-        return fallbackName || userId;
-    }
-
+    // --- 關鍵修改點 1: sendMessage 邏輯優化 ---
     function sendMessage() {
         const val = $("#msginput").val(); if (!val || !socket || socket.readyState !== 1) return;
-        const selfTs = Date.now().toString(); let finalCmd = "", replyDisplay = "";
         
+        // 使用 Twitch 原生回覆標籤發送，確保能被伺服器識別並廣播給所有人
+        let finalCmd = "";
         if (pendingReply.id) {
+            // 格式：@reply-parent-msg-id=... PRIVMSG #channel :message
             finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
-            
-            // 獲取被回覆的訊息
-            const repliedMsg = msgCache[pendingReply.id];
-            let rawQuote = "...";
-            if (repliedMsg) {
-                rawQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
-            }
-            
-            let parsedQuote = parseContent(rawQuote);
-            
-            // 使用 displayName 而不是 user id
-            const displayNameToShow = pendingReply.displayName || pendingReply.user;
-            
-            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
-
         } else {
             finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
         }
         
         socket.send(finalCmd); 
         
-        // 快取自己的訊息（包含 display name）
-        msgCache[selfTs] = {
-            content: val,
-            user: { login: myLoginId, displayName: myDisplayName },
-            displayName: myDisplayName
-        };
+        // 修正：移除手動 Append！
+        // 我們依賴伺服器回傳 PRIVMSG 給我們，這樣能確保全頻道都看到了，且伺服器會自動帶回你的 Badge
         
-        // 修正：手動新增訊息時呼叫 renderBadges(myBadgeStr)
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">
-            ${replyDisplay}
-            ${renderBadges(myBadgeStr)}
-            <b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
-        </div>`);
-        
-        // 限制訊息數量
-        limitMessages();
-        
-        if (isAtBottom) {
-            const container = $("#chat-container")[0];
-            // 標記為自動滾動
-            isAutoScrolling = true;
-            // 立即滾動一次
-            container.scrollTop = container.scrollHeight;
-            
-            // 等待 DOM 更新和圖片載入
-            setTimeout(() => {
-                if (isAtBottom) {
-                    container.scrollTop = container.scrollHeight;
-                }
-                // 重置自動滾動標記
-                setTimeout(() => {
-                    isAutoScrolling = false;
-                }, 100);
-            }, 50);
-            
-            // 再次檢查，確保圖片載入後滾動
-            setTimeout(() => {
-                if (isAtBottom) {
-                    isAutoScrolling = true;
-                    container.scrollTop = container.scrollHeight;
-                    // 重置自動滾動標記
-                    setTimeout(() => {
-                        isAutoScrolling = false;
-                    }, 100);
-                }
-            }, 300);
-        }
         cancelReply(); $("#msginput").val("");
     }
 
@@ -630,14 +509,6 @@
         socket.onmessage = (e) => {
             if (e.data.startsWith('PING')) { socket.send('PONG :tmi.twitch.tv'); return; }
 
-            // 新增：捕捉 USERSTATE 以獲取自己的徽章資訊
-            if (e.data.includes('USERSTATE')) {
-                const tags = e.data.split(' ')[0];
-                const badges = getTagValue(tags, "badges");
-                if (badges) myBadgeStr = badges;
-                return;
-            }
-
             if (!e.data.includes('PRIVMSG')) return;
             const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
             const tags = parts[0], rawMsg = parts[1].trim();
@@ -647,25 +518,14 @@
             const userLogin = getTagValue(tags, "login") || user.toLowerCase();
             const color = getTagValue(tags, "color") || "#9147ff";
 
-            // 新增：避免重複顯示自己剛送出的訊息 (因為 sendMessage 已經手動 append 了)
-            if (userLogin === myLoginId) return;
+            // --- 關鍵修改點 2: 移除自我過濾邏輯 ---
+            // 讓伺服器回傳的自己訊息可以通過，這樣就會自動顯示徽章
             
-            // 快取用戶資訊
             userCache[userLogin] = user;
-            
-            // 快取訊息（包含用戶資訊）
             if (msgId) {
-                msgCache[msgId] = {
-                    content: rawMsg,
-                    user: { login: userLogin, displayName: user },
-                    displayName: user
-                };
+                msgCache[msgId] = { content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user };
             }
-            msgCache[ts] = {
-                content: rawMsg,
-                user: { login: userLogin, displayName: user },
-                displayName: user
-            };
+            msgCache[ts] = { content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user };
             
             let replyHtml = "", displayMsg = rawMsg;
             const pUser = getTagValue(tags, "reply-parent-display-name");
@@ -674,83 +534,34 @@
             
             if (pUser && pId) {
                 let isMe = (pUser === myDisplayName || pUser === myLoginId);
-                
-                // 這裡新增一個變數來處理內容
                 let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
-                
-                // 重點：對引用的文字執行 parseContent，這樣裡面的 [s] 或表情才會變回 HTML
                 let pBody = parseContent(originalText); 
-                
                 const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                
                 replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
-                
                 const mention = `@${pUser} `;
-                if (displayMsg.startsWith(mention)) {
-                    displayMsg = displayMsg.substring(mention.length);
-                }
-            } else if (rawMsg.includes("[r]")) {
-                const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
-                if(myR) {
-                    const repliedMsgId = myR[2];
-                    const userIdFromTag = myR[1];
-                    
-                    // 從快取中獲取被回覆的訊息
-                    let repliedMsg = msgCache[repliedMsgId];
-                    let rawBody = "...";
-                    let displayNameToShow = userIdFromTag; // 預設使用標籤中的 ID
-                    
-                    if (repliedMsg) {
-                        if (typeof repliedMsg === 'object') {
-                            rawBody = repliedMsg.content || "...";
-                            // 優先使用訊息的 displayName
-                            displayNameToShow = repliedMsg.displayName || userIdFromTag;
-                        } else {
-                            rawBody = repliedMsg;
-                        }
-                    }
-                    
-                    // 如果快取中有用戶資訊，使用 display name
-                    if (userCache[userIdFromTag]) {
-                        displayNameToShow = userCache[userIdFromTag];
-                    }
-                    
-                    let body = parseContent(rawBody); 
-                    
-                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${body}</div>`;
-                    
-                    displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
-                }
+                if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
             
             const badgeStr = getTagValue(tags, "badges");
+            const isMeStyle = (userLogin === myLoginId) ? 'class="self-name"' : `style="color:${color}"`;
+            
             const line = `<div class="chat-line ts-${ts} id-${msgId}" data-msg-id="${msgId}">
                 <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
                 ${replyHtml}
                 ${renderBadges(badgeStr)}
-                <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
+                <b ${isMeStyle}>${user}:</b> <span>${parseContent(displayMsg)}</span>
             </div>`;
             $("#messages").append(line);
             
-            // 限制訊息數量
             limitMessages();
             
-            // 立即滾動一次
             if (isAtBottom) {
                 const container = $("#chat-container")[0];
-                // 標記為自動滾動
                 isAutoScrolling = true;
                 container.scrollTop = container.scrollHeight;
-                
-                // 雙重保險：延遲後再次滾動，確保圖片載入後也滾動
                 setTimeout(() => {
-                    if (isAtBottom) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                    // 重置自動滾動標記
-                    setTimeout(() => {
-                        isAutoScrolling = false;
-                    }, 100);
+                    if (isAtBottom) container.scrollTop = container.scrollHeight;
+                    setTimeout(() => { isAutoScrolling = false; }, 100);
                 }, 100);
             }
         };
@@ -780,28 +591,19 @@
         });
     }
 	
-	// 滾動到指定訊息
 	function scrollToMsg(msgId) {
         const $msg = $(`.id-${msgId}`);
         if ($msg.length) {
             const container = $("#chat-container")[0];
             const msgTop = $msg.offset().top - $(container).offset().top;
-            
-            container.scrollTo({
-                top: msgTop + container.scrollTop - 50, // 減去50px讓訊息稍微靠上
-                behavior: 'smooth'
-            });
+            container.scrollTo({ top: msgTop + container.scrollTop - 50, behavior: 'smooth' });
         }
     }
 	
 	function scrollToBottom() {
         const container = document.getElementById('chat-container');
-        // 標記為手動滾動到底部
         isAutoScrolling = false;
-        container.scrollTo({
-            top: container.scrollHeight,
-            behavior: 'smooth' 
-        });
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
         isAtBottom = true;
         $("#scroll-to-bottom-btn").fadeOut();
     }
@@ -809,11 +611,7 @@
     function insertTagOnly(s) { const i = $("#msginput")[0], st = i.selectionStart; i.value = i.value.substring(0, st) + s + i.value.substring(i.selectionEnd); i.focus(); }
     function insertAtCursor(v) { const i = $("#msginput")[0], st = i.selectionStart; i.value = i.value.substring(0, st) + v + i.value.substring(i.selectionEnd); i.focus(); }
     function replyNative(userLogin, msgId, displayName) { 
-        pendingReply = { 
-            id: msgId, 
-            user: userLogin, 
-            displayName: displayName || userLogin 
-        }; 
+        pendingReply = { id: msgId, user: userLogin, displayName: displayName || userLogin }; 
         $("#replying-to-user").text(displayName || userLogin); 
         $("#reply-indicator").show(); 
         $("#msginput").focus(); 
@@ -823,22 +621,10 @@
 	
 	const container = document.getElementById('chat-container');
     container.addEventListener('scroll', () => {
-        // 如果是自動滾動，不處理按鈕顯示/隱藏
-        if (isAutoScrolling) {
-            return;
-        }
-        
+        if (isAutoScrolling) return;
         const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-        
-        if (distanceFromBottom > 100) {
-            // 用戶手動向上滾動了
-            isAtBottom = false;
-            $("#scroll-to-bottom-btn").fadeIn();
-        } else {
-            // 用戶回到最底部了
-            isAtBottom = true;
-            $("#scroll-to-bottom-btn").fadeOut();
-        }
+        if (distanceFromBottom > 100) { isAtBottom = false; $("#scroll-to-bottom-btn").fadeIn(); }
+        else { isAtBottom = true; $("#scroll-to-bottom-btn").fadeOut(); }
     });
 
 </script>
