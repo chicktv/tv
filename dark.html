@@ -585,81 +585,68 @@
         return fallbackName || userId;
     }
 
-    function sendMessage() {
-        const val = $("#msginput").val(); if (!val || !socket || socket.readyState !== 1) return;
-        const selfTs = Date.now().toString(); let finalCmd = "", replyDisplay = "";
-        
-        if (pendingReply.id) {
-            finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
-            
-            // 獲取被回覆的訊息
-            const repliedMsg = msgCache[pendingReply.id];
-            let rawQuote = "...";
-            if (repliedMsg) {
-                rawQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
-            }
-            
-            let parsedQuote = parseContent(rawQuote);
-            
-            // 使用 displayName 而不是 user id
-            const displayNameToShow = pendingReply.displayName || pendingReply.user;
-            
-            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
+   function sendMessage() {
+    const val = $("#msginput").val(); 
+    if (!val || !socket || socket.readyState !== 1) return;
+    
+    const selfTs = Date.now().toString(); 
+    let finalCmd = "", replyDisplay = "";
+    
+    // --- 核心修正：獲取自己的徽章 ---
+    // 優先從變數拿，拿不到從 localStorage 拿
+    const currentBadges = myBadges || localStorage.getItem('user_badges_list') || "";
+    const badgeHtml = renderBadges(currentBadges);
+    // ----------------------------
 
-        } else {
-            finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
+    if (pendingReply.id) {
+        finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
+        const repliedMsg = msgCache[pendingReply.id];
+        let rawQuote = "...";
+        if (repliedMsg) {
+            rawQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
         }
-        
-        socket.send(finalCmd); 
-        
-        // 快取自己的訊息（包含 display name）
-        msgCache[selfTs] = {
-            content: val,
-            user: { login: myLoginId, displayName: myDisplayName },
-            displayName: myDisplayName
-        };
-        
-        // 新增：為自己發送的訊息添加徽章
-        const badgeStr = myBadges || "";
-        const badgeHtml = renderBadges(badgeStr);
-        
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
-        
-        // 限制訊息數量
-        limitMessages();
-        
-        if (isAtBottom) {
-            const container = $("#chat-container")[0];
-            // 標記為自動滾動
-            isAutoScrolling = true;
-            // 立即滾動一次
-            container.scrollTop = container.scrollHeight;
-            
-            // 等待 DOM 更新和圖片載入
-            setTimeout(() => {
-                if (isAtBottom) {
-                    container.scrollTop = container.scrollHeight;
-                }
-                // 重置自動滾動標記
-                setTimeout(() => {
-                    isAutoScrolling = false;
-                }, 100);
-            }, 50);
-            
-            // 再次檢查，確保圖片載入後滾動
-            setTimeout(() => {
-                if (isAtBottom) {
-                    isAutoScrolling = true;
-                    container.scrollTop = container.scrollHeight;
-                    // 重置自動滾動標記
-                    setTimeout(() => {
-                        isAutoScrolling = false;
-                    }, 100);
-                }
-            }, 300);
-        }
-        cancelReply(); $("#msginput").val("");
+        let parsedQuote = parseContent(rawQuote);
+        const displayNameToShow = pendingReply.displayName || pendingReply.user;
+        replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
+    } else {
+        finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
     }
+    
+    socket.send(finalCmd); 
+    
+    msgCache[selfTs] = {
+        content: val,
+        user: { login: myLoginId, displayName: myDisplayName },
+        displayName: myDisplayName
+    };
+    
+    // 這裡拼接畫面的 HTML
+    const localHtml = `
+        <div class="chat-line ts-${selfTs}">
+            ${replyDisplay}
+            ${badgeHtml}
+            <b class="self-name">${myDisplayName || myLoginId}:</b> 
+            <span>${parseContent(val)}</span>
+        </div>`;
+    
+    $("#messages").append(localHtml);
+    
+    limitMessages();
+    
+    // 滾動邏輯
+    if (isAtBottom) {
+        const container = $("#chat-container")[0];
+        isAutoScrolling = true;
+        container.scrollTop = container.scrollHeight;
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+            isAutoScrolling = false;
+        }, 150);
+    }
+    
+    cancelReply(); 
+    $("#msginput").val("");
+}
 
     function startChat() {
         if(socket) socket.close();
