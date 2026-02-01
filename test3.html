@@ -79,21 +79,21 @@
         .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
         
         /* --- 根據圖片優化輸入區佈局 --- */
-        .footer { background: #0e0e10; padding: 10px 15px 20px 15px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .footer { background: #0e0e10; padding: 10px 15px 20px 15px; border-top: 0px solid rgba(255, 255, 255, 0.05); }
         
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
         
-        .tool-bar { display: flex; gap: 12px; margin-bottom: 8px; align-items: center; }
+        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
         .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
         .tool-link:hover { color: #fff; }
         .tool-link svg { margin-left: 4px; }
 
         .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-        .input-box-wrapper { position: relative; width: 100%; border: 1px solid #333; border-radius: 6px; background: #000; overflow: hidden; }
-        #msginput { width: 100%; background: transparent; color: #efeff1; font-size: 14px; border: none; outline: none; padding: 12px 15px; box-sizing: border-box; font-family: inherit; }
+        .input-box-wrapper { position: relative; width: 100%; border: 1px solid #f7e7e7; border-radius: 6px; background: #000; overflow: hidden; }
+        #msginput { width: 100%; background: transparent; color: #efeff1; font-size: 14px; border: none; outline: none; padding: 12px 15px; box-sizing: border-box; font-family: inherit; overflow-wrap: break-word; max-height: calc(5lh + 20px); overflow: hidden auto;white-space: pre-wrap;}
         #msginput:disabled { cursor: not-allowed; }
 
-        .action-bar { display: flex; justify-content: flex-end; margin-top: 5px; }
+        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
         #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
         #sendbtn:hover { background: #a970ff; }
         #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
@@ -173,7 +173,7 @@
             <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
             <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
             <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="#FFFF00">
                     <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
                 </svg>
             </button>
@@ -184,6 +184,7 @@
         </div>
 
         <div class="action-bar">
+		
             <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
         </div>
     </div>
