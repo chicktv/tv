@@ -128,7 +128,7 @@
             position: fixed;
             display: none;
             width: 400px;
-            height: 500px;
+            height: 600px;
             background: var(--t-alt);
             border: 2px solid var(--t-purp);
             border-radius: 12px;
@@ -157,13 +157,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            text-align: center;
         }
         
-        .popup-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            border-radius: 0 0 12px 12px;
+        .popup-message {
+            color: #adadb8;
+            margin: 20px 0;
+            font-size: 14px;
         }
         
         .popup-close {
@@ -184,6 +184,21 @@
             background: rgba(255,255,255,0.1);
         }
         
+        /* 載入動畫 */
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #9147ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
         @keyframes pulse-audio {
             0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
@@ -199,7 +214,16 @@
         <b style="font-size:14px;">Twitch 登入</b>
         <button class="popup-close" onclick="closeLoginPopup()">✕</button>
     </div>
-    <iframe id="loginIframe" class="popup-iframe" allow="clipboard-write"></iframe>
+    <div class="popup-content">
+        <div class="loading-spinner"></div>
+        <div class="popup-message">
+            正在開啟 Twitch 登入頁面...<br><br>
+            如果沒有自動彈出，請點擊下方的按鈕手動開啟。
+        </div>
+        <button onclick="openTwitchAuthWindow()" style="background:var(--t-purp); color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; font-weight:bold; margin-top:10px;">
+            手動開啟 Twitch 登入
+        </button>
+    </div>
 </div>
 
 <div class="header-bar">
@@ -270,7 +294,7 @@
     let msgCache = {}; 
     let userCache = {}; 
     
-    let myLoginId = "", myDisplayName = "", myBadges = ""; // 新增 myBadges 變數
+    let myLoginId = "", myDisplayName = "", myBadges = "";
     let pendingReply = { id: null, user: null, displayName: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
@@ -278,15 +302,19 @@
     let isAutoScrolling = false;
     const MAX_MESSAGES = 100;
     
-    // 圖片/影片載入計數器，用於確保所有媒體載入完成後才滾動
+    // 圖片/影片載入計數器
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
-    // 登入彈出視窗相關變數
-    let loginPopup = null;
-    let loginCheckInterval = null;
+    // 登入相關變數
+    let authWindow = null;
+    let authCheckInterval = null;
     
-    function getTagValue(tags, key) { const regex = new RegExp(`${key}=([^;\\s]+)`); const match = tags.match(regex); return match ? match[1] : null; }
+    function getTagValue(tags, key) { 
+        const regex = new RegExp(`${key}=([^;\\s]+)`); 
+        const match = tags.match(regex); 
+        return match ? match[1] : null; 
+    }
 
     async function initApp() {
         const savedToken = localStorage.getItem('twitch_access_token');
@@ -294,12 +322,29 @@
             ACCESS_TOKEN = savedToken; 
             myLoginId = localStorage.getItem('twitch_my_login') || ""; 
             myDisplayName = localStorage.getItem('twitch_my_display') || ""; 
-            myBadges = localStorage.getItem('twitch_my_badges') || ""; // 讀取保存的 badge
+            myBadges = localStorage.getItem('twitch_my_badges') || "";
             updateAuthUI(); 
         }
         
-        // 監聽來自彈出視窗的訊息
-        window.addEventListener('message', handleLoginMessage, false);
+        // 檢查 URL hash 中是否有 token（從彈出視窗重定向回來的）
+        if (window.location.hash) {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const token = params.get("access_token");
+            if (token) { 
+                ACCESS_TOKEN = token; 
+                localStorage.setItem('twitch_access_token', ACCESS_TOKEN); 
+                
+                // 清除 hash，避免瀏覽器歷史記錄問題
+                window.location.hash = "";
+                
+                // 獲取用戶資訊
+                await fetchUserInfo();
+                updateAuthUI();
+                
+                // 顯示成功訊息
+                alert("Twitch 登入成功！");
+            }
+        }
         
         await fetchBadges();
         await loadResources();
@@ -307,36 +352,14 @@
         startChat();
     }
 
-    // 處理登入訊息的函數
-    function handleLoginMessage(event) {
-        // 確保訊息來自信任的來源
-        if (event.origin !== window.location.origin) {
-            return;
-        }
-        
-        if (event.data.type === 'twitch_login_success') {
-            const token = event.data.access_token;
-            if (token) {
-                ACCESS_TOKEN = token;
-                localStorage.setItem('twitch_access_token', ACCESS_TOKEN);
-                
-                // 關閉彈出視窗
-                closeLoginPopup();
-                
-                // 獲取用戶資訊
-                fetchUserInfo().then(() => {
-                    updateAuthUI();
-                    startChat();
-                });
-            }
-        } else if (event.data.type === 'twitch_login_cancel') {
-            closeLoginPopup();
-        }
-    }
-
     async function fetchUserInfo() {
         try {
-            const r = await fetch('https://api.twitch.tv/helix/users', { headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Client-Id': CLIENT_ID } });
+            const r = await fetch('https://api.twitch.tv/helix/users', { 
+                headers: { 
+                    'Authorization': `Bearer ${ACCESS_TOKEN}`, 
+                    'Client-Id': CLIENT_ID 
+                } 
+            });
             const d = await r.json();
             if(d.data && d.data[0]) {
                 myLoginId = d.data[0].login; 
@@ -367,62 +390,77 @@
         myBadges = "";
         $("#auth-area").html(`<button onclick="openLoginPopup()" style="background:var(--t-purp); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">登入TWITCH</button>`);
         if (socket) socket.close();
-        startChat(); // 重新以匿名身份連接
+        startChat();
     }
 
     // 開啟登入彈出視窗
     function openLoginPopup() {
-        const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
-        
-        // 顯示彈出視窗
         $("#loginPopup").show();
         
-        // 設定 iframe 的來源為 Twitch 登入頁面
-        $("#loginIframe").attr("src", twitchAuthUrl);
-        
-        // 開始檢查 iframe 的 URL
-        startLoginCheck();
+        // 延遲一點開啟 Twitch 視窗，讓用戶看到提示
+        setTimeout(openTwitchAuthWindow, 500);
     }
 
     // 關閉登入彈出視窗
     function closeLoginPopup() {
         $("#loginPopup").hide();
-        $("#loginIframe").attr("src", "about:blank");
         
         // 停止檢查
-        if (loginCheckInterval) {
-            clearInterval(loginCheckInterval);
-            loginCheckInterval = null;
+        if (authCheckInterval) {
+            clearInterval(authCheckInterval);
+            authCheckInterval = null;
         }
     }
 
-    // 開始檢查 iframe 中的登入狀態
-    function startLoginCheck() {
-        // 每500毫秒檢查一次 iframe 的 URL
-        loginCheckInterval = setInterval(function() {
+    // 開啟 Twitch 授權視窗
+    function openTwitchAuthWindow() {
+        // 構建重定向 URL
+        const redirectUri = window.location.origin + window.location.pathname;
+        
+        // Twitch OAuth 授權 URL
+        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read+chat:edit+user:read:email&force_verify=true`;
+        
+        // 開啟新視窗
+        authWindow = window.open(
+            twitchAuthUrl, 
+            'Twitch登入',
+            'width=500,height=700,scrollbars=yes,resizable=yes'
+        );
+        
+        if (!authWindow) {
+            alert('彈出視窗被瀏覽器阻止了！請允許彈出視窗，或點擊瀏覽器網址列旁邊的彈出視窗圖示。');
+            closeLoginPopup();
+            return;
+        }
+        
+        // 開始檢查授權視窗是否已關閉
+        startAuthCheck();
+    }
+
+    // 開始檢查授權狀態
+    function startAuthCheck() {
+        if (authCheckInterval) {
+            clearInterval(authCheckInterval);
+        }
+        
+        authCheckInterval = setInterval(function() {
             try {
-                const iframe = document.getElementById('loginIframe');
-                const iframeUrl = iframe.contentWindow.location.href;
-                
-                // 檢查 URL 中是否有 access_token
-                if (iframeUrl.includes('access_token')) {
-                    // 從 URL 中提取 access_token
-                    const hash = iframeUrl.split('#')[1];
-                    const params = new URLSearchParams(hash);
-                    const token = params.get('access_token');
+                // 檢查視窗是否已關閉
+                if (authWindow && authWindow.closed) {
+                    clearInterval(aCheckInterval);
+                    authCheckInterval = null;
                     
-                    if (token) {
-                        // 發送訊息給父視窗
-                        window.postMessage({
-                            type: 'twitch_login_success',
-                            access_token: token
-                        }, window.location.origin);
+                    // 檢查是否已登入（用戶可能已成功登入）
+                    if (localStorage.getItem('twitch_access_token')) {
+                        closeLoginPopup();
+                    } else {
+                        // 用戶取消了登入或關閉了視窗
+                        setTimeout(() => {
+                            if (!localStorage.getItem('twitch_access_token')) {
+                                alert('Twitch 登入已取消或未完成。');
+                            }
+                        }, 100);
                     }
-                }
-                
-                // 檢查是否取消登入（返回到原頁面）
-                if (iframeUrl === window.location.href || iframeUrl === 'about:blank') {
                     closeLoginPopup();
                 }
             } catch (e) {
@@ -709,42 +747,33 @@
         return a;
     }
 
-    // 媒體載入完成的回調函數 - 改善版
+    // 媒體載入完成的回調函數
     function onMediaLoaded() {
         mediaLoadCount++;
         
-        // 清除之前的計時器
         if (mediaLoadTimer) {
             clearTimeout(mediaLoadTimer);
         }
         
-        // 設置新的計時器，等待更多媒體載入
         mediaLoadTimer = setTimeout(() => {
-            // 等待 DOM 更新完成
             setTimeout(() => {
-                // 當所有媒體載入完成後，檢查是否需要滾動
                 if (isAtBottom && !isAutoScrolling) {
                     const container = $("#chat-container")[0];
-                    // 標記為自動滾動，避免觸發按鈕顯示
                     isAutoScrolling = true;
-                    // 強制滾動到最底部
                     container.scrollTop = container.scrollHeight;
                     
-                    // 雙重保險：延遲後再次滾動
                     setTimeout(() => {
                         if (isAtBottom && !isAutoScrolling) {
                             container.scrollTop = container.scrollHeight;
                         }
-                        // 重置自動滾動標記
                         setTimeout(() => {
                             isAutoScrolling = false;
                         }, 100);
                     }, 100);
                 }
-                // 重置計數器
                 mediaLoadCount = 0;
             }, 50);
-        }, 150); // 等待150ms，讓多個媒體有時間載入
+        }, 150);
     }
 
     // 限制訊息數量函數
@@ -752,19 +781,16 @@
         const $messages = $("#messages");
         const $children = $messages.children();
         if ($children.length > MAX_MESSAGES) {
-            // 移除超出100條的訊息（從最舊的開始移除）
             $children.slice(0, $children.length - MAX_MESSAGES).remove();
         }
     }
 
-    // 獲取用戶的 display name (從快取或實際資料)
+    // 獲取用戶的 display name
     function getUserDisplayName(userId, fallbackName) {
-        // 如果已經有 display name，直接返回
         if (userCache[userId]) {
             return userCache[userId];
         }
         
-        // 否則嘗試從現有訊息中尋找
         const userMessages = Object.keys(msgCache).filter(key => {
             const msg = msgCache[key];
             return msg && msg.user && (msg.user.login === userId || msg.user.displayName === userId || msg.user === userId);
@@ -778,11 +804,10 @@
             }
         }
         
-        // 如果找不到，返回 fallbackName
         return fallbackName || userId;
     }
 
-    // 新增：獲取自己的 badge 資訊
+    // 獲取自己的 badge 資訊
     function getMyBadges() {
         return myBadges || "";
     }
@@ -792,14 +817,12 @@
         const selfTs = Date.now().toString(); 
         let finalCmd = "", replyDisplay = "";
         
-        // 獲取自己的 badge 資訊
         const myBadgeStr = getMyBadges();
         const badgeHtml = renderBadges(myBadgeStr);
         
         if (pendingReply.id) {
             finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
             
-            // 獲取被回覆的訊息
             const repliedMsg = msgCache[pendingReply.id];
             let rawQuote = "...";
             if (repliedMsg) {
@@ -808,7 +831,6 @@
             
             let parsedQuote = parseContent(rawQuote);
             
-            // 使用 displayName 而不是 user id
             const displayNameToShow = pendingReply.displayName || pendingReply.user;
             
             replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
@@ -819,7 +841,6 @@
         
         socket.send(finalCmd); 
         
-        // 快取自己的訊息（包含 display name）
         msgCache[selfTs] = {
             content: val,
             user: { login: myLoginId, displayName: myDisplayName },
@@ -827,36 +848,28 @@
             badges: myBadgeStr
         };
         
-        // 修改這一行，添加 badgeHtml
         $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
         
-        // 限制訊息數量
         limitMessages();
         
         if (isAtBottom) {
             const container = $("#chat-container")[0];
-            // 標記為自動滾動
             isAutoScrolling = true;
-            // 立即滾動一次
             container.scrollTop = container.scrollHeight;
             
-            // 等待 DOM 更新和圖片載入
             setTimeout(() => {
                 if (isAtBottom) {
                     container.scrollTop = container.scrollHeight;
                 }
-                // 重置自動滾動標記
                 setTimeout(() => {
                     isAutoScrolling = false;
                 }, 100);
             }, 50);
             
-            // 再次檢查，確保圖片載入後滾動
             setTimeout(() => {
                 if (isAtBottom) {
                     isAutoScrolling = true;
                     container.scrollTop = container.scrollHeight;
-                    // 重置自動滾動標記
                     setTimeout(() => {
                         isAutoScrolling = false;
                     }, 100);
@@ -881,14 +894,13 @@
                 return; 
             }
             
-            // 新增：處理 USERSTATE 訊息（包含自己的 badge 資訊）
             if (e.data.includes('USERSTATE')) {
                 const badgeTag = getTagValue(e.data, "badges");
                 if (badgeTag) {
                     myBadges = badgeTag;
                     localStorage.setItem('twitch_my_badges', badgeTag);
                 }
-                return; // 不要顯示 USERSTATE 訊息
+                return;
             }
             
             if (!e.data.includes('PRIVMSG')) return;
@@ -902,10 +914,8 @@
             const color = getTagValue(tags, "color") || "#9147ff";
             const badgeStr = getTagValue(tags, "badges");
             
-            // 快取用戶資訊
             userCache[userLogin] = user;
             
-            // 快取訊息（包含用戶資訊）
             if (msgId) {
                 msgCache[msgId] = {
                     content: rawMsg,
@@ -929,10 +939,8 @@
             if (pUser && pId) {
                 let isMe = (pUser === myDisplayName || pUser === myLoginId);
                 
-                // 這裡新增一個變數來處理內容
                 let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
                 
-                // 重點：對引用的文字執行 parseContent，這樣裡面的 [s] 或表情才會變回 HTML
                 let pBody = parseContent(originalText); 
                 
                 const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
@@ -949,22 +957,19 @@
                     const repliedMsgId = myR[2];
                     const userIdFromTag = myR[1];
                     
-                    // 從快取中獲取被回覆的訊息
                     let repliedMsg = msgCache[repliedMsgId];
                     let rawBody = "...";
-                    let displayNameToShow = userIdFromTag; // 預設使用標籤中的 ID
+                    let displayNameToShow = userIdFromTag;
                     
                     if (repliedMsg) {
                         if (typeof repliedMsg === 'object') {
                             rawBody = repliedMsg.content || "...";
-                            // 優先使用訊息的 displayName
                             displayNameToShow = repliedMsg.displayName || userIdFromTag;
                         } else {
                             rawBody = repliedMsg;
                         }
                     }
                     
-                    // 如果快取中有用戶資訊，使用 display name
                     if (userCache[userIdFromTag]) {
                         displayNameToShow = userCache[userIdFromTag];
                     }
@@ -986,22 +991,17 @@
             </div>`;
             $("#messages").append(line);
             
-            // 限制訊息數量
             limitMessages();
             
-            // 立即滾動一次
             if (isAtBottom) {
                 const container = $("#chat-container")[0];
-                // 標記為自動滾動
                 isAutoScrolling = true;
                 container.scrollTop = container.scrollHeight;
                 
-                // 雙重保險：延遲後再次滾動，確保圖片載入後也滾動
                 setTimeout(() => {
                     if (isAtBottom) {
                         container.scrollTop = container.scrollHeight;
                     }
-                    // 重置自動滾動標記
                     setTimeout(() => {
                         isAutoScrolling = false;
                     }, 100);
@@ -1042,7 +1042,7 @@
             const msgTop = $msg.offset().top - $(container).offset().top;
             
             container.scrollTo({
-                top: msgTop + container.scrollTop - 50, // 減去50px讓訊息稍微靠上
+                top: msgTop + container.scrollTop - 50,
                 behavior: 'smooth'
             });
         }
@@ -1050,7 +1050,6 @@
     
     function scrollToBottom() {
         const container = document.getElementById('chat-container');
-        // 標記為手動滾動到底部
         isAutoScrolling = false;
         container.scrollTo({
             top: container.scrollHeight,
@@ -1077,7 +1076,6 @@
     
     const container = document.getElementById('chat-container');
     container.addEventListener('scroll', () => {
-        // 如果是自動滾動，不處理按鈕顯示/隱藏
         if (isAutoScrolling) {
             return;
         }
@@ -1085,11 +1083,9 @@
         const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
         
         if (distanceFromBottom > 100) {
-            // 用戶手動向上滾動了
             isAtBottom = false;
             $("#scroll-to-bottom-btn").fadeIn();
         } else {
-            // 用戶回到最底部了
             isAtBottom = true;
             $("#scroll-to-bottom-btn").fadeOut();
         }
