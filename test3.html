@@ -298,7 +298,7 @@
 
 <div id="chat-container">
     <div id="messages"></div>
-    <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
+   
 </div>
 
 <!-- @提及選單 -->
@@ -321,6 +321,7 @@
     
     <div class="input-section">
         <div class="tool-bar">
+		 <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
             <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
             <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
             <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
@@ -344,7 +345,7 @@
 <script>
     // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const CHANNEL = "whitewing940920";
+    const CHANNEL = "69nocondom";
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
 
@@ -585,7 +586,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'flex';
+        document.getElementById('userInfo').style.display = 'none';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
