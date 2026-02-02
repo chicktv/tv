@@ -139,18 +139,15 @@
         }
     }
 
-    #input-container {
-        display: flex;
-        align-items: center;
-        gap: 0.5em; /* 改用em單位 */
-        flex-wrap: nowrap; /* 禁止換行 */
-        overflow: hidden;
-        white-space: nowrap;
-        margin-top: 0.625em; /* 改用em單位 */
-        flex-shrink: 0; /* 禁止縮小 */
-        margin-left: auto; /* 推到右邊 */
-        padding-left: 0.625em; /* 改用em單位 */
-    }
+    input, select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: lime;
+            padding: 8px 12px;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
 
     #channel-selection {
         display: none;
