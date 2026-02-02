@@ -123,9 +123,32 @@
         #sendbtn:hover { background: #a970ff; }
         #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
         
-        /* 表情面板 */
-        #emojiPanel { position: fixed; display: none; width: 450px; height: 500px; background: #1f182e; border: 2px solid #443a5a; border-radius: 12px; z-index: 5000; left: 50%; top: 50%; transform: translate(-50%, -50%); flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x: auto;border-bottom: 1px solid #26262c;}
+        /* 表情面板 - 改為可拖曳 */
+        #emojiPanel { 
+            position: fixed; 
+            display: none; 
+            width: 80%; 
+            height: 50%; 
+            background: #1f182e; 
+            border: 2px solid #443a5a; 
+            border-radius: 12px; 
+            z-index: 9999; /* 提高z-index確保在最上層 */
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%); 
+            flex-direction: column; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            cursor: default; /* 預設游標 */
+            user-select: none; /* 防止文字選取 */
+        }
+        
+        /* 拖曳柄 */
+        .emoji-panel-header {
+            cursor: move !important;
+            user-select: none;
+        }
+        
+        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
         #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
         .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
         .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
@@ -271,14 +294,14 @@
 
 <div id="chat-container">
     <div id="messages"></div>
-  
+    
 </div>
 
 <!-- @提及選單 -->
 <div id="mention-list"></div>
 
 <div id="emojiPanel">
-    <div style="padding:12px; display:flex; justify-content:space-between; background:#26262c; border-radius: 12px 12px 0 0; align-items:center;">
+    <div style="padding:12px; display:flex; justify-content:space-between; background:#26262c; border-radius: 12px 12px 0 0; align-items:center;" class="emoji-panel-header">
         <b style="font-size:14px;">資源庫 (表情/音訊)</b>
         <button onclick="$('#emojiPanel').hide()" style="background:none; border:none; color:white; cursor:pointer; font-size:18px;">✕</button>
     </div>
@@ -294,11 +317,10 @@
     
     <div class="input-section">
         <div class="tool-bar">
-            <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
+		<button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
             <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
             <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
             <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
-              
         </div>
         
         <div class="input-box-wrapper">
@@ -355,6 +377,12 @@
     let mentionListVisible = false;
     let mentionSelectedIndex = 0;
     let mentionSearchTerm = "";
+    
+    // ===================== 表情面板拖曳相關變數 =====================
+    let isDraggingEmojiPanel = false;
+    let emojiPanelDragOffsetX = 0;
+    let emojiPanelDragOffsetY = 0;
+    let emojiPanelSavedPosition = null;
     
     // ===================== 輔助函數 =====================
     function getParameterByName(name, url) {
@@ -561,9 +589,130 @@
         await loadResources();
         setupAutoTag();
         setupMentionEvents();
+        setupEmojiPanelDrag(); // 設置表情面板拖曳
         
         if (!ACCESS_TOKEN) {
             startChat();
+        }
+    }
+
+    // ===================== 表情面板拖曳功能 =====================
+    function setupEmojiPanelDrag() {
+        const emojiPanel = document.getElementById('emojiPanel');
+        const header = emojiPanel.querySelector('.emoji-panel-header');
+        
+        // 載入保存的位置
+        const savedPos = localStorage.getItem('emojiPanelPosition');
+        if (savedPos) {
+            try {
+                const { left, top } = JSON.parse(savedPos);
+                emojiPanel.style.left = `${left}px`;
+                emojiPanel.style.top = `${top}px`;
+                emojiPanel.style.transform = 'none'; // 移除居中變換
+                emojiPanelSavedPosition = { left, top };
+            } catch (e) {
+                console.error('載入表情面板位置失敗:', e);
+            }
+        }
+        
+        // 鼠標按下開始拖曳
+        header.addEventListener('mousedown', startDrag);
+        
+        // 鼠標移動處理拖曳
+        document.addEventListener('mousemove', handleDrag);
+        
+        // 鼠標放開結束拖曳
+        document.addEventListener('mouseup', stopDrag);
+        
+        // 觸控支援
+        header.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDrag({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                preventDefault: () => {}
+            });
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (!isDraggingEmojiPanel) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleDrag({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                preventDefault: () => {}
+            });
+        });
+        
+        document.addEventListener('touchend', stopDrag);
+    }
+    
+    function startDrag(e) {
+        e.preventDefault();
+        const emojiPanel = document.getElementById('emojiPanel');
+        
+        // 計算面板當前的實際位置
+        const rect = emojiPanel.getBoundingClientRect();
+        
+        // 計算鼠標在面板內的偏移
+        emojiPanelDragOffsetX = e.clientX - rect.left;
+        emojiPanelDragOffsetY = e.clientY - rect.top;
+        
+        // 移除居中變換，改用絕對定位
+        emojiPanel.style.transform = 'none';
+        
+        // 設置面板為絕對定位，使用當前位置
+        emojiPanel.style.left = `${rect.left}px`;
+        emojiPanel.style.top = `${rect.top}px`;
+        
+        isDraggingEmojiPanel = true;
+        
+        // 添加拖曳中樣式
+        emojiPanel.style.opacity = '0.9';
+        emojiPanel.style.cursor = 'grabbing';
+    }
+    
+    function handleDrag(e) {
+        if (!isDraggingEmojiPanel) return;
+        e.preventDefault();
+        
+        const emojiPanel = document.getElementById('emojiPanel');
+        
+        // 計算新位置
+        const newLeft = e.clientX - emojiPanelDragOffsetX;
+        const newTop = e.clientY - emojiPanelDragOffsetY;
+        
+        // 限制在視窗範圍內
+        const maxX = window.innerWidth - emojiPanel.offsetWidth;
+        const maxY = window.innerHeight - emojiPanel.offsetHeight;
+        
+        const boundedLeft = Math.max(0, Math.min(newLeft, maxX));
+        const boundedTop = Math.max(0, Math.min(newTop, maxY));
+        
+        // 更新位置
+        emojiPanel.style.left = `${boundedLeft}px`;
+        emojiPanel.style.top = `${boundedTop}px`;
+    }
+    
+    function stopDrag() {
+        if (!isDraggingEmojiPanel) return;
+        
+        isDraggingEmojiPanel = false;
+        const emojiPanel = document.getElementById('emojiPanel');
+        
+        // 恢復樣式
+        emojiPanel.style.opacity = '1';
+        emojiPanel.style.cursor = 'default';
+        
+        // 保存位置到localStorage
+        const left = parseInt(emojiPanel.style.left);
+        const top = parseInt(emojiPanel.style.top);
+        
+        if (!isNaN(left) && !isNaN(top)) {
+            emojiPanelSavedPosition = { left, top };
+            localStorage.setItem('emojiPanelPosition', JSON.stringify({ left, top }));
         }
     }
 
