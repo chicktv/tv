@@ -68,7 +68,7 @@
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
         
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
-        .alt-emoji { max-width: 140px !important; max-height: 140px !important; vertical-align: top; margin: 2px; }
+        .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
         .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
         .reply-btn:hover {background-color: #3c3a39;}
@@ -86,12 +86,37 @@
         .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
         .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
         .tool-link:hover { color: #fff; }
-        .tool-link svg { margin-left: 4px; }
+        .tool-link svg { margin-left: 1px; }
         .tool-link svg:hover { fill: #9147ff; }
         .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-        .input-box-wrapper { position: relative; width: 100%; border: 1px solid #f7e7e7; border-radius: 6px; background: #000; overflow: hidden; }
-        #msginput { width: 100%; background: transparent; color: #efeff1; font-size: 14px; border: none; outline: none; padding: 12px 15px; box-sizing: border-box; font-family: inherit; overflow-wrap: break-word; max-height: calc(5lh + 20px); overflow: hidden auto;white-space: pre-wrap;}
-        #msginput:disabled { cursor: not-allowed; }
+        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
+        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
+        #msginput { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            color: #efeff1; 
+            font-size: 14px; 
+            outline: none; 
+            padding: 10px 0; 
+            font-family: inherit; 
+            box-sizing: border-box; 
+            font-family: inherit; 
+            overflow-wrap: break-word; 
+            max-height: calc(5lh + 20px); 
+            overflow: hidden auto;
+            white-space: pre-wrap;
+            min-height: 20px;
+        }
+        #msginput:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:focus:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
 
         .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
         #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
@@ -107,6 +132,7 @@
         .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
         .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
         .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
+        
 
         /* ========== 新添加：捲動到底部按鈕 ========== */
         #scrollToBottomBtn {
@@ -245,7 +271,6 @@
 
 <div id="chat-container">
     <div id="messages"></div>
-    <!-- 修改這裡：使用test3.html的滾動按鈕 -->
     <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
 </div>
 
@@ -272,15 +297,15 @@
             <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
             <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
             <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
-            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="#FFFF00">
-                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                </svg>
-            </button>
         </div>
         
         <div class="input-box-wrapper">
-            <textarea id="msginput" placeholder="傳送訊息..." autocomplete="off" disabled></textarea>
+            <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
+            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
+                <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
+                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                </svg>
+            </button>
         </div>
 
         <div class="action-bar">
@@ -360,15 +385,12 @@
     // ===================== 從test3.html移植的捲動控制功能 =====================
     function checkScrollPosition() {
         const chat = document.getElementById('chat-container');
-        // 檢查用戶是否在底部（距離底部小於50px視為在底部）
         const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
         
         if (isAtBottom) {
-            // 用戶在底部，啟用自動滾動
             autoScroll = true;
             hideScrollButton();
         } else {
-            // 用戶不在底部，暫停自動滾動
             autoScroll = false;
             showScrollButton();
         }
@@ -388,31 +410,25 @@
         autoScroll = true;
         hideScrollButton();
         
-        // 確保滾動到最底部
         setTimeout(() => {
             chat.scrollTop = chat.scrollHeight;
         }, 50);
     }
 
-    // 監聽捲動事件
     function setupScrollListener() {
         const chat = document.getElementById('chat-container');
         chat.addEventListener('scroll', () => {
-            // 清除之前的計時器
             if (scrollTimeout) {
                 clearTimeout(scrollTimeout);
             }
             
-            // 設置新的計時器，在停止滾動後檢查位置
             scrollTimeout = setTimeout(() => {
                 checkScrollPosition();
             }, 150);
         });
     }
 
-    // 強制滾動解決方案
     function forceScrollToBottom() {
-        // 只有在啟用自動滾動時才滾動
         if (autoScroll) {
             const chat = document.getElementById('chat-container');
             chat.scrollTop = chat.scrollHeight;
@@ -496,14 +512,12 @@
     function loginSuccess() {
         document.getElementById('status').textContent = `已登入成功：${myDisplayName}，可以發言囉！`;
         document.getElementById('msginput').disabled = false;
-        document.getElementById('msginput').placeholder = "傳送訊息";
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
-        // 重新連線聊天
         if (socket) {
             socket.close();
         }
@@ -517,7 +531,6 @@
 
     // ===================== 初始化應用 =====================
     async function initApp() {
-        // 檢查是否從授權回調返回
         if (location.hash.includes('access_token=')) {
             const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
             if (token) {
@@ -533,29 +546,20 @@
                 }
             }
         } else {
-            // 正常啟動檢查登入
             checkLogin();
         }
         
-        // 綁定事件
         document.getElementById('loginBtn').onclick = loginWithPopup;
         document.getElementById('logoutBtn').onclick = logout;
         
-        // 綁定滾動按鈕
         scrollToBottomBtn.addEventListener('click', scrollToBottom);
-        
-        // 初始化捲動監聽
         setupScrollListener();
         
-        // 載入資源
         await fetchBadges();
         await loadResources();
         setupAutoTag();
-        
-        // 綁定@提及相關事件
         setupMentionEvents();
         
-        // 如果沒有token，先開始匿名聊天
         if (!ACCESS_TOKEN) {
             startChat();
         }
@@ -565,17 +569,14 @@
     function setupMentionEvents() {
         const msgInput = document.getElementById('msginput');
         
-        // 監聽輸入事件，檢測@輸入
         msgInput.addEventListener('input', function(e) {
             handleMentionInput(e);
         });
         
-        // 監聽鍵盤事件，處理上下箭頭和Enter選擇
         msgInput.addEventListener('keydown', function(e) {
             handleMentionKeydown(e);
         });
         
-        // 點擊其他地方時隱藏提及列表
         document.addEventListener('click', function(e) {
             if (!e.target.closest('#mention-list') && !e.target.closest('#msginput')) {
                 hideMentionList();
@@ -585,25 +586,20 @@
     
     function handleMentionInput(e) {
         const input = e.target;
-        const cursorPos = input.selectionStart;
-        const textBeforeCursor = input.value.substring(0, cursorPos);
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const textBeforeCursor = input.textContent.substring(0, range.startOffset);
         
-        // 尋找最後一個@符號
         const lastAtPos = textBeforeCursor.lastIndexOf('@');
         
         if (lastAtPos === -1 || textBeforeCursor.substring(lastAtPos).includes(' ')) {
-            // 沒有@符號或者@後面有空格，隱藏提及列表
             hideMentionList();
             return;
         }
         
-        // 取得@後面的搜索詞
-        mentionSearchTerm = textBeforeCursor.substring(lastAtPos + 1, cursorPos).toLowerCase();
-        
-        // 更新最近用戶列表（從msgCache中獲取）
+        mentionSearchTerm = textBeforeCursor.substring(lastAtPos + 1, range.startOffset).toLowerCase();
         updateRecentUsersList();
         
-        // 過濾用戶
         const filteredUsers = recentUsers.filter(user => {
             return user.displayName.toLowerCase().includes(mentionSearchTerm) || 
                    user.login.toLowerCase().includes(mentionSearchTerm);
@@ -653,7 +649,6 @@
         recentUsers = [];
         const seenLogins = new Set();
         
-        // 從msgCache中提取最近的用戶（最多50個）
         Object.values(msgCache)
             .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
             .forEach(msg => {
@@ -668,7 +663,6 @@
                 }
             });
         
-        // 限制最多顯示50個用戶
         recentUsers = recentUsers.slice(0, 50);
     }
     
@@ -681,19 +675,16 @@
             return;
         }
         
-        // 添加標題
         const header = document.createElement('div');
         header.className = 'mention-header';
         header.textContent = `選擇用戶 (${users.length})`;
         mentionList.appendChild(header);
         
-        // 添加用戶項目
         users.forEach((user, index) => {
             const item = document.createElement('div');
             item.className = 'mention-item';
             if (index === 0) item.classList.add('selected');
             
-            // 徽章
             let badgeHtml = '';
             if (user.badges) {
                 badgeHtml = renderBadges(user.badges);
@@ -713,12 +704,10 @@
             mentionList.appendChild(item);
         });
         
-        // 顯示提及列表
         mentionList.style.display = 'block';
         mentionListVisible = true;
         mentionSelectedIndex = 0;
         
-        // 定位提及列表
         positionMentionList(atPosition);
     }
     
@@ -727,22 +716,17 @@
         const input = document.getElementById('msginput');
         const footer = document.querySelector('.footer');
         
-        // 計算@符號的位置
-        const textBeforeAt = input.value.substring(0, atPosition);
         const tempSpan = document.createElement('span');
         tempSpan.style.font = window.getComputedStyle(input).font;
         tempSpan.style.visibility = 'hidden';
         tempSpan.style.position = 'absolute';
         tempSpan.style.whiteSpace = 'pre-wrap';
-        tempSpan.textContent = textBeforeAt;
+        tempSpan.textContent = input.textContent.substring(0, atPosition);
         document.body.appendChild(tempSpan);
         
         const atX = tempSpan.offsetWidth;
-        const atY = -5; // 稍微向上偏移
-        
         document.body.removeChild(tempSpan);
         
-        // 設定位置
         mentionList.style.left = atX + 'px';
         mentionList.style.bottom = (footer.offsetHeight + 10) + 'px';
     }
@@ -752,7 +736,6 @@
         mentionItems.forEach((item, index) => {
             if (index === mentionSelectedIndex) {
                 item.classList.add('selected');
-                // 滾動到可見區域
                 item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             } else {
                 item.classList.remove('selected');
@@ -762,26 +745,19 @@
     
     function selectMentionUser(item) {
         const input = document.getElementById('msginput');
-        const cursorPos = input.selectionStart;
-        const textBeforeCursor = input.value.substring(0, cursorPos);
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const textBeforeCursor = input.textContent.substring(0, range.startOffset);
         const lastAtPos = textBeforeCursor.lastIndexOf('@');
         
         if (lastAtPos !== -1) {
             const login = item.dataset.login;
             const displayName = item.dataset.displayName;
             
-            // 替換@後面的文本為用戶名
-            const newText = input.value.substring(0, lastAtPos) + '@' + displayName + ' ' + input.value.substring(cursorPos);
-            input.value = newText;
+            const textToInsert = '@' + displayName + ' ';
+            insertTextAtCursor(textToInsert);
             
-            // 移動游標到用戶名後面
-            const newCursorPos = lastAtPos + displayName.length + 2; // +1 for @, +1 for space
-            input.selectionStart = input.selectionEnd = newCursorPos;
-            
-            // 隱藏提及列表
             hideMentionList();
-            
-            // 聚焦回輸入框
             input.focus();
         }
     }
@@ -807,24 +783,20 @@
 
     async function loadResources() {
         try {
-            // 載入常用表情
             const skData = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
             if (Array.isArray(skData)) {
                 emojiLists["常用"] = { emojis: skData, image: skData[0].src };
                 skData.forEach(i => { if(i.alt) altMap[i.alt.toLowerCase()] = i.src; });
             }
             
-            // 載入BTTV自訂表情
             const savedBTTV = JSON.parse(localStorage.getItem('myBTTV') || '[]');
             emojiLists["BTTV"] = {
                 emojis: savedBTTV.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url, dis: url })),
                 image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3"
             };
 
-            // 載入音訊
             await loadAudioData();
 
-            // 載入其他表情集
             const res = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
             for (const item of res.set) {
                 let n = (typeof item === 'object') ? item.name : item;
@@ -910,7 +882,7 @@
                 const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
                 item.on('click', () => { 
                     if(!isDeleteMode) { 
-                        insertAtCursor(` [s] ${e.src} [e] `); 
+                        insertTextAtCursor(` [s] ${e.src} [e] `); 
                         $("#emojiPanel").hide(); 
                     } 
                 });
@@ -930,7 +902,7 @@
                 const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">🔊<br>${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${index})">✕</div></div>`);
                 item.on('click', () => { 
                     if(!isAudioDeleteMode) { 
-                        insertAtCursor(` [a] ${a.url} [o] `); 
+                        insertTextAtCursor(` [a] ${a.url} [o] `); 
                         $("#emojiPanel").hide(); 
                     } 
                 });
@@ -941,12 +913,42 @@
                 $('<div class="emoji-item"></div>')
                     .append($('<img style="max-width:40px;">').attr('src', e.src))
                     .on('click', () => { 
-                        insertAtCursor(` ${e.alt} `); 
+                        insertTextAtCursor(` ${e.alt} `); 
                         $('#emojiPanel').hide(); 
                     })
                     .appendTo(content);
             });
         }
+    }
+
+    // ===================== 文字插入函數 (contenteditable div 專用) =====================
+    function insertTextAtCursor(text) {
+        const el = document.getElementById('msginput');
+        if (!el) return;
+        
+        el.focus();
+        
+        if (document.queryCommandSupported('insertText')) {
+            document.execCommand('insertText', false, text);
+        } else {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                const textNode = document.createTextNode(text);
+                range.insertNode(textNode);
+                range.setStartAfter(textNode);
+                range.setEndAfter(textNode);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } else {
+                el.textContent += text;
+            }
+        }
+    }
+
+    function insertTagOnly(s) { 
+        insertTextAtCursor(s);
     }
 
     window.addBTTV = () => {
@@ -1124,20 +1126,15 @@
     function onMediaLoaded() {
         mediaLoadCount++;
         
-        // 清除之前的計時器
         if (mediaLoadTimer) {
             clearTimeout(mediaLoadTimer);
         }
         
-        // 設置新的計時器，等待更多媒體載入
         mediaLoadTimer = setTimeout(() => {
-            // 等待 DOM 更新完成
             setTimeout(() => {
-                // 當所有媒體載入完成後，檢查是否需要滾動
                 if (autoScroll) {
                     forceScrollToBottom();
                 }
-                // 重置計數器
                 mediaLoadCount = 0;
             }, 50);
         }, 150);
@@ -1148,7 +1145,6 @@
         const $messages = $("#messages");
         const $children = $messages.children();
         if ($children.length > MAX_MESSAGES) {
-            // 移除超出100條的訊息（從最舊的開始移除）
             $children.slice(0, $children.length - MAX_MESSAGES).remove();
         }
     }
@@ -1194,19 +1190,20 @@
 
     // ===================== 聊天功能 =====================
     function sendMessage() {
-        const val = $("#msginput").val(); 
+        const msgInput = document.getElementById('msginput');
+        const val = msgInput.textContent.trim();
+        
         if (!val || !socket || socket.readyState !== 1) return;
+        
         const selfTs = Date.now().toString(); 
         let finalCmd = "", replyDisplay = "";
         
-        // 獲取自己的 badge 資訊
         const myBadgeStr = getMyBadges();
         const badgeHtml = renderBadges(myBadgeStr);
         
         if (pendingReply.id) {
             finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
             
-            // 獲取被回覆的訊息
             const repliedMsg = msgCache[pendingReply.id];
             let rawQuote = "...";
             if (repliedMsg) {
@@ -1214,8 +1211,6 @@
             }
             
             let parsedQuote = parseContent(rawQuote);
-            
-            // 使用 displayName 而不是 user id
             const displayNameToShow = pendingReply.displayName || pendingReply.user;
             
             replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
@@ -1226,7 +1221,6 @@
         
         socket.send(finalCmd); 
         
-        // 快取自己的訊息
         msgCache[selfTs] = {
             content: val,
             user: { login: myLoginId, displayName: myDisplayName },
@@ -1236,19 +1230,16 @@
             timestamp: Date.now()
         };
         
-        // 修改這一行，添加 badgeHtml
         $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
         
-        // 限制訊息數量
         limitMessages();
         
-        // 使用新的滾動邏輯
         if (autoScroll) {
             forceScrollToBottom();
         }
         
         cancelReply(); 
-        $("#msginput").val("");
+        msgInput.textContent = "";
     }
 
     function startChat() {
@@ -1268,7 +1259,6 @@
                 return; 
             }
             
-            // 處理 USERSTATE 訊息（包含自己的 badge 資訊）
             if (e.data.includes('USERSTATE')) {
                 const badgeTag = getTagValue(e.data, "badges");
                 if (badgeTag) {
@@ -1289,10 +1279,8 @@
             const color = getTagValue(tags, "color") || "#9147ff";
             const badgeStr = getTagValue(tags, "badges");
             
-            // 快取用戶資訊
             userCache[userLogin] = user;
             
-            // 快取訊息
             if (msgId) {
                 msgCache[msgId] = {
                     content: rawMsg,
@@ -1337,7 +1325,6 @@
                     const repliedMsgId = myR[2];
                     const userIdFromTag = myR[1];
                     
-                    // 從快取中獲取被回覆的訊息
                     let repliedMsg = msgCache[repliedMsgId];
                     let rawBody = "...";
                     let displayNameToShow = userIdFromTag;
@@ -1351,7 +1338,6 @@
                         }
                     }
                     
-                    // 如果快取中有用戶資訊，使用 display name
                     if (userCache[userIdFromTag]) {
                         displayNameToShow = userCache[userIdFromTag];
                     }
@@ -1373,10 +1359,8 @@
             </div>`;
             $("#messages").append(line);
             
-            // 限制訊息數量
             limitMessages();
             
-            // 使用新的滾動邏輯
             if (autoScroll) {
                 forceScrollToBottom();
             }
@@ -1392,23 +1376,25 @@
         document.getElementById('msginput').addEventListener('paste', (e) => {
             const data = (e.clipboardData || window.clipboardData).getData('text');
             if (!data.match(/^https?:\/\//i)) return;
+            
             const input = e.target;
-            if (input.value.endsWith('[s] ')) { 
+            const currentText = input.textContent;
+            
+            if (currentText.endsWith('[s] ')) { 
                 e.preventDefault(); 
-                insertAtCursor(data + ' [e]'); 
+                insertTextAtCursor(data + ' [e]'); 
             }
-            else if (input.value.endsWith('[y] ')) { 
+            else if (currentText.endsWith('[y] ')) { 
                 e.preventDefault(); 
-                insertAtCursor(data + ' [t]'); 
+                insertTextAtCursor(data + ' [t]'); 
             }
-            else if (input.value.endsWith('[a] ')) { 
+            else if (currentText.endsWith('[a] ')) { 
                 e.preventDefault(); 
-                insertAtCursor(data + ' [o]'); 
+                insertTextAtCursor(data + ' [o]'); 
             }
         });
     }
     
-    // 滾動到指定訊息
     function scrollToMsg(msgId) {
         const $msg = $(`.id-${msgId}`);
         if ($msg.length) {
@@ -1422,18 +1408,6 @@
         }
     }
     
-    function insertTagOnly(s) { 
-        const i = $("#msginput")[0], st = i.selectionStart; 
-        i.value = i.value.substring(0, st) + s + i.value.substring(i.selectionEnd); 
-        i.focus(); 
-    }
-    
-    function insertAtCursor(v) { 
-        const i = $("#msginput")[0], st = i.selectionStart; 
-        i.value = i.value.substring(0, st) + v + i.value.substring(i.selectionEnd); 
-        i.focus(); 
-    }
-    
     function replyNative(userLogin, msgId, displayName) { 
         pendingReply = { 
             id: msgId, 
@@ -1442,7 +1416,7 @@
         }; 
         $("#replying-to-user").text(displayName || userLogin); 
         $("#reply-indicator").show(); 
-        $("#msginput").focus(); 
+        document.getElementById('msginput').focus(); 
     }
     
     function cancelReply() { 
@@ -1451,8 +1425,11 @@
     }
     
     // 綁定Enter鍵發送訊息
-    $(document).on('keypress', '#msginput', e => { 
-        if (e.which == 13) sendMessage(); 
+    document.getElementById('msginput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
     });
 </script>
 </body>
