@@ -2,294 +2,298 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat9</title>
+    <title>Chickchat</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-    /* --- Webkit Scrollbar 樣式 --- */
-    #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
-    #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-    #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-    #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
+/* --- Webkit Scrollbar 樣式 --- */
+#chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
+#chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+#chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+#chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
-    /* 統一控制媒體嵌入大小 */
-    #chat-container .media-preview,
-    #chat-container iframe.media-preview,
-    #chat-container iframe[src*="youtube.com"],
-    #chat-container iframe[src*="youtube-nocookie.com"],
-    #chat-container iframe[src*="youtu.be"],
-    #chat-container iframe[src*="facebook.com"],
-    #chat-container blockquote.twitter-tweet,
-    #chat-container .twitter-tweet-container,
-    #chat-container iframe[src*="store.steampowered.com"],
-    #chat-container iframe[src*="threads.com"] {
-        width: auto !important;
-        height: auto !important;
-        max-width: 250px !important;
-        max-height: 250px !important;
-        border-radius: 8px !important;
-        border: 0px solid #444 !important;
-        margin: 5px 0 !important;
-        object-fit: fill !important;
-    }
+/* 統一控制媒體嵌入大小 */
+#chat-container .media-preview,
+#chat-container iframe.media-preview,
+#chat-container iframe[src*="youtube.com"],
+#chat-container iframe[src*="youtube-nocookie.com"],
+#chat-container iframe[src*="youtu.be"],
+#chat-container iframe[src*="facebook.com"],
+#chat-container blockquote.twitter-tweet,
+#chat-container .twitter-tweet-container,
+#chat-container iframe[src*="store.steampowered.com"],
+#chat-container iframe[src*="threads.com"] {
+    width: auto !important;
+    height: auto !important;
+    max-width: 250px !important;
+    max-height: 250px !important;
+    border-radius: 8px !important;
+    border: 0px solid #444 !important;
+    margin: 5px 0 !important;
+    object-fit: fill !important;
+}
 
-    /* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
-    #chat-container iframe[src*="youtube.com"],
-    #chat-container iframe[src*="youtube-nocookie.com"],
-    #chat-container blockquote.twitter-tweet,
-    #chat-container iframe[src*="threads.com"],
-    #chat-container iframe[src*="store.steampowered.com"] {
-        min-height: 400px !important;
-    }
+/* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
+#chat-container iframe[src*="youtube.com"],
+#chat-container iframe[src*="youtube-nocookie.com"],
+#chat-container blockquote.twitter-tweet,
+#chat-container iframe[src*="threads.com"],
+#chat-container iframe[src*="store.steampowered.com"] {
+    min-height: 400px !important;
+}
 
-    #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
+#chat-container iframe[src*="threads.com"] { background: #FFF !important; }
 
-    /* 圖片與影片保持原有比例 */
-    #chat-container img.media-preview {
-        height: auto !important;
-        max-height: 250px !important;
-        min-height: auto !important;
-        object-fit: fill !important;
-    }
-    #chat-container video.media-preview {
-        height: auto !important;
-        max-height: 250px !important;
-        min-height: auto !important;
-    }
+/* 圖片與影片保持原有比例 */
+#chat-container img.media-preview {
+    height: auto !important;
+    max-height: 250px !important;
+    min-height: auto !important;
+    object-fit: fill !important;
+}
+#chat-container video.media-preview {
+    height: auto !important;
+    max-height: 250px !important;
+    min-height: auto !important;
+}
 
-    .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-    #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
-    .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
-    .chat-line:hover { background: rgba(255,255,255,0.08); }
-    .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
-    .self-name { color: var(--t-purp); font-weight: bold; }
-    .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
-    
-    .audio-player { margin-top: 10px; display: block; max-width: 300px; }
-    .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
-    .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
-    .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
-    .reply-btn:hover {background-color: #3c3a39;}
-    .chat-line:hover .reply-btn { display: flex; }
-    .quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-    .quote-box:hover { background: rgba(255,255,255,0.15); }
-    .quote-user { color: #adadb8; margin-right: 5px; }
-    .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
-    
-    /* --- 根據圖片優化輸入區佈局 --- */
-    .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
-    
-    #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
-    
-    .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
-    .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
-    .tool-link:hover { color: #fff; }
-    .tool-link svg { margin-left: 1px; }
-    .tool-link svg:hover { fill: #9147ff; }
-    .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-    .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
-    .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
-    #msginput { 
-        flex: 1; 
-        background: transparent; 
-        border: none; 
-        color: #efeff1; 
-        font-size: 14px; 
-        outline: none; 
-        padding: 10px 0; 
-        font-family: inherit; 
-        box-sizing: border-box; 
-        font-family: inherit; 
-        overflow-wrap: break-word; 
-        max-height: calc(5lh + 20px); 
-        overflow: hidden auto;
-        white-space: pre-wrap;
-        min-height: 20px;
-    }
-    #msginput:empty:before {
-        content: attr(placeholder);
-        color: #777;
-    }
-    #msginput:focus:empty:before {
-        content: attr(placeholder);
-        color: #777;
-    }
-    #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
+.header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
+#chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
+.chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
+.chat-line:hover { background: rgba(255,255,255,0.08); }
+.chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
+.self-name { color: var(--t-purp); font-weight: bold; }
+.media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
 
-    .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
-    #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
-    #sendbtn:hover { background: #a970ff; }
-    #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
-    
-    /* 表情面板 */
-    #emojiPanel { 
-        position: fixed; 
-        display: none; 
-        width: 350px; 
-        height: 400px; 
-        background: #1f182e; 
-        border: 2px solid #443a5a; 
-        border-radius: 12px; 
-        z-index: 5000; 
-        left: 50%; 
-        top: 50%; 
-        transform: translate(-50%, -50%); 
-        flex-direction: column; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        cursor: default;
-    }
-    #emojiPanel.dragging { cursor: grabbing; }
-    .emoji-header { 
-        padding: 12px; 
-        display: flex; 
-        justify-content: space-between; 
-        background: #26262c; 
-        border-radius: 12px 12px 0 0; 
-        align-items: center;
-        cursor: grab;
-        user-select: none;
-    }
-    .emoji-header:active { cursor: grabbing; }
-    #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
-    #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
-    .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
-    .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-    .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-    .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
-    .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
-    
+.audio-player { margin-top: 10px; display: block; max-width: 300px; }
+.alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
+.badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
+.reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
+.reply-btn:hover {background-color: #3c3a39;}
+.chat-line:hover .reply-btn { display: flex; }
+.quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+.quote-box:hover { background: rgba(255,255,255,0.15); }
+.quote-user { color: #adadb8; margin-right: 5px; }
+.mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
+.quote-box[data-type="native"] {
+    border-left: 4px solid #9147ff;
+    background: rgba(145,71,255,0.12);
+}
+.quote-box[data-type="custom"] {
+    border-left: 4px solid #ff6b6b;
+    background: rgba(255,107,107,0.08);
+}
 
-    /* ========== 新添加：捲動到底部按鈕 ========== */
-    #scrollToBottomBtn {
-        position: absolute;
-        bottom: 80px;
-        right: 20px;
-        width: 40px;
-        height: 40px;
-        background: rgba(145, 71, 255, 0.8);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 100;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        transition: all 0.3s ease;
-        font-size: 20px;
-    }
-    
-    #scrollToBottomBtn:hover {
-        background: rgba(145, 71, 255, 1);
-        transform: scale(1.1);
-    }
-    
-    #scrollToBottomBtn:active {
-        transform: scale(0.95);
-    }
-    
-    #scrollToBottomBtn svg {
-        width: 24px;
-        height: 24px;
-    }
+/* --- 根據圖片優化輸入區佈局 --- */
+.footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
 
-    .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-    .show-del .delete-btn { display: block; }
-    .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
-    .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
-    .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
-    
-    @keyframes pulse-audio {
-        0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
-        100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
-    }
-    
-    #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
-    #userInfo img { width: 30px; height: 30px; border-radius: 50%; }
-    #logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
-    #logoutBtn:hover { background: #c51614; }
-    #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
-    #loginBtn:hover { background: #772ce8; }
-    #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
-    
-    /* 訊息統計 */
-    #message-stats {
-        margin: 8px 12px;
-        font-weight: 500;
-        color: #00ff00;
-        font-size: 10px;
-    }
-    
-    /* @提及選單樣式 - 類似Twitch */
-    #mention-list {
-        position: absolute;
-        bottom: 100%;
-        left: 0;
-        width: 300px;
-        max-height: 350px;
-        background: var(--t-alt);
-        border: 1px solid #333;
-        border-radius: 6px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        z-index: 9999;
-        display: none;
-        overflow-y: auto;
-        padding: 4px 0;
-    }
-    
-    .mention-item {
-        padding: 8px 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background 0.2s;
-        color: var(--t-text);
-        font-size: 14px;
-    }
-    
-    .mention-item:hover, .mention-item.selected {
-        background: rgba(145, 71, 255, 0.2);
-    }
-    
-    .mention-item .badge {
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
-    }
-    
-    .mention-item .user-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    
-    .mention-item .display-name {
-        font-weight: 600;
-        color: var(--t-purp);
-    }
-    
-    .mention-item .login-name {
-        color: #adadb8;
-        font-size: 12px;
-        margin-left: 4px;
-    }
-    
-    .mention-header {
-        padding: 8px 12px;
-        font-size: 12px;
-        color: #adadb8;
-        border-bottom: 1px solid #333;
-        margin-bottom: 4px;
-        background: rgba(0,0,0,0.2);
-    }
-</style></head>
-<body onload="initApp()">
+#reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
+
+.tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
+.tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
+.tool-link:hover { color: #fff; }
+.tool-link svg { margin-left: 1px; }
+.tool-link svg:hover { fill: #9147ff; }
+.input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
+.input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
+#msginput { 
+    flex: 1; 
+    background: transparent; 
+    border: none; 
+    color: #efeff1; 
+    font-size: 14px; 
+    outline: none; 
+    padding: 10px 0; 
+    font-family: inherit; 
+    box-sizing: border-box; 
+    font-family: inherit; 
+    overflow-wrap: break-word; 
+    max-height: calc(5lh + 20px); 
+    overflow: hidden auto;
+    white-space: pre-wrap;
+    min-height: 20px;
+}
+#msginput:empty:before {
+    content: attr(placeholder);
+    color: #777;
+}
+#msginput:focus:empty:before {
+    content: attr(placeholder);
+    color: #777;
+}
+#msginput:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
+#sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+#sendbtn:hover { background: #a970ff; }
+#sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
+
+/* 表情面板 */
+#emojiPanel { 
+    position: fixed; 
+    display: none; 
+    width: 350px; 
+    height: 400px; 
+    background: #1f182e; 
+    border: 2px solid #443a5a; 
+    border-radius: 12px; 
+    z-index: 5000; 
+    left: 50%; 
+    top: 50%; 
+    transform: translate(-50%, -50%); 
+    flex-direction: column; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    cursor: default;
+}
+#emojiPanel.dragging { cursor: grabbing; }
+.emoji-header { 
+    padding: 12px; 
+    display: flex; 
+    justify-content: space-between; 
+    background: #26262c; 
+    border-radius: 12px 12px 0 0; 
+    align-items: center;
+    cursor: grab;
+    user-select: none;
+}
+.emoji-header:active { cursor: grabbing; }
+#emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
+#emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
+.emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
+.emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+.emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+.bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
+.custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
+/* ========== 新添加：捲動到底部按鈕 ========== */
+#scrollToBottomBtn {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(145, 71, 255, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    font-size: 20px;
+}
+
+#scrollToBottomBtn:hover {
+    background: rgba(145, 71, 255, 1);
+    transform: scale(1.1);
+}
+
+#scrollToBottomBtn:active {
+    transform: scale(0.95);
+}
+
+#scrollToBottomBtn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+.show-del .delete-btn { display: block; }
+.audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
+.audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
+.audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
+
+@keyframes pulse-audio {
+    0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
+}
+
+#userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
+#userInfo img { width: 30px; height: 30px; border-radius: 50%; }
+#logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
+#logoutBtn:hover { background: #c51614; }
+#loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
+#loginBtn:hover { background: #772ce8; }
+#status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
+
+/* 訊息統計 */
+#message-stats {
+    margin: 8px 12px;
+    font-weight: 500;
+    color: #00ff00;
+    font-size: 10px;
+}
+
+/* @提及選單樣式 - 類似Twitch */
+#mention-list {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 300px;
+    max-height: 350px;
+    background: var(--t-alt);
+    border: 1px solid #333;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: none;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.mention-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+    color: var(--t-text);
+    font-size: 14px;
+}
+
+.mention-item:hover, .mention-item.selected {
+    background: rgba(145, 71, 255, 0.2);
+}
+
+.mention-item .badge {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+
+.mention-item .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.mention-item .display-name {
+    font-weight: 600;
+    color: var(--t-purp);
+}
+
+.mention-item .login-name {
+    color: #adadb8;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+.mention-header {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #adadb8;
+    border-bottom: 1px solid #333;
+    margin-bottom: 4px;
+    background: rgba(0,0,0,0.2);
+}</style></head><body onload="initApp()">
 
 <div class="header-bar">
     <div id="status">載入中...</div>
@@ -335,19 +339,18 @@
         <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
     </div>
     
-    <div class="input-box-wrapper">
-        <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
-        <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-            <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
-                <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-            </svg>
-        </button>
-    </div>
+<div class="input-box-wrapper">
+    <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
+    <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
+        <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
+            <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+        </svg>
+    </button>
+</div>
 
-    <div class="action-bar">
-        <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
-    </div>
-</div></div>
+<div class="action-bar">
+    <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
+</div></div></div>
 
 <script>
     // ===================== 重要設定 =====================
@@ -499,43 +502,29 @@
     }
 
     // 新增：遞迴解析訊息內容中的 [r][m] 標籤
-    function parseMessageWithReplies(content, depth = 0) {
-        if (depth > 3) return content; // 防止無限遞迴
-        
-        // 生成當前處理的訊息標識
-        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        processedMessages.add(messageId);
-        
+    function parseMessageWithReplies(content, depth = 0, visited = new Set()) {
+        if (depth > 5) {  // 更嚴格的深度限制
+            return content + ' <span style="color:#f44">[引用過深，已截斷]</span>';
+        }
+
         let result = content;
-        
-        // 解析 [r] 標籤
-        result = result.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, (match, userLogin, timestamp) => {
-            const repliedMsg = msgCache[timestamp];
-            if (!repliedMsg) return `@${userLogin}: ...`;
+
+        result = result.replace(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/gi, (m, user, refId, extra) => {
+            // refId 現在優先視為 msg-id，其次才是 timestamp
+            const repliedMsg = msgCache[refId] || Object.values(msgCache).find(m => m.realMsgId === refId || m.timestamp == refId);
             
-            // 檢查是否已經處理過此訊息，避免循環引用
-            if (processedMessages.has(`ref_${timestamp}`) && depth > 0) {
-                return `<span style="color: #777; font-style: italic;">[@${repliedMsg.displayName || userLogin}]</span>`;
+            if (!repliedMsg || visited.has(refId)) {
+                return `<span style="color:#777">@${user}（無法載入或循環引用）</span>`;
             }
-            
-            processedMessages.add(`ref_${timestamp}`);
-            
-            let rawBody = repliedMsg.content || "...";
-            
-            // 遞迴解析被回覆訊息中的 [r] 標籤
-            let body = parseMessageWithReplies(rawBody, depth + 1);
-            
-            // 只解析媒體標籤，不再次遞迴解析 [r] 標籤
-            body = parseContentBasic(body); // 使用一個簡化的解析函數
-            
-            return `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
+
+            visited.add(refId);
+
+            let body = parseMessageWithReplies(repliedMsg.content || "...", depth + 1, visited);
+            body = parseContentBasic(body);
+
+            return `<span style="color:#9147ff;cursor:pointer;" onclick="scrollToMsg('${repliedMsg.realMsgId || refId}')">@${repliedMsg.displayName || user}</span>: ${body}`;
         });
-        
-        // 清理處理標識（保留一段時間）
-        setTimeout(() => {
-            processedMessages.delete(messageId);
-        }, 1000);
-        
+
         return result;
     }
 
@@ -1396,6 +1385,7 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         const badgeStr = getTagValue(tags, "badges");
         
         const cacheKey = ts;
+        const realMsgId = msgId || ts;  // 優先用官方 msg-id，沒有才 fallback 到 ts
         
         if (msgCache[cacheKey]) {
             logDebug('跳過重複訊息:', cacheKey);
@@ -1411,7 +1401,8 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             badges: badgeStr,
             avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
             timestamp: parseInt(ts),
-            msgId: msgId
+            msgId: msgId,
+            realMsgId: realMsgId
         };
         
         const cacheKeys = Object.keys(msgCache);
@@ -1433,7 +1424,7 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             
             const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
             
-            replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
+            replyHtml = `<div class="quote-box" data-type="native" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
             
             const mention = `@${pUser} `;
             if (displayMsg.startsWith(mention)) {
@@ -1461,7 +1452,7 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
                 let isMe = (displayNameToShow === myDisplayName || displayNameToShow === myLoginId);
                 const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
                 
-                replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedTimestamp}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${body}</div>`;
+                replyHtml = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${repliedMsg.realMsgId || repliedTimestamp}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${body}</div>`;
                 
                 displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
             }
@@ -1470,8 +1461,8 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         displayMsg = parseMessageWithReplies(displayMsg);
         
         const badgeHtml = renderBadges(badgeStr);
-        const line = `<div class="chat-line ts-${ts} id-${msgId || cacheKey}" data-msg-id="${msgId || cacheKey}" data-timestamp="${ts}">
-            <div class="reply-btn" onclick="replyNative('${userLogin}','${cacheKey}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
+        const line = `<div class="chat-line ts-${ts} id-${realMsgId}" data-msg-id="${realMsgId}" data-timestamp="${ts}">
+            <div class="reply-btn" onclick="replyNative('${userLogin}','${realMsgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
             ${replyHtml}
             ${badgeHtml}
             <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
@@ -1513,7 +1504,7 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             
             let parsedQuote = parseContentBasic(rawQuote);
             
-            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName}:</span>${parsedQuote}</div>`;
+            replyDisplay = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${repliedMsg.realMsgId || pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName}:</span>${parsedQuote}</div>`;
         } else {
             finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
         }
@@ -1527,7 +1518,8 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             displayName: myDisplayName,
             badges: myBadgeStr,
             avatar: myAvatar,
-            timestamp: parseInt(selfTs)
+            timestamp: parseInt(selfTs),
+            realMsgId: selfTs  // 暫時用 ts，之後可更新為真 msg-id
         };
         
         $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
