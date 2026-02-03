@@ -2,322 +2,290 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat</title>
+    <title>Chickchat7</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-    /* --- Webkit Scrollbar 樣式 --- */
-    #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
-    #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-    #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-    #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
+        /* --- Webkit Scrollbar 樣式 --- */
+        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
+        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
-    /* 統一控制媒體嵌入大小 */
-    #chat-container .media-preview,
-    #chat-container iframe.media-preview,
-    #chat-container iframe[src*="youtube.com"],
-    #chat-container iframe[src*="youtube-nocookie.com"],
-    #chat-container iframe[src*="youtu.be"],
-    #chat-container iframe[src*="facebook.com"],
-    #chat-container blockquote.twitter-tweet,
-    #chat-container .twitter-tweet-container,
-    #chat-container iframe[src*="store.steampowered.com"],
-    #chat-container iframe[src*="threads.com"] {
-        width: auto !important;
-        height: auto !important;
-        max-width: 250px !important;
-        max-height: 250px !important;
-        border-radius: 8px !important;
-        border: 0px solid #444 !important;
-        margin: 5px 0 !important;
-        object-fit: fill !important;
-    }
+        /* 統一控制媒體嵌入大小 */
+        #chat-container .media-preview,
+        #chat-container iframe.media-preview,
+        #chat-container iframe[src*="youtube.com"],
+        #chat-container iframe[src*="youtube-nocookie.com"],
+        #chat-container iframe[src*="youtu.be"],
+        #chat-container iframe[src*="facebook.com"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container .twitter-tweet-container,
+        #chat-container iframe[src*="store.steampowered.com"],
+        #chat-container iframe[src*="threads.com"] {
+            width: auto !important;
+            height: auto !important;
+            max-width: 250px !important;
+            max-height: 250px !important;
+            border-radius: 8px !important;
+            border: 0px solid #444 !important;
+            margin: 5px 0 !important;
+            object-fit: fill !important;
+        }
 
-    /* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
-    #chat-container iframe[src*="youtube.com"],
-    #chat-container iframe[src*="youtube-nocookie.com"],
-    #chat-container blockquote.twitter-tweet,
-    #chat-container iframe[src*="threads.com"],
-    #chat-container iframe[src*="store.steampowered.com"] {
-        min-height: 400px !important;
-    }
+        /* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
+        #chat-container iframe[src*="youtube.com"],
+        #chat-container iframe[src*="youtube-nocookie.com"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container iframe[src*="threads.com"],
+        #chat-container iframe[src*="store.steampowered.com"] {
+            min-height: 400px !important;
+        }
 
-    #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
+        #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
 
-    /* 圖片與影片保持原有比例 */
-    #chat-container img.media-preview {
-        height: auto !important;
-        max-height: 250px !important;
-        min-height: auto !important;
-        object-fit: fill !important;
-    }
-    #chat-container video.media-preview {
-        height: auto !important;
-        max-height: 250px !important;
-        min-height: auto !important;
-    }
+        /* 圖片與影片保持原有比例 */
+        #chat-container img.media-preview {
+            height: auto !important;
+            max-height: 250px !important;
+            min-height: auto !important;
+            object-fit: fill !important;
+        }
+        #chat-container video.media-preview {
+            height: auto !important;
+            max-height: 250px !important;
+            min-height: auto !important;
+        }
 
-    .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-    #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
-    .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
-    .chat-line:hover { background: rgba(255,255,255,0.08); }
-    .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
-    .self-name { color: var(--t-purp); font-weight: bold; }
-    .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
-    
-    .audio-player { margin-top: 10px; display: block; max-width: 300px; }
-    .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
-    .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
-    .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
-    .reply-btn:hover {background-color: #3c3a39;}
-    .chat-line:hover .reply-btn { display: flex; }
-    .quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-    .quote-box:hover { background: rgba(255,255,255,0.15); }
-    .quote-user { color: #adadb8; margin-right: 5px; }
-    .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
-    
-    /* --- 根據圖片優化輸入區佈局 --- */
-    .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
-    
-    #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
-    
-    .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
-    .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
-    .tool-link:hover { color: #fff; }
-    .tool-link svg { margin-left: 1px; }
-    .tool-link svg:hover { fill: #9147ff; }
-    .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-    .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
-    .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
-    #msginput { 
-        flex: 1; 
-        background: transparent; 
-        border: none; 
-        color: #efeff1; 
-        font-size: 14px; 
-        outline: none; 
-        padding: 10px 0; 
-        font-family: inherit; 
-        box-sizing: border-box; 
-        font-family: inherit; 
-        overflow-wrap: break-word; 
-        max-height: calc(5lh + 20px); 
-        overflow: hidden auto;
-        white-space: pre-wrap;
-        min-height: 20px;
-    }
-    #msginput:empty:before {
-        content: attr(placeholder);
-        color: #777;
-    }
-    #msginput:focus:empty:before {
-        content: attr(placeholder);
-        color: #777;
-    }
-    #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
+        .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
+        .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
+        .chat-line:hover { background: rgba(255,255,255,0.08); }
+        .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
+        .self-name { color: var(--t-purp); font-weight: bold; }
+        .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
+        
+        .audio-player { margin-top: 10px; display: block; max-width: 300px; }
+        .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
+        .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
+        .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
+        .reply-btn:hover {background-color: #3c3a39;}
+        .chat-line:hover .reply-btn { display: flex; }
+        .quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .quote-box:hover { background: rgba(255,255,255,0.15); }
+        .quote-user { color: #adadb8; margin-right: 5px; }
+        .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
+        
+        /* --- 根據圖片優化輸入區佈局 --- */
+        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
+        
+        #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
+        
+        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
+        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
+        .tool-link:hover { color: #fff; }
+        .tool-link svg { margin-left: 1px; }
+        .tool-link svg:hover { fill: #9147ff; }
+        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
+        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
+        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
+        #msginput { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            color: #efeff1; 
+            font-size: 14px; 
+            outline: none; 
+            padding: 10px 0; 
+            font-family: inherit; 
+            box-sizing: border-box; 
+            font-family: inherit; 
+            overflow-wrap: break-word; 
+            max-height: calc(5lh + 20px); 
+            overflow: hidden auto;
+            white-space: pre-wrap;
+            min-height: 20px;
+        }
+        #msginput:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:focus:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
 
-    .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
-    #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
-    #sendbtn:hover { background: #a970ff; }
-    #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
-    
-    /* 表情面板 */
-    #emojiPanel { 
-        position: fixed; 
-        display: none; 
-        width: 350px; 
-        height: 400px; 
-        background: #1f182e; 
-        border: 2px solid #443a5a; 
-        border-radius: 12px; 
-        z-index: 5000; 
-        left: 50%; 
-        top: 50%; 
-        transform: translate(-50%, -50%); 
-        flex-direction: column; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        cursor: default;
-    }
-    #emojiPanel.dragging { cursor: grabbing; }
-    .emoji-header { 
-        padding: 12px; 
-        display: flex; 
-        justify-content: space-between; 
-        background: #26262c; 
-        border-radius: 12px 12px 0 0; 
-        align-items: center;
-        cursor: grab;
-        user-select: none;
-    }
-    .emoji-header:active { cursor: grabbing; }
-    #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
-    #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
-    .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
-    .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-    .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-    .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
-    .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
-    
+        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
+        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        #sendbtn:hover { background: #a970ff; }
+        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
+        
+        /* 表情面板 */
+        #emojiPanel { 
+            position: fixed; 
+            display: none; 
+            width: 350px; 
+            height: 400px; 
+            background: #1f182e; 
+            border: 2px solid #443a5a; 
+            border-radius: 12px; 
+            z-index: 5000; 
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%); 
+            flex-direction: column; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: default;
+        }
+        #emojiPanel.dragging { cursor: grabbing; }
+        .emoji-header { 
+            padding: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            background: #26262c; 
+            border-radius: 12px 12px 0 0; 
+            align-items: center;
+            cursor: grab;
+            user-select: none;
+        }
+        .emoji-header:active { cursor: grabbing; }
+        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
+        #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
+        .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
+        .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
+        .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
+        
 
-    /* ========== 新添加：捲動到底部按鈕 ========== */
-    #scrollToBottomBtn {
-        position: absolute;
-        bottom: 80px;
-        right: 20px;
-        width: 40px;
-        height: 40px;
-        background: rgba(145, 71, 255, 0.8);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 100;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        transition: all 0.3s ease;
-        font-size: 20px;
-    }
-    
-    #scrollToBottomBtn:hover {
-        background: rgba(145, 71, 255, 1);
-        transform: scale(1.1);
-    }
-    
-    #scrollToBottomBtn:active {
-        transform: scale(0.95);
-    }
-    
-    #scrollToBottomBtn svg {
-        width: 24px;
-        height: 24px;
-    }
+        /* ========== 新添加：捲動到底部按鈕 ========== */
+        #scrollToBottomBtn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(145, 71, 255, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+        
+        #scrollToBottomBtn:hover {
+            background: rgba(145, 71, 255, 1);
+            transform: scale(1.1);
+        }
+        
+        #scrollToBottomBtn:active {
+            transform: scale(0.95);
+        }
+        
+        #scrollToBottomBtn svg {
+            width: 24px;
+            height: 24px;
+        }
 
-    .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-    .show-del .delete-btn { display: block; }
-    .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
-    .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
-    .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
-    
-    @keyframes pulse-audio {
-        0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
-        100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
-    }
-    
-    #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
-    #userInfo img { width: 30px; height: 30px; border-radius: 50%; }
-    #logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
-    #logoutBtn:hover { background: #c51614; }
-    #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
-    #loginBtn:hover { background: #772ce8; }
-    #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
-    
-    /* 訊息統計 */
-    #message-stats {
-        margin: 8px 12px;
-        font-weight: 500;
-        color: #00ff00;
-        font-size: 10px;
-		display:none;
-    }
-    
-    /* @提及選單樣式 - 類似Twitch */
-    #mention-list {
-        position: absolute;
-        bottom: 100%;
-        left: 0;
-        width: 300px;
-        max-height: 350px;
-        background: var(--t-alt);
-        border: 1px solid #333;
-        border-radius: 6px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        z-index: 9999;
-        display: none;
-        overflow-y: auto;
-        padding: 4px 0;
-    }
-    
-    .mention-item {
-        padding: 8px 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background 0.2s;
-        color: var(--t-text);
-        font-size: 14px;
-    }
-    
-    .mention-item:hover, .mention-item.selected {
-        background: rgba(145, 71, 255, 0.2);
-    }
-    
-    .mention-item .badge {
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
-    }
-    
-    .mention-item .user-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    
-    .mention-item .display-name {
-        font-weight: 600;
-        color: var(--t-purp);
-    }
-    
-    .mention-item .login-name {
-        color: #adadb8;
-        font-size: 12px;
-        margin-left: 4px;
-    }
-    
-    .mention-header {
-        padding: 8px 12px;
-        font-size: 12px;
-        color: #adadb8;
-        border-bottom: 1px solid #333;
-        margin-bottom: 4px;
-        background: rgba(0,0,0,0.2);
-    }
-    
-    /* 訊息高亮效果 */
-    .highlight-message {
-        animation: highlight-fade 2s ease-out;
-        border: 2px solid #9147ff !important;
-    }
-    
-    @keyframes highlight-fade {
-        0% { background-color: rgba(145, 71, 255, 0.3); }
-        100% { background-color: transparent; }
-    }
-    
-    /* 錯誤訊息樣式 */
-    .error-message {
-        color: #ff6b6b;
-        background: rgba(255, 107, 107, 0.1);
-        padding: 8px;
-        border-radius: 4px;
-        margin: 5px 0;
-        font-size: 13px;
-        border: 1px solid rgba(255, 107, 107, 0.3);
-    }
-</style>
+        .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .show-del .delete-btn { display: block; }
+        .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
+        .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
+        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
+        
+        @keyframes pulse-audio {
+            0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
+        }
+        
+        #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
+        #userInfo img { width: 30px; height: 30px; border-radius: 50%; }
+        #logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
+        #logoutBtn:hover { background: #c51614; }
+        #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
+        #loginBtn:hover { background: #772ce8; }
+        #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
+        
+        /* @提及選單樣式 - 類似Twitch */
+        #mention-list {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 300px;
+            max-height: 350px;
+            background: var(--t-alt);
+            border: 1px solid #333;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        
+        .mention-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--t-text);
+            font-size: 14px;
+        }
+        
+        .mention-item:hover, .mention-item.selected {
+            background: rgba(145, 71, 255, 0.2);
+        }
+        
+        .mention-item .badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .mention-item .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .mention-item .display-name {
+            font-weight: 600;
+            color: var(--t-purp);
+        }
+        
+        .mention-item .login-name {
+            color: #adadb8;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        
+        .mention-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #adadb8;
+            border-bottom: 1px solid #333;
+            margin-bottom: 4px;
+            background: rgba(0,0,0,0.2);
+        }
+    </style>
 </head>
 <body onload="initApp()">
 
 <div class="header-bar">
     <div id="status">載入中...</div>
-    <div id="message-stats">訊息: 0</div>
     <div id="auth-area">
         <div id="userInfo" style="display:none;">
             <img id="userAvatar" src="" alt="頭像">
@@ -350,27 +318,28 @@
         <span onclick="cancelReply()" style="float:right; cursor:pointer; color:#efeff1;">✕ 取消回覆</span>
     </div>
     
-<div class="input-section">
-    <div class="tool-bar">
-     <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
-        <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
-        <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
-        <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
-    </div>
-    
-    <div class="input-box-wrapper">
-        <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
-        <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-            <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
-                <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-            </svg>
-        </button>
-    </div>
+    <div class="input-section">
+        <div class="tool-bar">
+            <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
+            <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
+            <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
+            <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
+        </div>
+        
+        <div class="input-box-wrapper">
+            <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
+            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
+                <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
+                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                </svg>
+            </button>
+        </div>
 
-    <div class="action-bar">
-        <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
+        <div class="action-bar">
+            <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
+        </div>
     </div>
-</div></div>
+</div>
 
 <script>
     // ===================== 重要設定 =====================
@@ -392,7 +361,7 @@
     let customBadges = {};
     let msgCache = {}; 
     let userCache = {}; 
-    let pendingReply = { id: null, user: null, displayName: null, type: null };
+    let pendingReply = { id: null, user: null, displayName: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
     
@@ -417,22 +386,11 @@
     let mentionSelectedIndex = 0;
     let mentionSearchTerm = "";
     
-    // 訊息統計
-    let messageCount = 0;
-    
-    // 用於防止遞迴引用的集合
-    let processedMessages = new Set();
-    
-    // 調試模式
-    window.debugMode = true;
+    // ===================== 訊息佇列機制 =====================
+    let messageQueue = [];
+    let processingQueue = false;
 
     // ===================== 輔助函數 =====================
-    function logDebug(...args) {
-        if (window.debugMode) {
-            console.log('[DEBUG]', ...args);
-        }
-    }
-
     function getParameterByName(name, url) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
         var regexS = "[\\?&]" + name + "=([^&#]*)";
@@ -458,105 +416,6 @@
         const regex = new RegExp(`${key}=([^;\\s]+)`); 
         const match = tags.match(regex); 
         return match ? match[1] : null; 
-    }
-
-    // 新增：簡化的內容解析函數，只用於解析媒體標籤
-    function parseContentBasic(str) {
-        let a = str, placeholders = [];
-        
-        // 1. 處理圖片標籤 [s]...e]
-        a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
-            let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
-            let id = `__PH_BASIC_${placeholders.length}__`;
-            
-            let e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
-            placeholders.push(e);
-            return id;
-        });
-        
-        // 2. 處理影片標籤 [y]...[t]
-        a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
-            let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
-            let id = `__PH_BASIC_${placeholders.length}__`;
-            
-            let e = "";
-            if (b.match(/youtu/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                e = `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
-            } else {
-                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
-            }
-            
-            placeholders.push(e);
-            return id;
-        });
-        
-        // 3. 處理音訊標籤 [a]...[o]
-        a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
-            const url = content.trim(); 
-            let id = `__PH_BASIC_${placeholders.length}__`;
-            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊"></span>`);
-            return id;
-        });
-        
-        // 處理一般網址
-        a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_BASIC_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
-        
-        // 處理自訂表情
-        let words = a.split(' ');
-        a = words.map(w => { 
-            if(w.includes('__PH_BASIC_')) return w; 
-            const src = altMap[w.toLowerCase()]; 
-            return src ? `<img src="${src}" class="alt-emoji">` : w; 
-        }).join(' ');
-        
-        // 還原預留佔位符
-        placeholders.forEach((html, i) => { 
-            a = a.replace(`__PH_BASIC_${i}__`, html); 
-        });
-        
-        return a;
-    }
-
-    // 新增：遞迴解析訊息內容中的 [r][m] 標籤
-    function parseMessageWithReplies(content, depth = 0) {
-        if (depth > 3) return content; // 防止無限遞迴
-        
-        // 生成當前處理的訊息標識
-        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        processedMessages.add(messageId);
-        
-        let result = content;
-        
-        // 解析 [r] 標籤
-        result = result.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, (match, userLogin, timestamp) => {
-            const repliedMsg = msgCache[timestamp];
-            if (!repliedMsg) return `@${userLogin}: ...`;
-            
-            // 檢查是否已經處理過此訊息，避免循環引用
-            if (processedMessages.has(`ref_${timestamp}`) && depth > 0) {
-                return `<span style="color: #777; font-style: italic;">[@${repliedMsg.displayName || userLogin}]</span>`;
-            }
-            
-            processedMessages.add(`ref_${timestamp}`);
-            
-            let rawBody = repliedMsg.content || "...";
-            
-            // 遞迴解析被回覆訊息中的 [r] 標籤
-            let body = parseMessageWithReplies(rawBody, depth + 1);
-            
-            // 只解析媒體標籤，不再次遞迴解析 [r] 標籤
-            body = parseContentBasic(body);
-            
-            return `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
-        });
-        
-        // 清理處理標識（保留一段時間）
-        setTimeout(() => {
-            processedMessages.delete(messageId);
-        }, 1000);
-        
-        return result;
     }
 
     // ===================== 捲動控制功能 =====================
@@ -631,7 +490,6 @@
         const emojiCloseBtn = document.getElementById('emojiCloseBtn');
         
         emojiHeader.addEventListener('mousedown', function(e) {
-            // 如果點擊的是關閉按鈕，則不觸發拖曳
             if (e.target === emojiCloseBtn || e.target.closest('#emojiCloseBtn')) return;
             
             dragging = true;
@@ -646,7 +504,7 @@
             if (dragging) {
                 emojiPanel.style.left = (e.clientX - offsetX) + 'px';
                 emojiPanel.style.top = (e.clientY - offsetY) + 'px';
-                emojiPanel.style.transform = 'none'; // 移除居中轉換
+                emojiPanel.style.transform = 'none';
             }
         });
         
@@ -657,7 +515,6 @@
             }
         });
         
-        // 關閉按鈕事件
         emojiCloseBtn.addEventListener('click', function() {
             emojiPanel.style.display = 'none';
         });
@@ -697,7 +554,7 @@
                 const token = localStorage.getItem('twitch_token');
                 if (token) {
                     ACCESS_TOKEN = token.replace('oauth:', '');
-                    fetchUserInfo(token);
+                    fetchUserInfo(ACCESS_TOKEN);
                 }
             }
         }, 500);
@@ -730,7 +587,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'flex';
+        document.getElementById('userInfo').style.display = 'none';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
@@ -1116,8 +973,7 @@
                     </div>
                 </div>`);
             audioLists[name].audios.forEach((a, index) => {
-                               const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">🔊<br>${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${index})">✕</div></div>`);
-
+                const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">🔊<br>${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${index})">✕</div></div>`);
                 item.on('click', () => { 
                     if(!isAudioDeleteMode) { 
                         insertTextAtCursor(` [a] ${a.url} [o] `); 
@@ -1139,7 +995,7 @@
         }
     }
 
-    // ===================== 文字插入函數 =====================
+    // ===================== 文字插入函數 (contenteditable div 專用) =====================
     function insertTextAtCursor(text) {
         const el = document.getElementById('msginput');
         if (!el) return;
@@ -1245,99 +1101,104 @@
         btn.currentAudio = null;
     }
 
-    // ===================== 核心解析邏輯 =====================
+    // ===================== 核心解析邏輯 (已移除[r]標籤支援) =====================
     function parseContent(str) {
-        let a = str, placeholders = [];
+        try {
+            let a = str, placeholders = [];
 
-        // 1. 處理大寫 [S]...E] (原創簡易圖片)
-        a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
-            b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
-            const number = Math.floor((Math.random() * 1000) + 1);
-            let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
-            return id;
-        });
+            // 1. 處理大寫 [S]...E] (原創簡易圖片)
+            a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
+                b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
+                const number = Math.floor((Math.random() * 1000) + 1);
+                let id = `__PH_${placeholders.length}__`;
+                placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
+                return id;
+            });
 
-        // 2. 處理小寫 [s]...e] (新邏輯增強版)
-        a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
-            let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
-            let id = `__PH_${placeholders.length}__`;
-            let e = "";
-            const number = Math.floor((Math.random() * 1000) + 1);
+            // 2. 處理小寫 [s]...e] (新邏輯增強版)
+            a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
+                let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
+                let id = `__PH_${placeholders.length}__`;
+                let e = "";
+                const number = Math.floor((Math.random() * 1000) + 1);
 
-            if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                let t = getParameterByName('t', b);
-                e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
-            } else if (b.match(/twitter|https:\/\/x.com/g)) {
-                let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
-            } else if (b.match(/www.threads.com/g)) {
-                let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
-                e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
-            } else if (b.match(/\.(webm|mp4)/g)) {
-                e = `<video class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
-            } else if (b.match(/steampowered|steamcommunity/g)) {
-                let appId = b.match("app/([0-9]+)");
-                e = appId ? `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"  src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0"></iframe>` : b;
-            } else {
-                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
+                if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
+                    let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+                    let t = getParameterByName('t', b);
+                    e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
+                } else if (b.match(/twitter|https:\/\/x.com/g)) {
+                    let twUrl = b.replace('https://x.com', 'https://twitter.com');
+                    e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
+                } else if (b.match(/www.threads.com/g)) {
+                    let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
+                    e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
+                } else if (b.match(/\.(webm|mp4)/g)) {
+                    e = `<video class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
+                } else if (b.match(/steampowered|steamcommunity/g)) {
+                    let appId = b.match("app/([0-9]+)");
+                    e = appId ? `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"  src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0"></iframe>` : b;
+                } else {
+                    e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
+                }
+                placeholders.push(e);
+                return id;
+            });
+
+            // 3. 處理影片標籤 [y]...[t] (新邏輯)
+            a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
+                let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
+                let id = `__PH_${placeholders.length}__`;
+                let e = "";
+                if (b.match(/facebook/g)) {
+                    e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
+                } else if (b.match(/youtu/g)) {
+                    let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+                    e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+                } 
+                else if (b.match(/\.(webm|mp4)/g)) {
+                    e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
+                else if (b.match(/twitter|https:\/\/x.com/g)) {
+                    let twUrl = b.replace('https://x.com', 'https://twitter.com');
+                    e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
+                else {
+                    e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
+                }
+                placeholders.push(e);
+                return id;
+            });
+
+            // 4. 處理音訊標籤 [a]...[o]
+            a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
+                const url = content.trim(); 
+                let id = `__PH_${placeholders.length}__`;
+                placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`);
+                return id;
+            });
+
+            // 5. 處理自動解析 HTML 連結中的標籤 (extractTagAndUrl 新邏輯)
+            let htmlMatch = extractTagAndUrl(a);
+            if (htmlMatch) {
+                let b = htmlMatch.url;
+                let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
+                a = a.replace(htmlMatch.match[0], e);
             }
-            placeholders.push(e);
-            return id;
-        });
 
-        // 3. 處理影片標籤 [y]...[t] (新邏輯)
-        a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
-            let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
-            let id = `__PH_${placeholders.length}__`;
-            let e = "";
-            if (b.match(/facebook/g)) {
-                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
-            } else if (b.match(/youtu/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
-            } 
-            else if (b.match(/\.(webm|mp4)/g)) {
-                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
-            else if (b.match(/twitter|https:\/\/x.com/g)) {
-                let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
-            else {
-                e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
-            }
-            placeholders.push(e);
-            return id;
-        });
+            // 6. 處理一般網址與自訂表情
+            a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
+            let words = a.split(' ');
+            a = words.map(w => { 
+                if(w.includes('__PH_')) return w; 
+                const src = altMap[w.toLowerCase()]; 
+                return src ? `<img src="${src}" class="alt-emoji">` : w; 
+            }).join(' ');
 
-        // 4. 處理音訊標籤 [a]...[o]
-        a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
-            const url = content.trim(); 
-            let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`);
-            return id;
-        });
-
-        // 5. 處理自動解析 HTML 連結中的標籤
-        let htmlMatch = extractTagAndUrl(a);
-        if (htmlMatch) {
-            let b = htmlMatch.url;
-            let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
-            a = a.replace(htmlMatch.match[0], e);
+            // 最後還原所有預留佔位符
+            placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
+            return a;
+        } catch (error) {
+            console.error('解析內容時出錯:', error, str);
+            return str;
         }
-
-        // 6. 處理一般網址與自訂表情
-        a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
-        let words = a.split(' ');
-        a = words.map(w => { 
-            if(w.includes('__PH_')) return w; 
-            const src = altMap[w.toLowerCase()]; 
-            return src ? `<img src="${src}" class="alt-emoji">` : w; 
-        }).join(' ');
-
-        // 最後還原所有預留佔位符
-        placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
-        return a;
     }
 
     // 媒體載入完成的回調函數
@@ -1406,156 +1267,12 @@
         return html;
     }
 
-    // ===================== 處理單條訊息 =====================
-    function processMessage(tags, rawMsg) {
-        const msgId = getTagValue(tags, "id");
-        const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
-        const user = getTagValue(tags, "display-name") || "User";
-        const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-        const color = getTagValue(tags, "color") || "#9147ff";
-        const badgeStr = getTagValue(tags, "badges");
-        
-                // 使用複合鍵避免衝突
-        const cacheKey = msgId ? msgId : `ts_${ts}`;
-
-        
-        if (msgCache[cacheKey]) {
-            logDebug('跳過重複訊息:', cacheKey);
-            return;
-        }
-        
-        userCache[userLogin] = user;
-        
-        msgCache[cacheKey] = {
-            content: rawMsg,
-            user: { login: userLogin, displayName: user },
-            displayName: user,
-            badges: badgeStr,
-            avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
-            timestamp: parseInt(ts),
-            msgId: msgId,
-            type: 'incoming'
-        };
-        
-        // 建立雙向映射
-        if (msgId) {
-            msgCache[msgId] = msgCache[cacheKey];
-        }
-        
-        const cacheKeys = Object.keys(msgCache);
-        if (cacheKeys.length > 1000) {
-            cacheKeys.sort((a, b) => (msgCache[a].timestamp || 0) - (msgCache[b].timestamp || 0));
-            cacheKeys.slice(0, 200).forEach(key => delete msgCache[key]);
-        }
-        
-        // 處理回覆訊息
-        let replyHtml = "", displayMsg = rawMsg;
-        
-        // 檢查原生Twitch回覆標籤
-        const pUser = getTagValue(tags, "reply-parent-display-name");
-        const pId = getTagValue(tags, "reply-parent-msg-id");
-        const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
-        
-        if (pUser && pId) {
-            // 原生Twitch回覆
-            let isMe = (pUser === myDisplayName || pUser === myLoginId);
-            let pBody = parseContentBasic(pBodyRaw || "...");
-            
-            const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-            
-            replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')">
-                <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
-                    <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                    <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
-                </svg>
-                回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}
-            </div>`;
-            
-            const mention = `@${pUser} `;
-            if (displayMsg.startsWith(mention)) {
-                displayMsg = displayMsg.substring(mention.length);
-            }
-        } 
-        // 檢查自定義[r]標籤
-        else if (rawMsg.includes("[r]")) {
-            const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
-            if(myR) {
-                const repliedTimestamp = myR[2];
-                const userIdFromTag = myR[1];
-                
-                let rawBody = "...";
-                const repliedMsg = msgCache[repliedTimestamp];
-                if (repliedMsg) {
-                    rawBody = repliedMsg.content || "...";
-                }
-                
-                let displayNameToShow = userIdFromTag;
-                if (repliedMsg && typeof repliedMsg === 'object') {
-                    displayNameToShow = repliedMsg.displayName || userIdFromTag;
-                }
-                
-                let body = parseContentBasic(rawBody);
-                
-                // 重要修正：檢查回覆的對象是否是自己
-                // 這裡使用 displayNameToShow 來檢查，因為它可能是 displayName
-                // 同時也要檢查 userIdFromTag，因為它可能是 login name
-                let isMe = false;
-                if (displayNameToShow === myDisplayName || displayNameToShow === myLoginId) {
-                    isMe = true;
-                } else if (userIdFromTag === myDisplayName || userIdFromTag === myLoginId) {
-                    isMe = true;
-                } else if (repliedMsg && repliedMsg.user) {
-                    // 再次檢查被回覆訊息的用戶
-                    if (repliedMsg.user.login === myLoginId || repliedMsg.displayName === myDisplayName) {
-                        isMe = true;
-                    }
-                }
-                
-                const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                
-                replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedTimestamp}')">
-                    <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
-                        <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                        <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
-                    </svg>
-                    回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${body}
-                </div>`;
-                
-                displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
-            }
-        }
-        
-        displayMsg = parseMessageWithReplies(displayMsg);
-        
-        const badgeHtml = renderBadges(badgeStr);
-        const line = `<div class="chat-line ts-${ts} id-${msgId || cacheKey}" data-msg-id="${msgId || cacheKey}" data-timestamp="${ts}">
-            <div class="reply-btn" onclick="replyNative('${userLogin}','${cacheKey}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
-            ${replyHtml}
-            ${badgeHtml}
-            <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
-        </div>`;
-        
-        $("#messages").append(line);
-        
-        messageCount++;
-        document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
-        
-        limitMessages();
-        
-        if (autoScroll) {
-            forceScrollToBottom();
-        }
-    }
-
-    // ===================== 聊天功能 =====================
+    // ===================== 改善的聊天功能 =====================
     function sendMessage() {
         const msgInput = document.getElementById('msginput');
         const val = msgInput.textContent.trim();
         
-        if (!val || !socket || socket.readyState !== 1) {
-            showError("無法發送訊息：連接中斷或訊息為空");
-            return;
-        }
+        if (!val || !socket || socket.readyState !== 1) return;
         
         const selfTs = Date.now().toString(); 
         let finalCmd = "", replyDisplay = "";
@@ -1564,60 +1281,35 @@
         const badgeHtml = renderBadges(myBadgeStr);
         
         if (pendingReply.id) {
-            // 處理回覆訊息
-            const repliedMsg = msgCache[pendingReply.id];
+            finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
             
-            // 創建回覆顯示
+            const repliedMsg = msgCache[pendingReply.id];
             let rawQuote = "...";
             if (repliedMsg) {
-                rawQuote = repliedMsg.content || "...";
+                rawQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
             }
             
-            // 創建回覆顯示HTML
-            let parsedQuote = parseContentBasic(rawQuote);
-            if (parsedQuote.length > 100) {
-                parsedQuote = parsedQuote.substring(0, 100) + "...";
-            }
+            let parsedQuote = parseContent(rawQuote);
+            const displayNameToShow = pendingReply.displayName || pendingReply.user;
             
-            // 重要修正：檢查回覆的對象是否是自己
-            const isMe = (pendingReply.displayName === myDisplayName || pendingReply.displayName === myLoginId);
-            const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-            
-            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')">
-                <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
-                    <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                    <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
-                </svg>
-                回覆<span class="${userTagClass}">@${pendingReply.displayName}:</span>${parsedQuote}
-            </div>`;
-            
-            // 重要：使用自定義[r]格式發送到Twitch
-            // 這樣可以確保訊息能被Twitch接收，同時我們的客戶端能解析
-            finalCmd = `PRIVMSG #${CHANNEL} :[r]${pendingReply.user},${pendingReply.id}[m]${val}`;
+            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
+
         } else {
             finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
         }
         
-        // 發送訊息到Twitch
         socket.send(finalCmd); 
-        logDebug('已發送訊息:', finalCmd);
         
-        // 儲存原始訊息內容到本地快取
         msgCache[selfTs] = {
             content: val,
             user: { login: myLoginId, displayName: myDisplayName },
             displayName: myDisplayName,
             badges: myBadgeStr,
             avatar: myAvatar,
-            timestamp: parseInt(selfTs),
-            type: 'outgoing'
+            timestamp: Date.now()
         };
         
-        // 立即顯示訊息在本地
-        $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
-        
-        messageCount++;
-        document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
+        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
         
         limitMessages();
         
@@ -1628,65 +1320,47 @@
         cancelReply(); 
         msgInput.textContent = "";
     }
-    
-    function showError(message) {
-        const errorDiv = $(`<div class="error-message">${message}</div>`);
-        $("#messages").append(errorDiv);
-        setTimeout(() => errorDiv.remove(), 5000);
-        forceScrollToBottom();
-    }
 
+    // ===================== 改善的聊天連線處理 =====================
     function startChat() {
-        if(socket) socket.close();
+        if(socket && socket.readyState === WebSocket.OPEN) {
+            socket.close();
+        }
+        
         socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
         
         socket.onopen = () => {
-            socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
+            console.log('WebSocket 連線已開啟');
+            socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
             socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
             socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan'+Math.floor(Math.random()*1000)}`);
             socket.send(`JOIN #${CHANNEL}`);
             document.getElementById('status').textContent = `已連線到 ${CHANNEL} ${ACCESS_TOKEN?'（已登入）':'（匿名）'}`;
-            logDebug('WebSocket 已連接');
+            
+            messageQueue = [];
+            processingQueue = false;
+        };
+        
+        socket.onerror = (error) => {
+            console.error('WebSocket 錯誤:', error);
+            document.getElementById('status').textContent = '連線錯誤，嘗試重新連線...';
+        };
+        
+        socket.onclose = () => { 
+            console.log('WebSocket 連線關閉，3秒後重新連線');
+            document.getElementById('status').textContent = '連線中斷，重新連線中...';
+            setTimeout(startChat, 3000); 
         };
         
         socket.onmessage = (e) => {
-            logDebug('收到原始資料:', e.data);
-            
-            // 處理 PING
-            if (e.data.startsWith('PING')) { 
-                socket.send('PONG :tmi.twitch.tv'); 
-                return; 
-            }
-            
-            // 分割多行訊息
-            const lines = e.data.split('\r\n');
-            
-            lines.forEach(line => {
-                if (!line.trim()) return;
-                
-                logDebug('處理行:', line);
-                
-                // 處理連線確認
-                if (line.includes('Welcome, GLHF!') || line.includes('Welcome!')) {
-                    logDebug('成功連接到 Twitch IRC');
-                    return;
+            try {
+                if (e.data.startsWith('PING')) { 
+                    socket.send('PONG :tmi.twitch.tv'); 
+                    return; 
                 }
                 
-                // 處理 JOIN 訊息
-                if (line.includes('JOIN')) {
-                    logDebug('已加入頻道');
-                    return;
-                }
-                
-                // 處理 CAP 確認
-                if (line.includes('CAP * ACK')) {
-                    logDebug('功能已啟用');
-                    return;
-                }
-                
-                // 處理 USERSTATE 更新徽章
-                if (line.includes('USERSTATE')) {
-                    const badgeTag = getTagValue(line, "badges");
+                if (e.data.includes('USERSTATE')) {
+                    const badgeTag = getTagValue(e.data, "badges");
                     if (badgeTag) {
                         myBadges = badgeTag;
                         localStorage.setItem('twitch_my_badges', badgeTag);
@@ -1694,45 +1368,85 @@
                     return;
                 }
                 
-                // 處理 PRIVMSG 訊息
-                if (line.includes('PRIVMSG')) {
-                    try {
-                        // 嘗試標準格式解析
-                        const parts = line.split(` PRIVMSG #${CHANNEL} :`);
-                        
-                        if (parts.length >= 2) {
-                            const tags = parts[0];
-                            const rawMsg = parts.slice(1).join(' :').trim();
-                            processMessage(tags, rawMsg);
-                        } else {
-                            // 嘗試其他格式的解析
-                            const match = line.match(/PRIVMSG #([^ ]+) :(.+)/);
-                            if (match && match[1] === CHANNEL) {
-                                const tagPart = line.substring(0, line.indexOf('PRIVMSG')).trim();
-                                processMessage(tagPart, match[2]);
-                            } else {
-                                logDebug('無法解析的訊息格式:', line);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('解析訊息失敗:', error, '原始訊息:', line);
+                if (!e.data.includes('PRIVMSG')) return;
+                
+                const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
+                if (parts.length < 2) return;
+                
+                const tags = parts[0], rawMsg = parts[1].trim();
+                const msgId = getTagValue(tags, "id");
+                const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
+                const user = getTagValue(tags, "display-name") || "User";
+                const userLogin = getTagValue(tags, "login") || user.toLowerCase();
+                const color = getTagValue(tags, "color") || "#9147ff";
+                const badgeStr = getTagValue(tags, "badges");
+                
+                userCache[userLogin] = user;
+                
+                const msgRecord = {
+                    content: rawMsg,
+                    user: { login: userLogin, displayName: user },
+                    displayName: user,
+                    badges: badgeStr,
+                    avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+                    timestamp: parseInt(ts)
+                };
+                
+                if (msgId) {
+                    msgCache[msgId] = msgRecord;
+                }
+                msgCache[ts] = msgRecord;
+                
+                let replyHtml = "", displayMsg = rawMsg;
+                const pUser = getTagValue(tags, "reply-parent-display-name");
+                const pId = getTagValue(tags, "reply-parent-msg-id");
+                const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+                
+                if (pUser && pId) {
+                    let isMe = (pUser === myDisplayName || pUser === myLoginId);
+                    
+                    let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
+                    let pBody = parseContent(originalText); 
+                    
+                    const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+                    
+                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')">
+                        <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
+                            <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
+                            <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
+                        </svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}
+                    </div>`;
+                    
+                    const mention = `@${pUser} `;
+                    if (displayMsg.startsWith(mention)) {
+                        displayMsg = displayMsg.substring(mention.length);
                     }
                 }
-            });
-        };
-        
-        socket.onerror = (error) => {
-            console.error('WebSocket 錯誤:', error);
-            document.getElementById('status').textContent = `連接錯誤，嘗試重新連接...`;
-            showError("連接錯誤，嘗試重新連接...");
-        };
-        
-        socket.onclose = (event) => {
-            console.log('WebSocket 關閉，代碼:', event.code, '原因:', event.reason);
-            document.getElementById('status').textContent = `已斷線，${event.code === 1006 ? '網路問題' : '連線中斷'}，3秒後重新連接...`;
-            
-            socket = null;
-            setTimeout(startChat, 3000);
+                
+                const badgeHtml = renderBadges(badgeStr);
+                const line = `<div class="chat-line ts-${ts} id-${msgId || ts}" data-msg-id="${msgId || ts}">
+                    <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId || ts}','${user}')">
+                        <img src="https://chicktv.github.io/tv/re2.png" width="35" height="35">
+                    </div>
+                    ${replyHtml}
+                    ${badgeHtml}
+                    <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
+                </div>`;
+                
+                requestAnimationFrame(() => {
+                    const $messages = $("#messages");
+                    $messages.append(line);
+                    
+                    limitMessages();
+                    
+                    if (autoScroll) {
+                        forceScrollToBottom();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('處理訊息時發生錯誤:', error, e.data);
+            }
         };
     }
 
@@ -1760,20 +1474,8 @@
         });
     }
     
-    function scrollToMsg(msgKey) {
-        // 嘗試用時間戳查找（自定義格式）
-        let $msg = $(`[data-timestamp="${msgKey}"]`);
-        
-        // 如果沒找到，嘗試用消息ID查找（原生Twitch格式）
-        if ($msg.length === 0) {
-            $msg = $(`[data-msg-id="${msgKey}"]`);
-        }
-        
-        // 如果還是沒找到，嘗試用class查找
-        if ($msg.length === 0) {
-            $msg = $(`.id-${msgKey}`);
-        }
-        
+    function scrollToMsg(msgId) {
+        const $msg = $(`.id-${msgId}`);
         if ($msg.length) {
             const container = $("#chat-container")[0];
             const msgTop = $msg.offset().top - $(container).offset().top;
@@ -1782,22 +1484,14 @@
                 top: msgTop + container.scrollTop - 50,
                 behavior: 'smooth'
             });
-            
-            // 添加高亮效果
-            $msg.addClass('highlight-message');
-            setTimeout(() => {
-                $msg.removeClass('highlight-message');
-            }, 2000);
         }
     }
     
-    function replyNative(userLogin, msgKey, displayName) { 
-        const msg = msgCache[msgKey];
+    function replyNative(userLogin, msgId, displayName) { 
         pendingReply = { 
-            id: msgKey, 
+            id: msgId, 
             user: userLogin, 
-            displayName: displayName || userLogin,
-            type: msg?.type || 'custom'
+            displayName: displayName || userLogin 
         }; 
         $("#replying-to-user").text(displayName || userLogin); 
         $("#reply-indicator").show(); 
@@ -1805,17 +1499,11 @@
     }
     
     function cancelReply() { 
-        pendingReply = { id: null, user: null, displayName: null, type: null }; 
+        pendingReply = { id: null, user: null, displayName: null }; 
         $("#reply-indicator").hide(); 
     }
     
-    // 綁定Enter鍵發送訊息
     document.getElementById('msginput').addEventListener('keydown', (e) => {
-        if (mentionListVisible && (e.key === 'Enter' || e.key === 'Tab')) {
-            // 在提及選單開啟時，Enter/Tab 用於選擇提及
-            return;
-        }
-        
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
@@ -1824,3 +1512,4 @@
 </script>
 </body>
 </html>
+
