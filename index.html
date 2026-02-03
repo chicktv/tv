@@ -139,15 +139,18 @@
         }
     }
 
-    input, select {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            color: lime;
-            padding: 8px 12px;
-            transition: all 0.2s ease;
-            min-width: 80px;
-        }
+    #input-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5em; /* 改用em單位 */
+        flex-wrap: nowrap; /* 禁止換行 */
+        overflow: hidden;
+        white-space: nowrap;
+        margin-top: 0.625em; /* 改用em單位 */
+        flex-shrink: 0; /* 禁止縮小 */
+        margin-left: auto; /* 推到右邊 */
+        padding-left: 0.625em; /* 改用em單位 */
+    }
 
     #channel-selection {
         display: none;
@@ -163,17 +166,14 @@
     }
 
     input, select {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 6px;
-        color: lime;
-        padding: 0.5em 0.75em; /* 改用em單位 */
-        transition: all 0.2s ease;
-        min-width: 5em; /* 改用em單位 */
-        font-size: clamp(12px, 0.9vw, 14px); /* 響應式字體大小 */
-        height: 36px; /* 統一高度 */
-        box-sizing: border-box; /* 確保padding不影響高度 */
-    }
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: lime;
+            padding: 8px 12px;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
 
     #chatToggleBtn {
         background: rgba(145, 71, 255, 0.8);
