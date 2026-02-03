@@ -64,7 +64,7 @@
         .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
-        .self-name { color: var(--t-purp); font-weight: bold; }
+        .self-name { font-weight: bold; }
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
         
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
@@ -364,6 +364,7 @@
     let pendingReply = { id: null, user: null, displayName: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
+    let myColor = "#9147ff"; // 新增：預設為紫色
     
     // ===================== 拖曳功能變數 =====================
     let dragging = false;
@@ -1309,7 +1310,7 @@
             timestamp: Date.now()
         };
         
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+       $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
         
         limitMessages();
         
@@ -1365,6 +1366,11 @@
                         myBadges = badgeTag;
                         localStorage.setItem('twitch_my_badges', badgeTag);
                     }
+                    // 新增：取得並儲存自己的顏色
+               const colorTag = getTagValue(e.data, "color");
+               if (colorTag) {
+                myColor = colorTag;
+                }
                     return;
                 }
                 
