@@ -587,7 +587,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'flex';
+        document.getElementById('userInfo').style.display = 'none';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
@@ -1102,9 +1102,30 @@
     }
 
     // ===================== 核心解析邏輯 (已移除[r]標籤支援) =====================
-    function parseContent(str) {
+   function parseContent(str) {
         try {
             let a = str, placeholders = [];
+
+            // 新增: 處理 [r]username,timestamp[m] 格式的回覆
+            a = a.replace(/\[r\]([^,]+),([^[]+)\[m\]/g, (m, username, timestamp) => {
+                let id = `__PH_${placeholders.length}__`;
+                let parsedQuote = "..."; // 預設，如果找不到原訊息
+                const repliedMsg = msgCache[timestamp];
+                if (repliedMsg) {
+                    parsedQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
+                }
+                parsedQuote = parseContent(parsedQuote); // 遞迴解析原訊息內容
+                const isSelf = (username === myDisplayName || username === myLoginId);
+                const userTagClass = isSelf ? 'quote-user mention-self-tag' : 'quote-user';
+                let e = `<div class="quote-box" onclick="scrollToMsg('${timestamp}')">
+                    <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
+                        <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
+                        <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
+                    </svg> 回覆<span class="${userTagClass}">@${username}:</span>${parsedQuote}
+                </div>`;
+                placeholders.push(e);
+                return id;
+            });
 
             // 1. 處理大寫 [S]...E] (原創簡易圖片)
             a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
@@ -1193,7 +1214,7 @@
             }).join(' ');
 
             // 最後還原所有預留佔位符
-            placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
+       placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
             return a;
         } catch (error) {
             console.error('解析內容時出錯:', error, str);
@@ -1281,7 +1302,8 @@
         const badgeHtml = renderBadges(myBadgeStr);
         
         if (pendingReply.id) {
-            finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
+            // 修改: 使用 [r]displayName,msgId[m] 格式發送
+            finalCmd = `PRIVMSG #${CHANNEL} :[r]${pendingReply.displayName},${pendingReply.id}[m] ${val}`;
             
             const repliedMsg = msgCache[pendingReply.id];
             let rawQuote = "...";
@@ -1512,3 +1534,4 @@
 </script>
 </body>
 </html>
+
