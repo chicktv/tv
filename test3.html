@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat3</title>
+    <title>Chickchat</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -352,7 +352,7 @@
 </div>
 
 <script>
-    // ===================== 重要設定 =====================
+      // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     const CHANNEL = "69nodomcon";
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
@@ -497,76 +497,111 @@
         return a;
     }
 
-    // 改進的 parseMessageWithReplies 函數，增強訊息查找邏輯
-    function parseMessageWithReplies(content, depth = 0, visited = new Set()) {
-        if (window.debugMode && depth === 0) {
-            console.log('[DEBUG] 解析訊息內容:', content.substring(0, 100));
-            console.log('[DEBUG] msgCache 大小:', Object.keys(msgCache).length);
-        }
-        
-        if (depth > 3) return '<span style="color:#777;font-style:italic;">[...]</span>';
+    // ===================== 巢狀回覆解析系統 =====================
+    // 新增：改進的巢狀回覆解析函數
+    function parseNestedReplies(content, depth = 0, visited = new Set()) {
+        if (depth > 5) return '<span style="color:#777;font-style:italic;">[...]</span>';
         
         let result = content;
         
-        // 解析 [r] 標籤
-        result = result.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, (match, userLogin, timestamp) => {
+        // 使用更精確的正則表達式來匹配 [r] 標籤
+        const regex = /\[r\](.*?),([\d\w-]+)\[m\]/gi;
+        let match;
+        let lastIndex = 0;
+        let processed = "";
+        
+        while ((match = regex.exec(result)) !== null) {
+            // 添加匹配前的文本
+            processed += result.substring(lastIndex, match.index);
+            
+            const userLogin = match[1];
+            const timestamp = match[2];
+            
             // 檢查循環引用
             if (visited.has(timestamp)) {
-                return `<span style="color: #777; font-style: italic;">[@${userLogin}]</span>`;
+                processed += `<span style="color: #777; font-style: italic;">[@${userLogin}]</span>`;
+                lastIndex = regex.lastIndex;
+                continue;
             }
             
-            // 嘗試多種方式查找被回覆的訊息
-            let repliedMsg = null;
-            
-            // 方法1：直接通過 timestamp 查找
-            repliedMsg = msgCache[timestamp];
-            
-            // 方法2：如果找不到，嘗試在所有訊息中查找匹配的 timestamp
-            if (!repliedMsg) {
-                for (const key in msgCache) {
-                    const msg = msgCache[key];
-                    if (msg && msg.timestamp && msg.timestamp.toString() === timestamp) {
-                        repliedMsg = msg;
-                        break;
-                    }
-                }
-            }
-            
-            // 方法3：如果還是找不到，嘗試通過用戶名查找最近訊息
-            if (!repliedMsg) {
-                const userMessages = Object.keys(msgCache)
-                    .filter(key => {
-                        const msg = msgCache[key];
-                        return msg && msg.user && 
-                               (msg.user.login === userLogin || msg.displayName === userLogin);
-                    })
-                    .sort((a, b) => (msgCache[b].timestamp || 0) - (msgCache[a].timestamp || 0));
-                    
-                if (userMessages.length > 0) {
-                    repliedMsg = msgCache[userMessages[0]];
-                }
-            }
+            // 查找被回覆的訊息
+            let repliedMsg = findRepliedMessage(timestamp, userLogin);
             
             if (!repliedMsg) {
-                if (window.debugMode) {
-                    console.log('[DEBUG] 找不到被回覆的訊息:', {timestamp, userLogin});
-                }
-                return `@${userLogin}: ...`;
+                processed += `@${userLogin}: ...`;
+            } else {
+                // 添加當前訊息到已訪問集合
+                const newVisited = new Set(visited);
+                newVisited.add(timestamp);
+                
+                let rawBody = repliedMsg.content || "...";
+                
+                // 遞迴解析被回覆訊息中的 [r] 標籤
+                let body = parseNestedReplies(rawBody, depth + 1, newVisited);
+                
+                // 確保 body 中的媒體也被解析
+                body = parseContentBasic(body);
+                
+                processed += `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${repliedMsg.timestamp || timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
             }
             
-            // 添加當前訊息到已訪問集合
-            const newVisited = new Set(visited);
-            newVisited.add(timestamp);
-            
-            let rawBody = repliedMsg.content || "...";
-            
-            // 遞迴解析被回覆訊息中的 [r] 標籤
-            let body = parseMessageWithReplies(rawBody, depth + 1, newVisited);
-            
-            return `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${repliedMsg.timestamp || timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
-        });
+            lastIndex = regex.lastIndex;
+        }
         
-        return result;
+        // 添加剩餘的文本
+        processed += result.substring(lastIndex);
+        
+        return processed;
+    }
+    
+    // 新增：查找被回覆訊息的函數
+    function findRepliedMessage(timestamp, userLogin) {
+        let repliedMsg = null;
+        
+        // 方法1：直接通過 timestamp 查找
+        repliedMsg = msgCache[timestamp];
+        
+        // 方法2：如果找不到，嘗試在所有訊息中查找匹配的 timestamp
+        if (!repliedMsg) {
+            for (const key in msgCache) {
+                const msg = msgCache[key];
+                if (msg && msg.timestamp && msg.timestamp.toString() === timestamp) {
+                    repliedMsg = msg;
+                    break;
+                }
+            }
+        }
+        
+        // 方法3：如果還是找不到，嘗試通過用戶名查找最近訊息
+        if (!repliedMsg) {
+            const userMessages = Object.keys(msgCache)
+                .filter(key => {
+                    const msg = msgCache[key];
+                    return msg && msg.user && 
+                           (msg.user.login === userLogin || msg.displayName === userLogin);
+                })
+                .sort((a, b) => (msgCache[b].timestamp || 0) - (msgCache[a].timestamp || 0));
+                
+            if (userMessages.length > 0) {
+                repliedMsg = msgCache[userMessages[0]];
+            }
+        }
+        
+        if (window.debugMode && !repliedMsg) {
+            console.log('[DEBUG] 找不到被回覆的訊息:', {timestamp, userLogin});
+        }
+        
+        return repliedMsg;
+    }
+    
+    // 改進的 parseMessageWithReplies 函數，整合巢狀回覆解析
+    function parseMessageWithReplies(content, depth = 0, visited = new Set()) {
+        if (window.debugMode && depth === 0) {
+            console.log('[DEBUG] 解析訊息內容 (深度', depth, '):', content.substring(0, 100));
+        }
+        
+        // 使用新的巢狀回覆解析函數
+        return parseNestedReplies(content, depth, visited);
     }
 
     // ===================== 捲動控制功能 =====================
@@ -1335,27 +1370,7 @@
             a = a.replace(htmlMatch.match[0], e);
         }
 
-        // 6. 處理 [r] 標籤 - 使用改進的查找邏輯
-        a = a.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, (match, userLogin, timestamp) => {
-            const repliedMsg = msgCache[timestamp];
-            if (!repliedMsg) return `@${userLogin}: ...`;
-            
-            // 檢查是否已經處理過此訊息，避免循環引用
-            if (processedMessages.has(`ref_${timestamp}`)) {
-                return `<span style="color: #777; font-style: italic;">[@${repliedMsg.displayName || userLogin}]</span>`;
-            }
-            
-            processedMessages.add(`ref_${timestamp}`);
-            
-            let rawBody = repliedMsg.content || "...";
-            
-            // 遞迴解析被回覆訊息中的 [r] 標籤
-            let body = parseMessageWithReplies(rawBody, 1);
-            
-            return `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
-        });
-
-        // 7. 處理一般網址與自訂表情
+        // 6. 處理一般網址與自訂表情
         a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
         
         let words = a.split(' ');
@@ -1369,6 +1384,9 @@
         placeholders.forEach((html, i) => { 
             a = a.replace(`__PH_${i}__`, html); 
         });
+        
+        // 7. 處理 [r] 標籤 - 使用新的巢狀回覆解析系統
+        a = parseNestedReplies(a, 0, new Set());
         
         return a;
     }
@@ -1539,7 +1557,7 @@
             let isMe = (pUser === myDisplayName || pUser === myLoginId);
             
             let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
-            let pBody = parseMessageWithReplies(originalText, 1);
+            let pBody = parseNestedReplies(originalText, 1);
             
             const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
             
@@ -1556,19 +1574,8 @@
                 const repliedTimestamp = myR[2];
                 const userIdFromTag = myR[1];
                 
-                // 改進被回覆訊息的查找邏輯
-                let repliedMsg = msgCache[repliedTimestamp];
-                
-                // 如果直接找不到，嘗試在所有訊息中查找
-                if (!repliedMsg) {
-                    for (const key in msgCache) {
-                        const msg = msgCache[key];
-                        if (msg && msg.timestamp && msg.timestamp.toString() === repliedTimestamp) {
-                            repliedMsg = msg;
-                            break;
-                        }
-                    }
-                }
+                // 查找被回覆的訊息
+                let repliedMsg = findRepliedMessage(repliedTimestamp, userIdFromTag);
                 
                 let rawBody = "...";
                 let displayNameToShow = userIdFromTag;
@@ -1578,8 +1585,8 @@
                     displayNameToShow = repliedMsg.displayName || userIdFromTag;
                 }
                 
-                // 使用 parseMessageWithReplies 處理被引用訊息內容
-                let body = parseMessageWithReplies(rawBody, 1);
+                // 使用 parseNestedReplies 處理被引用訊息內容
+                let body = parseNestedReplies(rawBody, 1);
                 
                 let isMe = (displayNameToShow === myDisplayName || displayNameToShow === myLoginId);
                 const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
@@ -1592,7 +1599,7 @@
         }
         
         // 處理顯示訊息中的 [r] 標籤
-        displayMsg = parseMessageWithReplies(displayMsg, 0);
+        displayMsg = parseNestedReplies(displayMsg, 0);
         
         const badgeHtml = renderBadges(badgeStr);
         const line = `<div class="chat-line ts-${ts} id-${msgId || cacheKey}" data-msg-id="${msgId || cacheKey}" data-timestamp="${ts}">
@@ -1640,8 +1647,8 @@
                 rawQuote = repliedMsg.content || "...";
             }
             
-            // 使用 parseMessageWithReplies 處理被引用訊息內容
-            let parsedQuote = parseMessageWithReplies(rawQuote, 1);
+            // 使用 parseNestedReplies 處理被引用訊息內容
+            let parsedQuote = parseNestedReplies(rawQuote, 1);
             
             replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
 
@@ -1826,4 +1833,3 @@
 </script>
 </body>
 </html> 
-
