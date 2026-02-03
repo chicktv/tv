@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat</title>
+    <title>Chickchat7</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -298,7 +298,6 @@
 
 <div id="chat-container">
     <div id="messages"></div>
-   
 </div>
 
 <!-- @提及選單 -->
@@ -321,7 +320,7 @@
     
     <div class="input-section">
         <div class="tool-bar">
-		 <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
+            <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
             <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
             <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
             <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
@@ -371,7 +370,7 @@
     let offsetX = 0;
     let offsetY = 0;
     
-    // ===================== 從test3.html移植的捲動控制變數 =====================
+    // ===================== 捲動控制變數 =====================
     let autoScroll = true;
     let userScrolling = false;
     let scrollTimeout = null;
@@ -387,6 +386,10 @@
     let mentionSelectedIndex = 0;
     let mentionSearchTerm = "";
     
+    // ===================== 訊息佇列機制 =====================
+    let messageQueue = [];
+    let processingQueue = false;
+
     // ===================== 輔助函數 =====================
     function getParameterByName(name, url) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -415,7 +418,7 @@
         return match ? match[1] : null; 
     }
 
-    // ===================== 從test3.html移植的捲動控制功能 =====================
+    // ===================== 捲動控制功能 =====================
     function checkScrollPosition() {
         const chat = document.getElementById('chat-container');
         const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
@@ -487,7 +490,6 @@
         const emojiCloseBtn = document.getElementById('emojiCloseBtn');
         
         emojiHeader.addEventListener('mousedown', function(e) {
-            // 如果點擊的是關閉按鈕，則不觸發拖曳
             if (e.target === emojiCloseBtn || e.target.closest('#emojiCloseBtn')) return;
             
             dragging = true;
@@ -502,7 +504,7 @@
             if (dragging) {
                 emojiPanel.style.left = (e.clientX - offsetX) + 'px';
                 emojiPanel.style.top = (e.clientY - offsetY) + 'px';
-                emojiPanel.style.transform = 'none'; // 移除居中轉換
+                emojiPanel.style.transform = 'none';
             }
         });
         
@@ -513,7 +515,6 @@
             }
         });
         
-        // 關閉按鈕事件
         emojiCloseBtn.addEventListener('click', function() {
             emojiPanel.style.display = 'none';
         });
@@ -586,7 +587,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
@@ -631,7 +632,7 @@
         await loadResources();
         setupAutoTag();
         setupMentionEvents();
-        setupEmojiPanelDrag(); // 初始化表情面板拖曳功能
+        setupEmojiPanelDrag();
         
         if (!ACCESS_TOKEN) {
             startChat();
@@ -1100,99 +1101,104 @@
         btn.currentAudio = null;
     }
 
-    // ===================== 核心解析邏輯 =====================
+    // ===================== 核心解析邏輯 (已移除[r]標籤支援) =====================
     function parseContent(str) {
-        let a = str, placeholders = [];
+        try {
+            let a = str, placeholders = [];
 
-        // 1. 處理大寫 [S]...E] (原創簡易圖片)
-        a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
-            b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
-            const number = Math.floor((Math.random() * 1000) + 1);
-            let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
-            return id;
-        });
+            // 1. 處理大寫 [S]...E] (原創簡易圖片)
+            a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
+                b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
+                const number = Math.floor((Math.random() * 1000) + 1);
+                let id = `__PH_${placeholders.length}__`;
+                placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
+                return id;
+            });
 
-        // 2. 處理小寫 [s]...e] (新邏輯增強版)
-        a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
-            let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
-            let id = `__PH_${placeholders.length}__`;
-            let e = "";
-            const number = Math.floor((Math.random() * 1000) + 1);
+            // 2. 處理小寫 [s]...e] (新邏輯增強版)
+            a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
+                let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
+                let id = `__PH_${placeholders.length}__`;
+                let e = "";
+                const number = Math.floor((Math.random() * 1000) + 1);
 
-            if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                let t = getParameterByName('t', b);
-                e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
-            } else if (b.match(/twitter|https:\/\/x.com/g)) {
-                let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
-            } else if (b.match(/www.threads.com/g)) {
-                let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
-                e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
-            } else if (b.match(/\.(webm|mp4)/g)) {
-                e = `<video class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
-            } else if (b.match(/steampowered|steamcommunity/g)) {
-                let appId = b.match("app/([0-9]+)");
-                e = appId ? `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"  src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0"></iframe>` : b;
-            } else {
-                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
+                if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
+                    let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+                    let t = getParameterByName('t', b);
+                    e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
+                } else if (b.match(/twitter|https:\/\/x.com/g)) {
+                    let twUrl = b.replace('https://x.com', 'https://twitter.com');
+                    e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
+                } else if (b.match(/www.threads.com/g)) {
+                    let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
+                    e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
+                } else if (b.match(/\.(webm|mp4)/g)) {
+                    e = `<video class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
+                } else if (b.match(/steampowered|steamcommunity/g)) {
+                    let appId = b.match("app/([0-9]+)");
+                    e = appId ? `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"  src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0"></iframe>` : b;
+                } else {
+                    e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
+                }
+                placeholders.push(e);
+                return id;
+            });
+
+            // 3. 處理影片標籤 [y]...[t] (新邏輯)
+            a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
+                let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
+                let id = `__PH_${placeholders.length}__`;
+                let e = "";
+                if (b.match(/facebook/g)) {
+                    e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
+                } else if (b.match(/youtu/g)) {
+                    let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+                    e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+                } 
+                else if (b.match(/\.(webm|mp4)/g)) {
+                    e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
+                else if (b.match(/twitter|https:\/\/x.com/g)) {
+                    let twUrl = b.replace('https://x.com', 'https://twitter.com');
+                    e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
+                else {
+                    e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
+                }
+                placeholders.push(e);
+                return id;
+            });
+
+            // 4. 處理音訊標籤 [a]...[o]
+            a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
+                const url = content.trim(); 
+                let id = `__PH_${placeholders.length}__`;
+                placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`);
+                return id;
+            });
+
+            // 5. 處理自動解析 HTML 連結中的標籤 (extractTagAndUrl 新邏輯)
+            let htmlMatch = extractTagAndUrl(a);
+            if (htmlMatch) {
+                let b = htmlMatch.url;
+                let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
+                a = a.replace(htmlMatch.match[0], e);
             }
-            placeholders.push(e);
-            return id;
-        });
 
-        // 3. 處理影片標籤 [y]...[t] (新邏輯)
-        a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
-            let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
-            let id = `__PH_${placeholders.length}__`;
-            let e = "";
-            if (b.match(/facebook/g)) {
-                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
-            } else if (b.match(/youtu/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
-            } 
-            else if (b.match(/\.(webm|mp4)/g)) {
-                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
-            else if (b.match(/twitter|https:\/\/x.com/g)) {
-                let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
-            else {
-                e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
-            }
-            placeholders.push(e);
-            return id;
-        });
+            // 6. 處理一般網址與自訂表情
+            a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
+            let words = a.split(' ');
+            a = words.map(w => { 
+                if(w.includes('__PH_')) return w; 
+                const src = altMap[w.toLowerCase()]; 
+                return src ? `<img src="${src}" class="alt-emoji">` : w; 
+            }).join(' ');
 
-        // 4. 處理音訊標籤 [a]...[o]
-        a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
-            const url = content.trim(); 
-            let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`);
-            return id;
-        });
-
-        // 5. 處理自動解析 HTML 連結中的標籤 (extractTagAndUrl 新邏輯)
-        let htmlMatch = extractTagAndUrl(a);
-        if (htmlMatch) {
-            let b = htmlMatch.url;
-            let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
-            a = a.replace(htmlMatch.match[0], e);
+            // 最後還原所有預留佔位符
+            placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
+            return a;
+        } catch (error) {
+            console.error('解析內容時出錯:', error, str);
+            return str;
         }
-
-        // 6. 處理一般網址與自訂表情
-        a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
-        let words = a.split(' ');
-        a = words.map(w => { 
-            if(w.includes('__PH_')) return w; 
-            const src = altMap[w.toLowerCase()]; 
-            return src ? `<img src="${src}" class="alt-emoji">` : w; 
-        }).join(' ');
-
-        // 最後還原所有預留佔位符
-        placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
-        return a;
     }
 
     // 媒體載入完成的回調函數
@@ -1261,7 +1267,7 @@
         return html;
     }
 
-    // ===================== 聊天功能 =====================
+    // ===================== 改善的聊天功能 =====================
     function sendMessage() {
         const msgInput = document.getElementById('msginput');
         const val = msgInput.textContent.trim();
@@ -1315,47 +1321,69 @@
         msgInput.textContent = "";
     }
 
+    // ===================== 改善的聊天連線處理 =====================
     function startChat() {
-        if(socket) socket.close();
+        if(socket && socket.readyState === WebSocket.OPEN) {
+            socket.close();
+        }
+        
         socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        
         socket.onopen = () => {
+            console.log('WebSocket 連線已開啟');
             socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
             socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
             socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan'+Math.floor(Math.random()*1000)}`);
             socket.send(`JOIN #${CHANNEL}`);
             document.getElementById('status').textContent = `已連線到 ${CHANNEL} ${ACCESS_TOKEN?'（已登入）':'（匿名）'}`;
+            
+            messageQueue = [];
+            processingQueue = false;
+        };
+        
+        socket.onerror = (error) => {
+            console.error('WebSocket 錯誤:', error);
+            document.getElementById('status').textContent = '連線錯誤，嘗試重新連線...';
+        };
+        
+        socket.onclose = () => { 
+            console.log('WebSocket 連線關閉，3秒後重新連線');
+            document.getElementById('status').textContent = '連線中斷，重新連線中...';
+            setTimeout(startChat, 3000); 
         };
         
         socket.onmessage = (e) => {
-            if (e.data.startsWith('PING')) { 
-                socket.send('PONG :tmi.twitch.tv'); 
-                return; 
-            }
-            
-            if (e.data.includes('USERSTATE')) {
-                const badgeTag = getTagValue(e.data, "badges");
-                if (badgeTag) {
-                    myBadges = badgeTag;
-                    localStorage.setItem('twitch_my_badges', badgeTag);
+            try {
+                if (e.data.startsWith('PING')) { 
+                    socket.send('PONG :tmi.twitch.tv'); 
+                    return; 
                 }
-                return;
-            }
-            
-            if (!e.data.includes('PRIVMSG')) return;
-            
-            const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
-            const tags = parts[0], rawMsg = parts[1].trim();
-            const msgId = getTagValue(tags, "id");
-            const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
-            const user = getTagValue(tags, "display-name") || "User";
-            const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-            const color = getTagValue(tags, "color") || "#9147ff";
-            const badgeStr = getTagValue(tags, "badges");
-            
-            userCache[userLogin] = user;
-            
-            if (msgId) {
-                msgCache[msgId] = {
+                
+                if (e.data.includes('USERSTATE')) {
+                    const badgeTag = getTagValue(e.data, "badges");
+                    if (badgeTag) {
+                        myBadges = badgeTag;
+                        localStorage.setItem('twitch_my_badges', badgeTag);
+                    }
+                    return;
+                }
+                
+                if (!e.data.includes('PRIVMSG')) return;
+                
+                const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
+                if (parts.length < 2) return;
+                
+                const tags = parts[0], rawMsg = parts[1].trim();
+                const msgId = getTagValue(tags, "id");
+                const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
+                const user = getTagValue(tags, "display-name") || "User";
+                const userLogin = getTagValue(tags, "login") || user.toLowerCase();
+                const color = getTagValue(tags, "color") || "#9147ff";
+                const badgeStr = getTagValue(tags, "badges");
+                
+                userCache[userLogin] = user;
+                
+                const msgRecord = {
                     content: rawMsg,
                     user: { login: userLogin, displayName: user },
                     displayName: user,
@@ -1363,84 +1391,62 @@
                     avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
                     timestamp: parseInt(ts)
                 };
-            }
-            msgCache[ts] = {
-                content: rawMsg,
-                user: { login: userLogin, displayName: user },
-                displayName: user,
-                badges: badgeStr,
-                avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
-                timestamp: parseInt(ts)
-            };
-            
-            let replyHtml = "", displayMsg = rawMsg;
-            const pUser = getTagValue(tags, "reply-parent-display-name");
-            const pId = getTagValue(tags, "reply-parent-msg-id");
-            const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
-            
-            if (pUser && pId) {
-                let isMe = (pUser === myDisplayName || pUser === myLoginId);
                 
-                let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
-                let pBody = parseContent(originalText); 
-                
-                const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                
-                replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
-                
-                const mention = `@${pUser} `;
-                if (displayMsg.startsWith(mention)) {
-                    displayMsg = displayMsg.substring(mention.length);
+                if (msgId) {
+                    msgCache[msgId] = msgRecord;
                 }
-            } else if (rawMsg.includes("[r]")) {
-                const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
-                if(myR) {
-                    const repliedMsgId = myR[2];
-                    const userIdFromTag = myR[1];
+                msgCache[ts] = msgRecord;
+                
+                let replyHtml = "", displayMsg = rawMsg;
+                const pUser = getTagValue(tags, "reply-parent-display-name");
+                const pId = getTagValue(tags, "reply-parent-msg-id");
+                const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+                
+                if (pUser && pId) {
+                    let isMe = (pUser === myDisplayName || pUser === myLoginId);
                     
-                    let repliedMsg = msgCache[repliedMsgId];
-                    let rawBody = "...";
-                    let displayNameToShow = userIdFromTag;
+                    let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
+                    let pBody = parseContent(originalText); 
                     
-                    if (repliedMsg) {
-                        if (typeof repliedMsg === 'object') {
-                            rawBody = repliedMsg.content || "...";
-                            displayNameToShow = repliedMsg.displayName || userIdFromTag;
-                        } else {
-                            rawBody = repliedMsg;
-                        }
+                    const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+                    
+                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')">
+                        <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
+                            <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
+                            <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
+                        </svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}
+                    </div>`;
+                    
+                    const mention = `@${pUser} `;
+                    if (displayMsg.startsWith(mention)) {
+                        displayMsg = displayMsg.substring(mention.length);
                     }
-                    
-                    if (userCache[userIdFromTag]) {
-                        displayNameToShow = userCache[userIdFromTag];
-                    }
-                    
-                    let body = parseContent(rawBody); 
-                    
-                    replyHtml = `<div class="quote-box" onclick="scrollToMsg('${repliedMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${body}</div>`;
-                    
-                    displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
                 }
+                
+                const badgeHtml = renderBadges(badgeStr);
+                const line = `<div class="chat-line ts-${ts} id-${msgId || ts}" data-msg-id="${msgId || ts}">
+                    <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId || ts}','${user}')">
+                        <img src="https://chicktv.github.io/tv/re2.png" width="35" height="35">
+                    </div>
+                    ${replyHtml}
+                    ${badgeHtml}
+                    <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
+                </div>`;
+                
+                requestAnimationFrame(() => {
+                    const $messages = $("#messages");
+                    $messages.append(line);
+                    
+                    limitMessages();
+                    
+                    if (autoScroll) {
+                        forceScrollToBottom();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('處理訊息時發生錯誤:', error, e.data);
             }
-            
-            const badgeHtml = renderBadges(badgeStr);
-            const line = `<div class="chat-line ts-${ts} id-${msgId}" data-msg-id="${msgId}">
-                <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
-                ${replyHtml}
-                ${badgeHtml}
-                <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
-            </div>`;
-            $("#messages").append(line);
-            
-            limitMessages();
-            
-            if (autoScroll) {
-                forceScrollToBottom();
-            }
-        };
-        
-        socket.onclose = () => { 
-            setTimeout(startChat, 3000); 
         };
     }
 
@@ -1497,7 +1503,6 @@
         $("#reply-indicator").hide(); 
     }
     
-    // 綁定Enter鍵發送訊息
     document.getElementById('msginput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
