@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat</title>
+    <title>Chickchat9</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -1377,165 +1377,169 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
 
     // ===================== 處理單條訊息 =====================
     function processMessage(tags, rawMsg) {
-        const msgId = getTagValue(tags, "id");
-        const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
-        const user = getTagValue(tags, "display-name") || "User";
-        const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-        const color = getTagValue(tags, "color") || "#9147ff";
-        const badgeStr = getTagValue(tags, "badges");
+    const msgId = getTagValue(tags, "id");
+    const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
+    const user = getTagValue(tags, "display-name") || "User";
+    const userLogin = getTagValue(tags, "login") || user.toLowerCase();
+    const color = getTagValue(tags, "color") || "#9147ff";
+    const badgeStr = getTagValue(tags, "badges");
+    
+    const cacheKey = ts;
+    const realMsgId = msgId || ts;  // 優先用官方 msg-id，沒有才 fallback 到 ts
+    
+    if (msgCache[cacheKey]) {
+        logDebug('跳過重複訊息:', cacheKey);
+        return;
+    }
+    
+    userCache[userLogin] = user;
+    
+    msgCache[cacheKey] = {
+        content: rawMsg,
+        user: { login: userLogin, displayName: user },
+        displayName: user,
+        badges: badgeStr,
+        avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+        timestamp: parseInt(ts),
+        msgId: msgId,
+        realMsgId: realMsgId
+    };
+    
+    const cacheKeys = Object.keys(msgCache);
+    if (cacheKeys.length > 1000) {
+        cacheKeys.sort((a, b) => (msgCache[a].timestamp || 0) - (msgCache[b].timestamp || 0));
+        cacheKeys.slice(0, 200).forEach(key => delete msgCache[key]);
+    }
+    
+    let replyHtml = "", displayMsg = rawMsg;
+    const pUser = getTagValue(tags, "reply-parent-display-name");
+    const pId = getTagValue(tags, "reply-parent-msg-id");
+    const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+    
+    if (pUser && pId) {
+        let isMe = (pUser === myDisplayName || pUser === myLoginId);
         
-        const cacheKey = ts;
-        const realMsgId = msgId || ts;  // 優先用官方 msg-id，沒有才 fallback 到 ts
+        let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
+        let pBody = parseContentBasic(originalText);
         
-        if (msgCache[cacheKey]) {
-            logDebug('跳過重複訊息:', cacheKey);
-            return;
+        const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+        
+        replyHtml = `<div class="quote-box" data-type="native" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
+        
+        const mention = `@${pUser} `;
+        if (displayMsg.startsWith(mention)) {
+            displayMsg = displayMsg.substring(mention.length);
         }
-        
-        userCache[userLogin] = user;
-        
-        msgCache[cacheKey] = {
-            content: rawMsg,
-            user: { login: userLogin, displayName: user },
-            displayName: user,
-            badges: badgeStr,
-            avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
-            timestamp: parseInt(ts),
-            msgId: msgId,
-            realMsgId: realMsgId
-        };
-        
-        const cacheKeys = Object.keys(msgCache);
-        if (cacheKeys.length > 1000) {
-            cacheKeys.sort((a, b) => (msgCache[a].timestamp || 0) - (msgCache[b].timestamp || 0));
-            cacheKeys.slice(0, 200).forEach(key => delete msgCache[key]);
-        }
-        
-        let replyHtml = "", displayMsg = rawMsg;
-        const pUser = getTagValue(tags, "reply-parent-display-name");
-        const pId = getTagValue(tags, "reply-parent-msg-id");
-        const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
-        
-        if (pUser && pId) {
-            let isMe = (pUser === myDisplayName || pUser === myLoginId);
+    } else if (rawMsg.includes("[r]")) {
+        const myR = rawMsg.match(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/);
+        if (myR) {
+            const userIdFromTag = myR[1];
+            const refId = myR[2];  // 可能是 msg-id 或 timestamp
             
-            let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
-            let pBody = parseContentBasic(originalText);
+            const repliedMsg = msgCache[refId] || 
+                              Object.values(msgCache).find(m => m.realMsgId === refId || m.timestamp == refId);
             
+            let parsedBody = "...";
+            let displayNameToShow = userIdFromTag;
+            let jumpTarget = refId;
+            
+            if (repliedMsg) {
+                parsedBody = parseContentBasic(repliedMsg.content || "...");
+                displayNameToShow = repliedMsg.displayName || userIdFromTag;
+                jumpTarget = repliedMsg.realMsgId || refId;
+            }
+            
+            let isMe = (displayNameToShow === myDisplayName || displayNameToShow === myLoginId);
             const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
             
-            replyHtml = `<div class="quote-box" data-type="native" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
+            replyHtml = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${jumpTarget}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${parsedBody}</div>`;
             
-            const mention = `@${pUser} `;
-            if (displayMsg.startsWith(mention)) {
-                displayMsg = displayMsg.substring(mention.length);
-            }
-        } else if (rawMsg.includes("[r]")) {
-            const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
-            if(myR) {
-                const repliedTimestamp = myR[2];
-                const userIdFromTag = myR[1];
-                
-                let rawBody = "...";
-                const repliedMsg = msgCache[repliedTimestamp];
-                if (repliedMsg) {
-                    rawBody = repliedMsg.content || "...";
-                }
-                
-                let displayNameToShow = userIdFromTag;
-                if (repliedMsg && typeof repliedMsg === 'object') {
-                    displayNameToShow = repliedMsg.displayName || userIdFromTag;
-                }
-                
-                let body = parseContentBasic(rawBody);
-                
-                let isMe = (displayNameToShow === myDisplayName || displayNameToShow === myLoginId);
-                const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                
-                replyHtml = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${repliedMsg.realMsgId || repliedTimestamp}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${body}</div>`;
-                
-                displayMsg = rawMsg.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, "");
-            }
-        }
-        
-        displayMsg = parseMessageWithReplies(displayMsg);
-        
-        const badgeHtml = renderBadges(badgeStr);
-        const line = `<div class="chat-line ts-${ts} id-${realMsgId}" data-msg-id="${realMsgId}" data-timestamp="${ts}">
-            <div class="reply-btn" onclick="replyNative('${userLogin}','${realMsgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
-            ${replyHtml}
-            ${badgeHtml}
-            <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
-        </div>`;
-        
-        $("#messages").append(line);
-        
-        messageCount++;
-        document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
-        
-        limitMessages();
-        
-        if (autoScroll) {
-            forceScrollToBottom();
+            displayMsg = rawMsg.replace(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/gi, "");
         }
     }
+    
+    displayMsg = parseMessageWithReplies(displayMsg);
+    
+    const badgeHtml = renderBadges(badgeStr);
+    const line = `<div class="chat-line ts-${ts} id-${realMsgId}" data-msg-id="${realMsgId}" data-timestamp="${ts}">
+        <div class="reply-btn" onclick="replyNative('${userLogin}','${realMsgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
+        ${replyHtml}
+        ${badgeHtml}
+        <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
+    </div>`;
+    
+    $("#messages").append(line);
+    
+    messageCount++;
+    document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
+    
+    limitMessages();
+    
+    if (autoScroll) {
+        forceScrollToBottom();
+    }
+}
 
     // ===================== 聊天功能 =====================
     function sendMessage() {
-        const msgInput = document.getElementById('msginput');
-        const val = msgInput.textContent.trim();
+    const msgInput = document.getElementById('msginput');
+    const val = msgInput.textContent.trim();
+    
+    if (!val || !socket || socket.readyState !== 1) return;
+    
+    const selfTs = Date.now().toString(); 
+    let finalCmd = "", replyDisplay = "";
+    
+    const myBadgeStr = getMyBadges();
+    const badgeHtml = renderBadges(myBadgeStr);
+    
+    let repliedMsg = null;
+    if (pendingReply.id) {
+        repliedMsg = msgCache[pendingReply.id];
         
-        if (!val || !socket || socket.readyState !== 1) return;
+        finalCmd = `PRIVMSG #${CHANNEL} :[r]${pendingReply.user},${pendingReply.id}[m]${val}`;
         
-        const selfTs = Date.now().toString(); 
-        let finalCmd = "", replyDisplay = "";
-        
-        const myBadgeStr = getMyBadges();
-        const badgeHtml = renderBadges(myBadgeStr);
-        
-        if (pendingReply.id) {
-            finalCmd = `PRIVMSG #${CHANNEL} :[r]${pendingReply.user},${pendingReply.id}[m]${val}`;
-            
-            let rawQuote = "...";
-            const repliedMsg = msgCache[pendingReply.id];
-            if (repliedMsg) {
-                rawQuote = repliedMsg.content || "...";
-            }
-            
-            let parsedQuote = parseContentBasic(rawQuote);
-            
-            replyDisplay = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${repliedMsg.realMsgId || pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName}:</span>${parsedQuote}</div>`;
-        } else {
-            finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
+        let parsedQuote = "...";
+        if (repliedMsg) {
+            const rawQuote = repliedMsg.content || "...";
+            parsedQuote = parseContentBasic(rawQuote);
         }
         
-        socket.send(finalCmd); 
+        // 防呆：如果 repliedMsg 不存在，就不要讀 realMsgId
+        const jumpTarget = repliedMsg?.realMsgId || pendingReply.id;
         
-        // 儲存原始訊息內容
-        msgCache[selfTs] = {
-            content: val,
-            user: { login: myLoginId, displayName: myDisplayName },
-            displayName: myDisplayName,
-            badges: myBadgeStr,
-            avatar: myAvatar,
-            timestamp: parseInt(selfTs),
-            realMsgId: selfTs  // 暫時用 ts，之後可更新為真 msg-id
-        };
-        
-        $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
-        
-        messageCount++;
-        document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
-        
-        limitMessages();
-        
-        if (autoScroll) {
-            forceScrollToBottom();
-        }
-        
-        cancelReply(); 
-        msgInput.textContent = "";
+        replyDisplay = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${jumpTarget}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName}:</span>${parsedQuote}</div>`;
+    } else {
+        finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
     }
+    
+    socket.send(finalCmd); 
+    
+    // 儲存原始訊息內容
+    msgCache[selfTs] = {
+        content: val,
+        user: { login: myLoginId, displayName: myDisplayName },
+        displayName: myDisplayName,
+        badges: myBadgeStr,
+        avatar: myAvatar,
+        timestamp: parseInt(selfTs),
+        realMsgId: selfTs  // 暫時用 ts，之後可更新為真 msg-id
+    };
+    
+    $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+    
+    messageCount++;
+    document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
+    
+    limitMessages();
+    
+    if (autoScroll) {
+        forceScrollToBottom();
+    }
+    
+    cancelReply(); 
+    msgInput.textContent = "";
+}
 
     function startChat() {
         if(socket) socket.close();
