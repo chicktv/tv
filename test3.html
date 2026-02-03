@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat87</title>
+    <title>Chickchat7</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -64,7 +64,7 @@
         .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
-        .self-name { color: var(--t-purp); font-weight: bold; }
+        .self-name { font-weight: bold; }
         .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
         
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
@@ -364,7 +364,7 @@
     let pendingReply = { id: null, user: null, displayName: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
-    
+    let myColor = "#9147ff";
     // ===================== 拖曳功能變數 =====================
     let dragging = false;
     let offsetX = 0;
@@ -573,50 +573,73 @@
                 myLoginId = data.data[0].login;
                 myDisplayName = data.data[0].display_name;
                 myAvatar = data.data[0].profile_image_url;
-                document.getElementById('userAvatar').src = myAvatar;
-                document.getElementById('userName').innerText = myDisplayName;
-                document.getElementById('userInfo').style.display = 'flex';
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('msginput').disabled = false;
-                document.getElementById('sendbtn').disabled = false;
+                loginSuccess();
             }
-            startChat();
-        } catch (error) {
-            console.error('獲取用戶資訊失敗:', error);
-            localStorage.removeItem('twitch_token');
-            ACCESS_TOKEN = "";
+        } catch (e) {
+            console.error('取得用戶資訊失敗:', e);
+            alert('登入失敗，請重新登入');
+            logout();
+        }
+    }
+
+    function loginSuccess() {
+        document.getElementById('status').textContent = `已登入成功：${myDisplayName}，可以發言囉！`;
+        document.getElementById('msginput').disabled = false;
+        document.getElementById('sendbtn').disabled = false;
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('userAvatar').src = myAvatar;
+        document.getElementById('userName').textContent = myDisplayName;
+        
+        if (socket) {
+            socket.close();
+        }
+        startChat();
+    }
+
+    function logout() {
+        localStorage.removeItem('twitch_token');
+        location.reload();
+    }
+
+    // ===================== 初始化應用 =====================
+    async function initApp() {
+        if (location.hash.includes('access_token=')) {
+            const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
+            if (token) {
+                const oauthToken = 'oauth:' + token;
+                localStorage.setItem('twitch_token', oauthToken);
+                
+                if (window.opener) {
+                    window.close();
+                } else {
+                    history.replaceState(null, null, location.pathname);
+                    ACCESS_TOKEN = token;
+                    fetchUserInfo(token);
+                }
+            }
+        } else {
+            checkLogin();
+        }
+        
+        document.getElementById('loginBtn').onclick = loginWithPopup;
+        document.getElementById('logoutBtn').onclick = logout;
+        
+        scrollToBottomBtn.addEventListener('click', scrollToBottom);
+        setupScrollListener();
+        
+        await fetchBadges();
+        await loadResources();
+        setupAutoTag();
+        setupMentionEvents();
+        setupEmojiPanelDrag();
+        
+        if (!ACCESS_TOKEN) {
             startChat();
         }
     }
 
-    document.getElementById('loginBtn').addEventListener('click', loginWithPopup);
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('twitch_token');
-        ACCESS_TOKEN = "";
-        myLoginId = "";
-        myDisplayName = "";
-        myAvatar = "";
-        myBadges = "";
-        document.getElementById('userInfo').style.display = 'none';
-        document.getElementById('loginBtn').style.display = 'block';
-        document.getElementById('msginput').disabled = true;
-        document.getElementById('sendbtn').disabled = true;
-        if (socket) socket.close();
-        startChat();
-    });
-
-    // ===================== 初始化應用 =====================
-    function initApp() {
-        checkLogin();
-        setupScrollListener();
-        setupEmojiPanelDrag();
-        loadEmojis();
-        loadAudios();
-        setupAutoTag();
-    }
-	
-	    // ===================== @提及功能 =====================
+    // ===================== @提及功能 =====================
     function setupMentionEvents() {
         const msgInput = document.getElementById('msginput');
         
@@ -820,8 +843,7 @@
         mentionSelectedIndex = 0;
     }
 
-    // ===================== 表情與音訊載入 =====================
-     // ===================== 資源載入 =====================
+    // ===================== 資源載入 =====================
     async function fetchBadges() { 
         try {
             const response = await fetch('https://chicktv.github.io/tv/badges.txt');
@@ -972,6 +994,7 @@
             });
         }
     }
+
     // ===================== 文字插入函數 (contenteditable div 專用) =====================
     function insertTextAtCursor(text) {
         const el = document.getElementById('msginput');
@@ -1030,7 +1053,7 @@
         const saved = JSON.parse(localStorage.getItem('myAudios') || '[]');
         saved.push({ name, url });
         localStorage.setItem('myAudios', JSON.stringify(saved));
-        audioLists["音訊"].audios = saved;
+        audioLists["音訊"].audios = mergeAudioLists([], saved);
         renderTabContent("音訊");
     };
 
@@ -1078,34 +1101,10 @@
         btn.currentAudio = null;
     }
 
-    // ===================== 核心解析邏輯 =====================
+    // ===================== 核心解析邏輯 (已移除[r]標籤支援) =====================
     function parseContent(str) {
         try {
             let a = str, placeholders = [];
-
-            // 處理 [r]username,timestamp[m] 格式的回覆
-            a = a.replace(/\[r\]([^,]+),([^[]+)\[m\]/g, (m, username, timestamp) => {
-                let id = `__PH_${placeholders.length}__`;
-                let parsedQuote = "... (原訊息未找到)"; // 預設，如果找不到原訊息
-                let repliedMsg = msgCache[timestamp];
-                if (!repliedMsg && msgId) {
-                    repliedMsg = msgCache[msgId]; // 備用，使用msgId查找
-                }
-                if (repliedMsg) {
-                    parsedQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
-                }
-                parsedQuote = parseContent(parsedQuote); // 遞迴解析原訊息內容
-                const isSelf = (username === myDisplayName || username === myLoginId);
-                const userTagClass = isSelf ? 'quote-user mention-self-tag' : 'quote-user';
-                let e = `<div class="quote-box" onclick="scrollToMsg('${timestamp}')">
-                    <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
-                        <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                        <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
-                    </svg> 回覆<span class="${userTagClass}">@${username}:</span>${parsedQuote}
-                </div>`;
-                placeholders.push(e);
-                return id;
-            });
 
             // 1. 處理大寫 [S]...E] (原創簡易圖片)
             a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
@@ -1282,7 +1281,7 @@
         const badgeHtml = renderBadges(myBadgeStr);
         
         if (pendingReply.id) {
-            finalCmd = `PRIVMSG #${CHANNEL} :[r]${pendingReply.displayName},${pendingReply.id}[m] ${val}`;
+            finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
             
             const repliedMsg = msgCache[pendingReply.id];
             let rawQuote = "...";
@@ -1293,7 +1292,7 @@
             let parsedQuote = parseContent(rawQuote);
             const displayNameToShow = pendingReply.displayName || pendingReply.user;
             
-            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
+            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
 
         } else {
             finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
@@ -1310,7 +1309,7 @@
             timestamp: Date.now()
         };
         
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
         
         limitMessages();
         
@@ -1366,6 +1365,11 @@
                         myBadges = badgeTag;
                         localStorage.setItem('twitch_my_badges', badgeTag);
                     }
+					// 新增：取得並儲存自己的顏色
+                const colorTag = getTagValue(e.data, "color");
+                if (colorTag) {
+                 myColor = colorTag;
+                 }
                     return;
                 }
                 
@@ -1414,7 +1418,7 @@
                     replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')">
                         <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor">
                             <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                            <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
+                            <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
                         </svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}
                     </div>`;
                     
@@ -1513,3 +1517,4 @@
 </script>
 </body>
 </html>
+
