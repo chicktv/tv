@@ -2,298 +2,290 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat9</title>
+    <title>Chickchat</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-/* --- Webkit Scrollbar 樣式 --- */
-#chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
-#chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-#chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-#chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
+        /* --- Webkit Scrollbar 樣式 --- */
+        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
+        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
-/* 統一控制媒體嵌入大小 */
-#chat-container .media-preview,
-#chat-container iframe.media-preview,
-#chat-container iframe[src*="youtube.com"],
-#chat-container iframe[src*="youtube-nocookie.com"],
-#chat-container iframe[src*="youtu.be"],
-#chat-container iframe[src*="facebook.com"],
-#chat-container blockquote.twitter-tweet,
-#chat-container .twitter-tweet-container,
-#chat-container iframe[src*="store.steampowered.com"],
-#chat-container iframe[src*="threads.com"] {
-    width: auto !important;
-    height: auto !important;
-    max-width: 250px !important;
-    max-height: 250px !important;
-    border-radius: 8px !important;
-    border: 0px solid #444 !important;
-    margin: 5px 0 !important;
-    object-fit: fill !important;
-}
+        /* 統一控制媒體嵌入大小 */
+        #chat-container .media-preview,
+        #chat-container iframe.media-preview,
+        #chat-container iframe[src*="youtube.com"],
+        #chat-container iframe[src*="youtube-nocookie.com"],
+        #chat-container iframe[src*="youtu.be"],
+        #chat-container iframe[src*="facebook.com"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container .twitter-tweet-container,
+        #chat-container iframe[src*="store.steampowered.com"],
+        #chat-container iframe[src*="threads.com"] {
+            width: auto !important;
+            height: auto !important;
+            max-width: 250px !important;
+            max-height: 250px !important;
+            border-radius: 8px !important;
+            border: 0px solid #444 !important;
+            margin: 5px 0 !important;
+            object-fit: fill !important;
+        }
 
-/* 針對YouTube、Twitter、Threads、Steam的特殊調整 */
-#chat-container iframe[src*="youtube.com"],
-#chat-container iframe[src*="youtube-nocookie.com"],
-#chat-container blockquote.twitter-tweet,
-#chat-container iframe[src*="threads.com"],
-#chat-container iframe[src*="store.steampowered.com"] {
-    min-height: 400px !important;
-}
+        #chat-container iframe[src*="youtube.com"],
+        #chat-container iframe[src*="youtube-nocookie.com"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container iframe[src*="threads.com"],
+        #chat-container iframe[src*="store.steampowered.com"] {
+            min-height: 400px !important;
+        }
 
-#chat-container iframe[src*="threads.com"] { background: #FFF !important; }
+        #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
 
-/* 圖片與影片保持原有比例 */
-#chat-container img.media-preview {
-    height: auto !important;
-    max-height: 250px !important;
-    min-height: auto !important;
-    object-fit: fill !important;
-}
-#chat-container video.media-preview {
-    height: auto !important;
-    max-height: 250px !important;
-    min-height: auto !important;
-}
+        #chat-container img.media-preview {
+            height: auto !important;
+            max-height: 250px !important;
+            min-height: auto !important;
+            object-fit: fill !important;
+        }
+        #chat-container video.media-preview {
+            height: auto !important;
+            max-height: 250px !important;
+            min-height: auto !important;
+        }
 
-.header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-#chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
-.chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
-.chat-line:hover { background: rgba(255,255,255,0.08); }
-.chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
-.self-name { color: var(--t-purp); font-weight: bold; }
-.media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
+        .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
+        .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
+        .chat-line:hover { background: rgba(255,255,255,0.08); }
+        .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
+        .self-name { color: var(--t-purp); font-weight: bold; }
+        .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
+        
+        .audio-player { margin-top: 10px; display: block; max-width: 300px; }
+        .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
+        .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
+        .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
+        .reply-btn:hover {background-color: #3c3a39;}
+        .chat-line:hover .reply-btn { display: flex; }
+        .quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .quote-box:hover { background: rgba(255,255,255,0.15); }
+        .quote-user { color: #adadb8; margin-right: 5px; }
+        .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
+        .quote-box[data-type="native"] {
+            border-left: 4px solid #9147ff;
+            background: rgba(145,71,255,0.12);
+        }
+        .quote-box[data-type="custom"] {
+            border-left: 4px solid #ff6b6b;
+            background: rgba(255,107,107,0.08);
+        }
+        
+        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
+        
+        #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
+        
+        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
+        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
+        .tool-link:hover { color: #fff; }
+        .tool-link svg { margin-left: 1px; }
+        .tool-link svg:hover { fill: #9147ff; }
+        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
+        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
+        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
+        #msginput { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            color: #efeff1; 
+            font-size: 14px; 
+            outline: none; 
+            padding: 10px 0; 
+            font-family: inherit; 
+            box-sizing: border-box; 
+            font-family: inherit; 
+            overflow-wrap: break-word; 
+            max-height: calc(5lh + 20px); 
+            overflow: hidden auto;
+            white-space: pre-wrap;
+            min-height: 20px;
+        }
+        #msginput:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:focus:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
 
-.audio-player { margin-top: 10px; display: block; max-width: 300px; }
-.alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
-.badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
-.reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
-.reply-btn:hover {background-color: #3c3a39;}
-.chat-line:hover .reply-btn { display: flex; }
-.quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-.quote-box:hover { background: rgba(255,255,255,0.15); }
-.quote-user { color: #adadb8; margin-right: 5px; }
-.mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
-.quote-box[data-type="native"] {
-    border-left: 4px solid #9147ff;
-    background: rgba(145,71,255,0.12);
-}
-.quote-box[data-type="custom"] {
-    border-left: 4px solid #ff6b6b;
-    background: rgba(255,107,107,0.08);
-}
-
-/* --- 根據圖片優化輸入區佈局 --- */
-.footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
-
-#reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
-
-.tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
-.tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
-.tool-link:hover { color: #fff; }
-.tool-link svg { margin-left: 1px; }
-.tool-link svg:hover { fill: #9147ff; }
-.input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-.input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
-.input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
-#msginput { 
-    flex: 1; 
-    background: transparent; 
-    border: none; 
-    color: #efeff1; 
-    font-size: 14px; 
-    outline: none; 
-    padding: 10px 0; 
-    font-family: inherit; 
-    box-sizing: border-box; 
-    font-family: inherit; 
-    overflow-wrap: break-word; 
-    max-height: calc(5lh + 20px); 
-    overflow: hidden auto;
-    white-space: pre-wrap;
-    min-height: 20px;
-}
-#msginput:empty:before {
-    content: attr(placeholder);
-    color: #777;
-}
-#msginput:focus:empty:before {
-    content: attr(placeholder);
-    color: #777;
-}
-#msginput:disabled { cursor: not-allowed; opacity: 0.5; }
-
-.action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
-#sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
-#sendbtn:hover { background: #a970ff; }
-#sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
-
-/* 表情面板 */
-#emojiPanel { 
-    position: fixed; 
-    display: none; 
-    width: 350px; 
-    height: 400px; 
-    background: #1f182e; 
-    border: 2px solid #443a5a; 
-    border-radius: 12px; 
-    z-index: 5000; 
-    left: 50%; 
-    top: 50%; 
-    transform: translate(-50%, -50%); 
-    flex-direction: column; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    cursor: default;
-}
-#emojiPanel.dragging { cursor: grabbing; }
-.emoji-header { 
-    padding: 12px; 
-    display: flex; 
-    justify-content: space-between; 
-    background: #26262c; 
-    border-radius: 12px 12px 0 0; 
-    align-items: center;
-    cursor: grab;
-    user-select: none;
-}
-.emoji-header:active { cursor: grabbing; }
-#emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
-#emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
-.emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
-.emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-.emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-.bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
-.custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
-/* ========== 新添加：捲動到底部按鈕 ========== */
-#scrollToBottomBtn {
-    position: absolute;
-    bottom: 80px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background: rgba(145, 71, 255, 0.8);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease;
-    font-size: 20px;
-}
-
-#scrollToBottomBtn:hover {
-    background: rgba(145, 71, 255, 1);
-    transform: scale(1.1);
-}
-
-#scrollToBottomBtn:active {
-    transform: scale(0.95);
-}
-
-#scrollToBottomBtn svg {
-    width: 24px;
-    height: 24px;
-}
-
-.delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-.show-del .delete-btn { display: block; }
-.audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
-.audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
-.audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
-
-@keyframes pulse-audio {
-    0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
-    100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
-}
-
-#userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
-#userInfo img { width: 30px; height: 30px; border-radius: 50%; }
-#logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
-#logoutBtn:hover { background: #c51614; }
-#loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
-#loginBtn:hover { background: #772ce8; }
-#status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
-
-/* 訊息統計 */
-#message-stats {
-    margin: 8px 12px;
-    font-weight: 500;
-    color: #00ff00;
-    font-size: 10px;
-}
-
-/* @提及選單樣式 - 類似Twitch */
-#mention-list {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    width: 300px;
-    max-height: 350px;
-    background: var(--t-alt);
-    border: 1px solid #333;
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    z-index: 9999;
-    display: none;
-    overflow-y: auto;
-    padding: 4px 0;
-}
-
-.mention-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.2s;
-    color: var(--t-text);
-    font-size: 14px;
-}
-
-.mention-item:hover, .mention-item.selected {
-    background: rgba(145, 71, 255, 0.2);
-}
-
-.mention-item .badge {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-}
-
-.mention-item .user-avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.mention-item .display-name {
-    font-weight: 600;
-    color: var(--t-purp);
-}
-
-.mention-item .login-name {
-    color: #adadb8;
-    font-size: 12px;
-    margin-left: 4px;
-}
-
-.mention-header {
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #adadb8;
-    border-bottom: 1px solid #333;
-    margin-bottom: 4px;
-    background: rgba(0,0,0,0.2);
-}</style></head><body onload="initApp()">
+        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
+        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        #sendbtn:hover { background: #a970ff; }
+        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
+        
+        #emojiPanel { 
+            position: fixed; 
+            display: none; 
+            width: 350px; 
+            height: 400px; 
+            background: #1f182e; 
+            border: 2px solid #443a5a; 
+            border-radius: 12px; 
+            z-index: 5000; 
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%); 
+            flex-direction: column; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: default;
+        }
+        #emojiPanel.dragging { cursor: grabbing; }
+        .emoji-header { 
+            padding: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            background: #26262c; 
+            border-radius: 12px 12px 0 0; 
+            align-items: center;
+            cursor: grab;
+            user-select: none;
+        }
+        .emoji-header:active { cursor: grabbing; }
+        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
+        #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
+        .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
+        .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
+        .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
+        
+        #scrollToBottomBtn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(145, 71, 255, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+        
+        #scrollToBottomBtn:hover {
+            background: rgba(145, 71, 255, 1);
+            transform: scale(1.1);
+        }
+        
+        #scrollToBottomBtn:active {
+            transform: scale(0.95);
+        }
+        
+        .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .show-del .delete-btn { display: block; }
+        .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
+        .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
+        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
+        
+        @keyframes pulse-audio {
+            0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
+        }
+        
+        #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
+        #userInfo img { width: 30px; height: 30px; border-radius: 50%; }
+        #logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
+        #logoutBtn:hover { background: #c51614; }
+        #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
+        #loginBtn:hover { background: #772ce8; }
+        #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
+        
+        #message-stats {
+            margin: 8px 12px;
+            font-weight: 500;
+            color: #00ff00;
+            font-size: 10px;
+        }
+        
+        #mention-list {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 300px;
+            max-height: 350px;
+            background: var(--t-alt);
+            border: 1px solid #333;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        
+        .mention-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--t-text);
+            font-size: 14px;
+        }
+        
+        .mention-item:hover, .mention-item.selected {
+            background: rgba(145, 71, 255, 0.2);
+        }
+        
+        .mention-item .badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .mention-item .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .mention-item .display-name {
+            font-weight: 600;
+            color: var(--t-purp);
+        }
+        
+        .mention-item .login-name {
+            color: #adadb8;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        
+        .mention-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #adadb8;
+            border-bottom: 1px solid #333;
+            margin-bottom: 4px;
+            background: rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body onload="initApp()">
 
 <div class="header-bar">
     <div id="status">載入中...</div>
@@ -310,10 +302,8 @@
 
 <div id="chat-container">
     <div id="messages"></div>
-   
 </div>
 
-<!-- @提及選單 -->
 <div id="mention-list"></div>
 
 <div id="emojiPanel">
@@ -331,26 +321,28 @@
         <span onclick="cancelReply()" style="float:right; cursor:pointer; color:#efeff1;">✕ 取消回覆</span>
     </div>
     
-<div class="input-section">
-    <div class="tool-bar">
-     <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
-        <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
-        <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
-        <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
-    </div>
-    
-<div class="input-box-wrapper">
-    <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
-    <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-        <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
-            <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-        </svg>
-    </button>
-</div>
+    <div class="input-section">
+        <div class="tool-bar">
+            <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
+            <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
+            <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
+            <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
+        </div>
+        
+        <div class="input-box-wrapper">
+            <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
+            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
+                <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
+                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
+                </svg>
+            </button>
+        </div>
 
-<div class="action-bar">
-    <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
-</div></div></div>
+        <div class="action-bar">
+            <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
+        </div>
+    </div>
+</div>
 
 <script>
     // ===================== 重要設定 =====================
@@ -372,45 +364,32 @@
     let customBadges = {};
     let msgCache = {}; 
     let userCache = {}; 
-    let pendingReply = { id: null, user: null, displayName: null };
+    let pendingReply = { id: null, user: null, displayName: null, msgId: null };
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
     
-    // ===================== 拖曳功能變數 =====================
     let dragging = false;
     let offsetX = 0;
     let offsetY = 0;
     
-    // ===================== 從test3.html移植的捲動控制變數 =====================
     let autoScroll = true;
-    let userScrolling = false;
     let scrollTimeout = null;
-    const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
     
     const MAX_MESSAGES = 100;
     let mediaLoadCount = 0;
     let mediaLoadTimer = null;
     
-    // @提及相關變數
     let recentUsers = [];
     let mentionListVisible = false;
     let mentionSelectedIndex = 0;
     let mentionSearchTerm = "";
     
-    // 訊息統計
     let messageCount = 0;
     
-    // 用於防止遞迴引用的集合
-    let processedMessages = new Set();
-    
-    // 調試模式
     window.debugMode = true;
 
-    // ===================== 輔助函數 =====================
     function logDebug(...args) {
-        if (window.debugMode) {
-            console.log('[DEBUG]', ...args);
-        }
+        if (window.debugMode) console.log('[DEBUG]', ...args);
     }
 
     function getParameterByName(name, url) {
@@ -418,20 +397,13 @@
         var regexS = "[\\?&]" + name + "=([^&#]*)";
         var regex = new RegExp(regexS);
         var results = regex.exec(url);
-        if (results == null) return "";
-        else return decodeURIComponent(results[1].replace(/\+/g, " "));
+        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
     }
 
     function extractTagAndUrl(str) {
         const regex = /\[(s|y|start)\]\s+<a\s+href="([^"]+)"[^>]+>[^<]+<\/a>/i;
         const match = str.match(regex);
-        if (match) {
-            const tag = match[1];
-            const url = match[2];
-            return { tag, url, match };
-        } else {
-            return null;
-        }
+        return match ? { tag: match[1], url: match[2], match } : null;
     }
 
     function getTagValue(tags, key) { 
@@ -440,28 +412,20 @@
         return match ? match[1] : null; 
     }
 
-    // 新增：簡化的內容解析函數，只用於解析媒體標籤，不解析 [r] 標籤
     function parseContentBasic(str) {
         let a = str, placeholders = [];
         
-        // 處理基本媒體標籤（圖片、影片、音訊等）
-        // 這裡只包含基本的媒體解析邏輯，不包含 [r] 標籤處理
-        
-        // 1. 處理圖片標籤 [s]...e]
         a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
             let id = `__PH_BASIC_${placeholders.length}__`;
-            
             let e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
             placeholders.push(e);
             return id;
         });
         
-        // 2. 處理影片標籤 [y]...[t]
         a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
             let id = `__PH_BASIC_${placeholders.length}__`;
-            
             let e = "";
             if (b.match(/youtu/g)) {
                 let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
@@ -469,12 +433,10 @@
             } else {
                 e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
             }
-            
             placeholders.push(e);
             return id;
         });
         
-        // 3. 處理音訊標籤 [a]...[o]
         a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
             const url = content.trim(); 
             let id = `__PH_BASIC_${placeholders.length}__`;
@@ -482,10 +444,8 @@
             return id;
         });
         
-        // 處理一般網址
         a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_BASIC_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
         
-        // 處理自訂表情
         let words = a.split(' ');
         a = words.map(w => { 
             if(w.includes('__PH_BASIC_')) return w; 
@@ -493,7 +453,6 @@
             return src ? `<img src="${src}" class="alt-emoji">` : w; 
         }).join(' ');
         
-        // 還原預留佔位符
         placeholders.forEach((html, i) => { 
             a = a.replace(`__PH_BASIC_${i}__`, html); 
         });
@@ -501,17 +460,16 @@
         return a;
     }
 
-    // 新增：遞迴解析訊息內容中的 [r][m] 標籤
     function parseMessageWithReplies(content, depth = 0, visited = new Set()) {
-        if (depth > 5) {  // 更嚴格的深度限制
+        if (depth > 5) {
             return content + ' <span style="color:#f44">[引用過深，已截斷]</span>';
         }
 
         let result = content;
 
-        result = result.replace(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/gi, (m, user, refId, extra) => {
-            // refId 現在優先視為 msg-id，其次才是 timestamp
-            const repliedMsg = msgCache[refId] || Object.values(msgCache).find(m => m.realMsgId === refId || m.timestamp == refId);
+        result = result.replace(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/gi, (m, user, refId) => {
+            const repliedMsg = msgCache[refId] || 
+                              Object.values(msgCache).find(m => m.realMsgId === refId || String(m.timestamp) === refId);
             
             if (!repliedMsg || visited.has(refId)) {
                 return `<span style="color:#777">@${user}（無法載入或循環引用）</span>`;
@@ -522,17 +480,17 @@
             let body = parseMessageWithReplies(repliedMsg.content || "...", depth + 1, visited);
             body = parseContentBasic(body);
 
-            return `<span style="color:#9147ff;cursor:pointer;" onclick="scrollToMsg('${repliedMsg.realMsgId || refId}')">@${repliedMsg.displayName || user}</span>: ${body}`;
+            const jumpTarget = repliedMsg.realMsgId || refId;
+
+            return `<span style="color:#9147ff;cursor:pointer;" onclick="scrollToMsg('${jumpTarget}')">@${repliedMsg.displayName || user}</span>: ${body}`;
         });
 
         return result;
     }
 
-    // ===================== 從test3.html移植的捲動控制功能 =====================
     function checkScrollPosition() {
         const chat = document.getElementById('chat-container');
         const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
-        
         if (isAtBottom) {
             autoScroll = true;
             hideScrollButton();
@@ -543,11 +501,11 @@
     }
 
     function showScrollButton() {
-        scrollToBottomBtn.style.display = 'flex';
+        document.getElementById('scrollToBottomBtn').style.display = 'flex';
     }
 
     function hideScrollButton() {
-        scrollToBottomBtn.style.display = 'none';
+        document.getElementById('scrollToBottomBtn').style.display = 'none';
     }
 
     function scrollToBottom() {
@@ -555,22 +513,14 @@
         chat.scrollTop = chat.scrollHeight;
         autoScroll = true;
         hideScrollButton();
-        
-        setTimeout(() => {
-            chat.scrollTop = chat.scrollHeight;
-        }, 50);
+        setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
     }
 
     function setupScrollListener() {
         const chat = document.getElementById('chat-container');
         chat.addEventListener('scroll', () => {
-            if (scrollTimeout) {
-                clearTimeout(scrollTimeout);
-            }
-            
-            scrollTimeout = setTimeout(() => {
-                checkScrollPosition();
-            }, 150);
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(checkScrollPosition, 150);
         });
     }
 
@@ -578,61 +528,49 @@
         if (autoScroll) {
             const chat = document.getElementById('chat-container');
             chat.scrollTop = chat.scrollHeight;
-            
-            const maxAttempts = 10;
             let attempts = 0;
-            
-            const scrollInterval = setInterval(() => {
+            const interval = setInterval(() => {
                 chat.scrollTop = chat.scrollHeight;
                 attempts++;
-                
-                if (attempts >= maxAttempts) {
-                    clearInterval(scrollInterval);
-                }
+                if (attempts >= 10) clearInterval(interval);
             }, 100);
         }
     }
 
-    // ===================== 拖曳功能 =====================
     function setupEmojiPanelDrag() {
-        const emojiPanel = document.getElementById('emojiPanel');
-        const emojiHeader = emojiPanel.querySelector('.emoji-header');
-        const emojiCloseBtn = document.getElementById('emojiCloseBtn');
+        const panel = document.getElementById('emojiPanel');
+        const header = panel.querySelector('.emoji-header');
+        const closeBtn = document.getElementById('emojiCloseBtn');
         
-        emojiHeader.addEventListener('mousedown', function(e) {
-            // 如果點擊的是關閉按鈕，則不觸發拖曳
-            if (e.target === emojiCloseBtn || e.target.closest('#emojiCloseBtn')) return;
-            
+        header.addEventListener('mousedown', e => {
+            if (e.target === closeBtn || e.target.closest('#emojiCloseBtn')) return;
             dragging = true;
-            offsetX = e.clientX - emojiPanel.offsetLeft;
-            offsetY = e.clientY - emojiPanel.offsetTop;
-            
-            emojiPanel.classList.add('dragging');
+            offsetX = e.clientX - panel.offsetLeft;
+            offsetY = e.clientY - panel.offsetTop;
+            panel.classList.add('dragging');
             e.preventDefault();
         });
         
-        document.addEventListener('mousemove', function(e) {
+        document.addEventListener('mousemove', e => {
             if (dragging) {
-                emojiPanel.style.left = (e.clientX - offsetX) + 'px';
-                emojiPanel.style.top = (e.clientY - offsetY) + 'px';
-                emojiPanel.style.transform = 'none'; // 移除居中轉換
+                panel.style.left = (e.clientX - offsetX) + 'px';
+                panel.style.top = (e.clientY - offsetY) + 'px';
+                panel.style.transform = 'none';
             }
         });
         
-        document.addEventListener('mouseup', function() {
+        document.addEventListener('mouseup', () => {
             if (dragging) {
                 dragging = false;
-                emojiPanel.classList.remove('dragging');
+                panel.classList.remove('dragging');
             }
         });
         
-        // 關閉按鈕事件
-        emojiCloseBtn.addEventListener('click', function() {
-            emojiPanel.style.display = 'none';
+        closeBtn.addEventListener('click', () => {
+            panel.style.display = 'none';
         });
     }
 
-    // ===================== 登入系統 =====================
     function checkLogin() {
         const saved = localStorage.getItem('twitch_token');
         if (saved) {
@@ -644,8 +582,7 @@
     }
 
     function loginWithPopup() {
-        const width = 600;
-        const height = 700;
+        const width = 600, height = 700;
         const left = (screen.width - width) / 2;
         const top = (screen.height - height) / 2;
         
@@ -655,14 +592,14 @@
             `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
         );
         
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-            alert('彈出視窗被阻擋了！請允許彈出視窗，或使用其他瀏覽器。');
+        if (!popup) {
+            alert('彈出視窗被阻擋，請允許彈出視窗');
             return;
         }
         
-        const checkPopup = setInterval(() => {
+        const check = setInterval(() => {
             if (popup.closed) {
-                clearInterval(checkPopup);
+                clearInterval(check);
                 const token = localStorage.getItem('twitch_token');
                 if (token) {
                     ACCESS_TOKEN = token.replace('oauth:', '');
@@ -675,10 +612,7 @@
     async function fetchUserInfo(token) {
         try {
             const res = await fetch('https://api.twitch.tv/helix/users', {
-                headers: { 
-                    'Client-ID': CLIENT_ID, 
-                    'Authorization': 'Bearer ' + token 
-                }
+                headers: { 'Client-ID': CLIENT_ID, 'Authorization': 'Bearer ' + token }
             });
             const data = await res.json();
             if (data.data?.[0]) {
@@ -703,9 +637,7 @@
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
-        if (socket) {
-            socket.close();
-        }
+        if (socket) socket.close();
         startChat();
     }
 
@@ -714,17 +646,14 @@
         location.reload();
     }
 
-    // ===================== 初始化應用 =====================
     async function initApp() {
         if (location.hash.includes('access_token=')) {
             const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
             if (token) {
                 const oauthToken = 'oauth:' + token;
                 localStorage.setItem('twitch_token', oauthToken);
-                
-                if (window.opener) {
-                    window.close();
-                } else {
+                if (window.opener) window.close();
+                else {
                     history.replaceState(null, null, location.pathname);
                     ACCESS_TOKEN = token;
                     fetchUserInfo(token);
@@ -737,109 +666,93 @@
         document.getElementById('loginBtn').onclick = loginWithPopup;
         document.getElementById('logoutBtn').onclick = logout;
         
-        scrollToBottomBtn.addEventListener('click', scrollToBottom);
+        document.getElementById('scrollToBottomBtn').addEventListener('click', scrollToBottom);
         setupScrollListener();
         
         await fetchBadges();
         await loadResources();
         setupAutoTag();
         setupMentionEvents();
-        setupEmojiPanelDrag(); // 初始化表情面板拖曳功能
+        setupEmojiPanelDrag();
         
-        if (!ACCESS_TOKEN) {
-            startChat();
-        }
+        if (!ACCESS_TOKEN) startChat();
     }
 
-    // ===================== @提及功能 =====================
     function setupMentionEvents() {
-        const msgInput = document.getElementById('msginput');
-        
-        msgInput.addEventListener('input', function(e) {
-            handleMentionInput(e);
-        });
-        
-        msgInput.addEventListener('keydown', function(e) {
-            handleMentionKeydown(e);
-        });
-        
-        document.addEventListener('click', function(e) {
+        const input = document.getElementById('msginput');
+        input.addEventListener('input', handleMentionInput);
+        input.addEventListener('keydown', handleMentionKeydown);
+        document.addEventListener('click', e => {
             if (!e.target.closest('#mention-list') && !e.target.closest('#msginput')) {
                 hideMentionList();
             }
         });
     }
-    
+
     function handleMentionInput(e) {
         const input = e.target;
-        const selection = window.getSelection();
-        const range = selection.getRangeAt(0);
-        const textBeforeCursor = input.textContent.substring(0, range.startOffset);
+        const sel = window.getSelection();
+        const range = sel.getRangeAt(0);
+        const textBefore = input.textContent.substring(0, range.startOffset);
+        const lastAt = textBefore.lastIndexOf('@');
         
-        const lastAtPos = textBeforeCursor.lastIndexOf('@');
-        
-        if (lastAtPos === -1 || textBeforeCursor.substring(lastAtPos).includes(' ')) {
+        if (lastAt === -1 || textBefore.substring(lastAt).includes(' ')) {
             hideMentionList();
             return;
         }
         
-        mentionSearchTerm = textBeforeCursor.substring(lastAtPos + 1, range.startOffset).toLowerCase();
+        mentionSearchTerm = textBefore.substring(lastAt + 1, range.startOffset).toLowerCase();
         updateRecentUsersList();
         
-        const filteredUsers = recentUsers.filter(user => {
-            return user.displayName.toLowerCase().includes(mentionSearchTerm) || 
-                   user.login.toLowerCase().includes(mentionSearchTerm);
-        });
+        const filtered = recentUsers.filter(u => 
+            u.displayName.toLowerCase().includes(mentionSearchTerm) || 
+            u.login.toLowerCase().includes(mentionSearchTerm)
+        );
         
-        if (filteredUsers.length > 0 && mentionSearchTerm.length > 0) {
-            showMentionList(filteredUsers, lastAtPos);
+        if (filtered.length > 0 && mentionSearchTerm.length > 0) {
+            showMentionList(filtered, lastAt);
         } else {
             hideMentionList();
         }
     }
-    
+
     function handleMentionKeydown(e) {
         if (!mentionListVisible) return;
-        
-        const mentionItems = document.querySelectorAll('.mention-item');
-        if (mentionItems.length === 0) return;
+        const items = document.querySelectorAll('.mention-item');
+        if (items.length === 0) return;
         
         switch(e.key) {
             case 'ArrowUp':
                 e.preventDefault();
-                mentionSelectedIndex = (mentionSelectedIndex - 1 + mentionItems.length) % mentionItems.length;
+                mentionSelectedIndex = (mentionSelectedIndex - 1 + items.length) % items.length;
                 updateMentionSelection();
                 break;
-                
             case 'ArrowDown':
                 e.preventDefault();
-                mentionSelectedIndex = (mentionSelectedIndex + 1) % mentionItems.length;
+                mentionSelectedIndex = (mentionSelectedIndex + 1) % items.length;
                 updateMentionSelection();
                 break;
-                
             case 'Enter':
             case 'Tab':
                 e.preventDefault();
-                if (mentionSelectedIndex >= 0 && mentionSelectedIndex < mentionItems.length) {
-                    selectMentionUser(mentionItems[mentionSelectedIndex]);
+                if (mentionSelectedIndex >= 0 && mentionSelectedIndex < items.length) {
+                    selectMentionUser(items[mentionSelectedIndex]);
                 }
                 break;
-                
             case 'Escape':
                 hideMentionList();
                 break;
         }
     }
-    
+
     function updateRecentUsersList() {
         recentUsers = [];
-        const seenLogins = new Set();
-        
+        const seen = new Set();
         Object.values(msgCache)
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .sort((a,b) => (b.timestamp||0) - (a.timestamp||0))
             .forEach(msg => {
-                if (msg.user && msg.displayName && !seenLogins.has(msg.user.login)) {
-                    seenLogins.add(msg.user.login);
+                if (msg.user?.login && !seen.has(msg.user.login)) {
+                    seen.add(msg.user.login);
                     recentUsers.push({
                         login: msg.user.login,
                         displayName: msg.displayName,
@@ -848,33 +761,24 @@
                     });
                 }
             });
-        
         recentUsers = recentUsers.slice(0, 50);
     }
-    
-    function showMentionList(users, atPosition) {
-        const mentionList = document.getElementById('mention-list');
-        mentionList.innerHTML = '';
+
+    function showMentionList(users, atPos) {
+        const list = document.getElementById('mention-list');
+        list.innerHTML = '';
         
-        if (users.length === 0) {
-            hideMentionList();
-            return;
-        }
+        if (users.length === 0) return hideMentionList();
         
         const header = document.createElement('div');
         header.className = 'mention-header';
         header.textContent = `選擇用戶 (${users.length})`;
-        mentionList.appendChild(header);
+        list.appendChild(header);
         
-        users.forEach((user, index) => {
+        users.forEach((user, i) => {
             const item = document.createElement('div');
-            item.className = 'mention-item';
-            if (index === 0) item.classList.add('selected');
-            
-            let badgeHtml = '';
-            if (user.badges) {
-                badgeHtml = renderBadges(user.badges);
-            }
+            item.className = 'mention-item' + (i === 0 ? ' selected' : '');
+            let badgeHtml = user.badges ? renderBadges(user.badges) : '';
             
             item.innerHTML = `
                 <img class="user-avatar" src="${user.avatar}" alt="${user.displayName}">
@@ -882,175 +786,149 @@
                 <span class="display-name">${user.displayName}</span>
                 <span class="login-name">@${user.login}</span>
             `;
-            
             item.dataset.login = user.login;
             item.dataset.displayName = user.displayName;
-            
             item.addEventListener('click', () => selectMentionUser(item));
-            mentionList.appendChild(item);
+            list.appendChild(item);
         });
         
-        mentionList.style.display = 'block';
+        list.style.display = 'block';
         mentionListVisible = true;
         mentionSelectedIndex = 0;
-        
-        positionMentionList(atPosition);
+        positionMentionList(atPos);
     }
-    
-    function positionMentionList(atPosition) {
-        const mentionList = document.getElementById('mention-list');
+
+    function positionMentionList(atPos) {
+        const list = document.getElementById('mention-list');
         const input = document.getElementById('msginput');
         const footer = document.querySelector('.footer');
         
-        const tempSpan = document.createElement('span');
-        tempSpan.style.font = window.getComputedStyle(input).font;
-        tempSpan.style.visibility = 'hidden';
-        tempSpan.style.position = 'absolute';
-        tempSpan.style.whiteSpace = 'pre-wrap';
-        tempSpan.textContent = input.textContent.substring(0, atPosition);
-        document.body.appendChild(tempSpan);
+        const span = document.createElement('span');
+        span.style.font = getComputedStyle(input).font;
+        span.style.visibility = 'hidden';
+        span.style.position = 'absolute';
+        span.style.whiteSpace = 'pre-wrap';
+        span.textContent = input.textContent.substring(0, atPos);
+        document.body.appendChild(span);
+        const x = span.offsetWidth;
+        document.body.removeChild(span);
         
-        const atX = tempSpan.offsetWidth;
-        document.body.removeChild(tempSpan);
-        
-        mentionList.style.left = atX + 'px';
-        mentionList.style.bottom = (footer.offsetHeight + 10) + 'px';
+        list.style.left = x + 'px';
+        list.style.bottom = (footer.offsetHeight + 10) + 'px';
     }
-    
+
     function updateMentionSelection() {
-        const mentionItems = document.querySelectorAll('.mention-item');
-        mentionItems.forEach((item, index) => {
-            if (index === mentionSelectedIndex) {
-                item.classList.add('selected');
-                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            } else {
-                item.classList.remove('selected');
-            }
+        document.querySelectorAll('.mention-item').forEach((el, i) => {
+            el.classList.toggle('selected', i === mentionSelectedIndex);
+            if (i === mentionSelectedIndex) el.scrollIntoView({block: 'nearest', behavior: 'smooth'});
         });
     }
-    
+
     function selectMentionUser(item) {
-        const input = document.getElementById('msginput');
-        const selection = window.getSelection();
-        const range = selection.getRangeAt(0);
-        const textBeforeCursor = input.textContent.substring(0, range.startOffset);
-        const lastAtPos = textBeforeCursor.lastIndexOf('@');
-        
-        if (lastAtPos !== -1) {
-            const login = item.dataset.login;
-            const displayName = item.dataset.displayName;
-            
-            const textToInsert = '@' + displayName + ' ';
-            insertTextAtCursor(textToInsert);
-            
-            hideMentionList();
-            input.focus();
-        }
+        const login = item.dataset.login;
+        const display = item.dataset.displayName;
+        insertTextAtCursor('@' + display + ' ');
+        hideMentionList();
+        document.getElementById('msginput').focus();
     }
-    
+
     function hideMentionList() {
-        const mentionList = document.getElementById('mention-list');
-        mentionList.style.display = 'none';
+        document.getElementById('mention-list').style.display = 'none';
         mentionListVisible = false;
         mentionSelectedIndex = 0;
     }
 
-    // ===================== 資源載入 =====================
-    async function fetchBadges() { 
+    async function fetchBadges() {
         try {
-            const response = await fetch('https://chicktv.github.io/tv/badges.txt');
-            const data = await response.json();
-            customBadges = data;
-        } catch (error) {
-            console.error('載入徽章映射失敗:', error);
+            const res = await fetch('https://chicktv.github.io/tv/badges.txt');
+            customBadges = await res.json();
+        } catch(e) {
+            console.error('載入徽章失敗', e);
             customBadges = {};
         }
     }
 
     async function loadResources() {
         try {
-            const skData = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
-            if (Array.isArray(skData)) {
-                emojiLists["常用"] = { emojis: skData, image: skData[0].src };
-                skData.forEach(i => { if(i.alt) altMap[i.alt.toLowerCase()] = i.src; });
+            const sk = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
+            if (Array.isArray(sk)) {
+                emojiLists["常用"] = { emojis: sk, image: sk[0]?.src };
+                sk.forEach(i => { if (i.alt) altMap[i.alt.toLowerCase()] = i.src; });
             }
             
-            const savedBTTV = JSON.parse(localStorage.getItem('myBTTV') || '[]');
+            const bttv = JSON.parse(localStorage.getItem('myBTTV') || '[]');
             emojiLists["BTTV"] = {
-                emojis: savedBTTV.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url, dis: url })),
+                emojis: bttv.map(url => ({alt: url.split('/').pop().split('?')[0], src: url})),
                 image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3"
             };
 
             await loadAudioData();
 
-            const res = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
-            for (const item of res.set) {
-                let n = (typeof item === 'object') ? item.name : item;
-                let img = (typeof item === 'object') ? item.image : "";
+            const sets = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
+            for (const item of sets.set) {
+                const n = typeof item === 'object' ? item.name : item;
+                const img = typeof item === 'object' ? item.image : "";
                 if (!n || n === "skuser_icon") continue;
                 $.getJSON(`https://chicktv.github.io/tv/${n}.txt`, d => {
-                    let list = d[n] || [];
+                    const list = d[n] || [];
                     emojiLists[n] = { emojis: list, image: img };
                     list.forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
                 });
             }
-        } catch(e){
-            console.error('載入資源失敗:', e);
+        } catch(e) {
+            console.error('載入資源失敗', e);
         }
     }
 
     async function loadAudioData() {
         try {
-            const response = await fetch('https://chicktv.github.io/tv/audio.txt');
-            const localAudios = JSON.parse(localStorage.getItem('myAudios') || '[]');
-            if (response.ok) {
-                const remoteAudios = await response.json();
-                audioLists["音訊"] = { audios: mergeAudioLists(remoteAudios, localAudios), image: "" };
-            } else { 
-                throw new Error(); 
-            }
-        } catch (e) {
+            const res = await fetch('https://chicktv.github.io/tv/audio.txt');
+            const local = JSON.parse(localStorage.getItem('myAudios') || '[]');
+            if (res.ok) {
+                const remote = await res.json();
+                audioLists["音訊"] = { audios: mergeAudioLists(remote, local), image: "" };
+            } else throw new Error();
+        } catch {
             audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "" };
         }
     }
 
     function mergeAudioLists(remote, local) {
         const merged = [...remote];
-        const urlSet = new Set(remote.map(a => a.url));
-        local.forEach(l => { 
-            if (!urlSet.has(l.url)) { 
-                merged.push(l); 
-                urlSet.add(l.url); 
-            } 
+        const urls = new Set(remote.map(a => a.url));
+        local.forEach(l => {
+            if (!urls.has(l.url)) {
+                merged.push(l);
+                urls.add(l.url);
+            }
         });
         return merged;
     }
 
-    // ===================== 表情面板功能 =====================
     function renderEmojiPanel() {
         const tabs = $("#emojiTabs").empty();
         Object.keys(emojiLists).forEach((name, i) => {
             const tab = $('<div class="emoji-tab"></div>')
                 .css("background-image", `url(${emojiLists[name].image})`)
                 .attr("title", name)
-                .on('click', function() { 
-                    $(".emoji-tab").css("opacity", "0.6"); 
-                    $(this).css("opacity", "1"); 
-                    renderTabContent(name); 
+                .on('click', function() {
+                    $(".emoji-tab").css("opacity", "0.6");
+                    $(this).css("opacity", "1");
+                    renderTabContent(name);
                 });
             if (i === 0) tab.css("opacity", "1");
             tabs.append(tab);
         });
 
-        const audioTab = $('<div class="emoji-tab" style="color:white; text-align:center; line-height:32px;"></div>')
-            .on('click', function() { 
-                $(".emoji-tab").css("opacity", "0.6"); 
-                $(this).css("opacity", "1"); 
-                renderTabContent("音訊"); 
+        const audioTab = $('<div class="emoji-tab" style="color:white; text-align:center; line-height:32px;">音</div>')
+            .on('click', function() {
+                $(".emoji-tab").css("opacity", "0.6");
+                $(this).css("opacity", "1");
+                renderTabContent("音訊");
             });
         tabs.append(audioTab);
 
-        renderTabContent(Object.keys(emojiLists)[0]);
+        renderTabContent(Object.keys(emojiLists)[0] || "音訊");
     }
 
     function renderTabContent(name) {
@@ -1060,38 +938,37 @@
                 <div class="bttv-input-area">
                     <input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1">
                     <div style="display:flex; gap:5px;">
-                        <button onclick="addBTTV()" style="background:var(--t-purp); color:white; border:none; border-radius:4px; cursor:pointer; padding:5px 15px;">儲存</button>
-                        <button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'}; color:white; border:none; border-radius:4px; padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button>
+                        <button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button>
+                        <button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button>
                     </div>
                 </div>`);
             emojiLists[name].emojis.forEach(e => {
-                const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
-                item.on('click', () => { 
-                    if(!isDeleteMode) { 
-                        insertTextAtCursor(` [s] ${e.src} [e] `); 
-                        $("#emojiPanel").hide(); 
-                    } 
+                const item = $(`<div class="emoji-item ${isDeleteMode?'show-del':''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
+                item.on('click', () => {
+                    if (!isDeleteMode) {
+                        insertTextAtCursor(` [s] ${e.src} [e] `);
+                        $("#emojiPanel").hide();
+                    }
                 });
                 content.append(item);
             });
         } else if (name === "音訊") {
             content.append(`
                 <div class="audio-input-form" style="flex-wrap:wrap">
-                    <input type="text" id="audioName" class="custom-input" placeholder="音訊名稱" style="flex:1; min-width:120px;">
-                    <input type="text" id="audioUrl" class="custom-input" placeholder="音訊網址" style="flex:2; min-width:180px;">
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="addAudio()" style="background:var(--t-purp); color:white; border:none; border-radius:4px; padding:5px 15px;">儲存音訊</button>
-                        <button onclick="isAudioDeleteMode=!isAudioDeleteMode;renderTabContent('音訊')" style="background:${isAudioDeleteMode?'#666':'#c42b1c'}; color:white; border:none; border-radius:4px; padding:5px 15px;">${isAudioDeleteMode?'取消':'刪除'}</button>
+                    <input type="text" id="audioName" class="custom-input" placeholder="音訊名稱" style="flex:1;min-width:120px;">
+                    <input type="text" id="audioUrl" class="custom-input" placeholder="音訊網址" style="flex:2;min-width:180px;">
+                    <div style="display:flex;gap:5px;">
+                        <button onclick="addAudio()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button>
+                        <button onclick="isAudioDeleteMode=!isAudioDeleteMode;renderTabContent('音訊')" style="background:${isAudioDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isAudioDeleteMode?'取消':'刪除'}</button>
                     </div>
                 </div>`);
-            audioLists[name].audios.forEach((a, index) => {
-                const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">
-${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${index})">✕</div></div>`);
-                item.on('click', () => { 
-                    if(!isAudioDeleteMode) { 
-                        insertTextAtCursor(` [a] ${a.url} [o] `); 
-                        $("#emojiPanel").hide(); 
-                    } 
+            audioLists[name].audios.forEach((a, idx) => {
+                const item = $(`<div class="audio-item ${isAudioDeleteMode?'show-del':''}">${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${idx})">✕</div></div>`);
+                item.on('click', () => {
+                    if (!isAudioDeleteMode) {
+                        insertTextAtCursor(` [a] ${a.url} [o] `);
+                        $("#emojiPanel").hide();
+                    }
                 });
                 content.append(item);
             });
@@ -1099,59 +976,55 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             emojiLists[name].emojis.forEach(e => {
                 $('<div class="emoji-item"></div>')
                     .append($('<img style="max-width:40px;">').attr('src', e.src))
-                    .on('click', () => { 
-                        insertTextAtCursor(` ${e.alt} `); 
-                        $('#emojiPanel').hide(); 
+                    .on('click', () => {
+                        insertTextAtCursor(` ${e.alt} `);
+                        $('#emojiPanel').hide();
                     })
                     .appendTo(content);
             });
         }
     }
 
-    // ===================== 文字插入函數 (contenteditable div 專用) =====================
     function insertTextAtCursor(text) {
         const el = document.getElementById('msginput');
         if (!el) return;
-        
         el.focus();
         
         if (document.queryCommandSupported('insertText')) {
             document.execCommand('insertText', false, text);
         } else {
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
+            const sel = window.getSelection();
+            if (sel.rangeCount) {
+                const range = sel.getRangeAt(0);
                 range.deleteContents();
-                const textNode = document.createTextNode(text);
-                range.insertNode(textNode);
-                range.setStartAfter(textNode);
-                range.setEndAfter(textNode);
-                selection.removeAllRanges();
-                selection.addRange(range);
+                range.insertNode(document.createTextNode(text));
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
             } else {
                 el.textContent += text;
             }
         }
     }
 
-    function insertTagOnly(s) { 
+    function insertTagOnly(s) {
         insertTextAtCursor(s);
     }
 
     window.addBTTV = () => {
         const url = $("#bttvUrl").val().trim();
         if (!url) return;
-        const saved = JSON.parse(localStorage.getItem('myBTTV') || '[]');
+        let saved = JSON.parse(localStorage.getItem('myBTTV') || '[]');
         if (!saved.includes(url)) {
             saved.push(url);
             localStorage.setItem('myBTTV', JSON.stringify(saved));
-            emojiLists["BTTV"].emojis.push({ alt: url.split('/').pop(), src: url });
+            emojiLists["BTTV"].emojis.push({alt: url.split('/').pop(), src: url});
             renderTabContent("BTTV");
         }
         $("#bttvUrl").val("");
     };
 
-    window.deleteBTTV = (url) => {
+    window.deleteBTTV = url => {
         let saved = JSON.parse(localStorage.getItem('myBTTV') || '[]');
         saved = saved.filter(u => u !== url);
         localStorage.setItem('myBTTV', JSON.stringify(saved));
@@ -1163,21 +1036,21 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         const name = $("#audioName").val().trim();
         const url = $("#audioUrl").val().trim();
         if (!name || !url) return alert("請填寫完整");
-        const saved = JSON.parse(localStorage.getItem('myAudios') || '[]');
-        saved.push({ name, url });
+        let saved = JSON.parse(localStorage.getItem('myAudios') || '[]');
+        saved.push({name, url});
         localStorage.setItem('myAudios', JSON.stringify(saved));
         audioLists["音訊"].audios = mergeAudioLists([], saved);
         renderTabContent("音訊");
     };
 
-    window.deleteAudio = (i) => {
+    window.deleteAudio = i => {
         let saved = JSON.parse(localStorage.getItem('myAudios') || '[]');
         saved.splice(i, 1);
         localStorage.setItem('myAudios', JSON.stringify(saved));
         audioLists["音訊"].audios = saved;
         renderTabContent("音訊");
     };
-    
+
     window.handleAudioClick = (btn, url) => {
         if (btn.dataset.isPlaying === "true") {
             if (btn.currentAudio) {
@@ -1186,26 +1059,23 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             }
             resetAudioState(btn);
         } else {
-            const audioElem = new Audio(url);
-            btn.currentAudio = audioElem;
+            const audio = new Audio(url);
+            btn.currentAudio = audio;
             btn.dataset.isPlaying = "true";
             btn.classList.add('playing');
             btn.innerHTML = '';
             btn.title = '播放中...點擊停止';
 
-            audioElem.play().catch(error => {
-                console.error('音訊播放失敗:', error);
+            audio.play().catch(e => {
+                console.error('音訊播放失敗:', e);
                 resetAudioState(btn);
                 btn.title = '播放失敗';
-                btn.innerHTML = '';
             });
 
-            audioElem.onended = () => {
-                resetAudioState(btn);
-            };
+            audio.onended = () => resetAudioState(btn);
         }
     };
-    
+
     function resetAudioState(btn) {
         btn.dataset.isPlaying = "false";
         btn.classList.remove('playing');
@@ -1214,41 +1084,32 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         btn.currentAudio = null;
     }
 
-    // ===================== 核心解析邏輯 =====================
     function parseContent(str) {
         let a = str, placeholders = [];
 
-        // 1. 處理大寫 [S]...E] (原創簡易圖片)
         a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
             b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
-            const number = Math.floor((Math.random() * 1000) + 1);
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img id="${number}" alt="[S]${b}[E]" src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
+            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
             return id;
         });
 
-        // 2. 處理小寫 [s]...e] (新邏輯增強版)
         a = a.replace(/\[s\](.*?)e\]/g, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[s]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`;
             let e = "";
-            const number = Math.floor((Math.random() * 1000) + 1);
-
-            if (b.match(/youtu/g) && !b.match(/img|jpg|png|gif/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+            if (b.match(/youtu/g) && !b.match(/\.(jpg|png|gif|webp)/i)) {
+                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace(/^.*(v=|youtu\.be\/)([^&?]+)/, '$2');
                 let t = getParameterByName('t', b);
-                e = `<div><a style="text-decoration: none;" href="https://www.youtube.com/watch?v=${vid}"><div style="padding: 5px;background: rgba(0, 0, 0, 0.45);color: white;border-radius: 5px 5px 0px 0px;"> <i class="material-icons" style="font-size: 20px;float: right;"></i></div></a><iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0"  allowfullscreen></iframe></div>`;
-            } else if (b.match(/twitter|https:\/\/x.com/g)) {
+                e = `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}${t ? '?start='+t : ''}" frameborder="0" allowfullscreen></iframe>`;
+            } else if (b.match(/twitter|https:\/\/x\.com/g)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
-            } else if (b.match(/www.threads.com/g)) {
-                let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
-                e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
-            } else if (b.match(/\.(webm|mp4)/g)) {
-                e = `<video class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
-            } else if (b.match(/steampowered|steamcommunity/g)) {
-                let appId = b.match("app/([0-9]+)");
-                e = appId ? `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"  src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0"></iframe>` : b;
+                e = `<div class="twitter-tweet-container"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"></script>`;
+            } else if (b.match(/threads\.net/g)) {
+                let m = b.match(/threads\.net\/@[^/]+\/post\/([^/?]+)/);
+                e = m ? `<iframe src="https://www.threads.net/post/${m[1]}/embed" frameborder="0" allowfullscreen style="background:#fff;border-radius:12px;width:100%;height:300px;"></iframe>` : b;
+            } else if (b.match(/\.(mp4|webm)/i)) {
+                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
             } else {
                 e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
             }
@@ -1256,114 +1117,66 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             return id;
         });
 
-        // 3. 處理影片標籤 [y]...[t] (新邏輯)
         a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`;
             let e = "";
-            if (b.match(/facebook/g)) {
-                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
-            } else if (b.match(/youtu/g)) {
-                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
-            } 
-            else if (b.match(/\.(webm|mp4)/g)) {
-                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
-            else if (b.match(/twitter|https:\/\/x.com/g)) {
-                let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"><\/script>`;}
-            else {
+            if (b.match(/youtu/)) {
+                let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace(/^.*(v=|youtu\.be\/)([^&?]+)/, '$2');
+                e = `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+            } else if (b.match(/\.(mp4|webm)/i)) {
+                e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
+            } else {
                 e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
             }
             placeholders.push(e);
             return id;
         });
 
-        // 4. 處理音訊標籤 [a]...[o]
         a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
-            const url = content.trim(); 
+            const url = content.trim();
             let id = `__PH_${placeholders.length}__`;
             placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊"></span>`);
             return id;
         });
 
-        // 5. 處理自動解析 HTML 連結中的標籤 (extractTagAndUrl 新邏輯)
         let htmlMatch = extractTagAndUrl(a);
         if (htmlMatch) {
             let b = htmlMatch.url;
-            let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height: 150px; max-width: 100%; border-radius:6px;"/></a>`;
+            let e = `<a href="${b}" target="_blank"><img src="${b}" style="max-height:150px;max-width:100%;border-radius:6px;"/></a>`;
             a = a.replace(htmlMatch.match[0], e);
         }
 
-        // 6. 處理一般網址與自訂表情
-        a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
+        a = a.replace(/https?:\/\/[^\s]+/gi, url => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
+
         let words = a.split(' ');
-        a = words.map(w => { 
-            if(w.includes('__PH_')) return w; 
-            const src = altMap[w.toLowerCase()]; 
-            return src ? `<img src="${src}" class="alt-emoji">` : w; 
+        a = words.map(w => {
+            if (w.includes('__PH_')) return w;
+            const src = altMap[w.toLowerCase()];
+            return src ? `<img src="${src}" class="alt-emoji">` : w;
         }).join(' ');
 
-        // 最後還原所有預留佔位符
-        placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
+        placeholders.forEach((html, i) => a = a.replace(`__PH_${i}__`, html));
         return a;
     }
 
-    // 媒體載入完成的回調函數
     function onMediaLoaded() {
         mediaLoadCount++;
-        
-        if (mediaLoadTimer) {
-            clearTimeout(mediaLoadTimer);
-        }
-        
+        clearTimeout(mediaLoadTimer);
         mediaLoadTimer = setTimeout(() => {
-            setTimeout(() => {
-                if (autoScroll) {
-                    forceScrollToBottom();
-                }
-                mediaLoadCount = 0;
-            }, 50);
+            if (autoScroll) forceScrollToBottom();
+            mediaLoadCount = 0;
         }, 150);
     }
 
-    // 限制訊息數量函數
     function limitMessages() {
-        const $messages = $("#messages");
-        const $children = $messages.children();
-        if ($children.length > MAX_MESSAGES) {
-            $children.slice(0, $children.length - MAX_MESSAGES).remove();
+        const msgs = $("#messages");
+        const children = msgs.children();
+        if (children.length > MAX_MESSAGES) {
+            children.slice(0, children.length - MAX_MESSAGES).remove();
         }
     }
 
-    // 獲取用戶的 display name
-    function getUserDisplayName(userId, fallbackName) {
-        if (userCache[userId]) {
-            return userCache[userId];
-        }
-        
-        const userMessages = Object.keys(msgCache).filter(key => {
-            const msg = msgCache[key];
-            return msg && msg.user && (msg.user.login === userId || msg.user.displayName === userId || msg.user === userId);
-        });
-        
-        if (userMessages.length > 0) {
-            const latestMsg = msgCache[userMessages[userMessages.length - 1]];
-            if (latestMsg && latestMsg.displayName) {
-                userCache[userId] = latestMsg.displayName;
-                return latestMsg.displayName;
-            }
-        }
-        
-        return fallbackName || userId;
-    }
-
-    // 獲取自己的 badge 資訊
-    function getMyBadges() {
-        return myBadges || "";
-    }
-
-    // 渲染徽章
     function renderBadges(badgeStr) {
         if (!badgeStr) return "";
         let html = "";
@@ -1375,331 +1188,254 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         return html;
     }
 
-    // ===================== 處理單條訊息 =====================
     function processMessage(tags, rawMsg) {
-    const msgId = getTagValue(tags, "id");
-    const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
-    const user = getTagValue(tags, "display-name") || "User";
-    const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-    const color = getTagValue(tags, "color") || "#9147ff";
-    const badgeStr = getTagValue(tags, "badges");
-    
-    const cacheKey = ts;
-    const realMsgId = msgId || ts;  // 優先用官方 msg-id，沒有才 fallback 到 ts
-    
-    if (msgCache[cacheKey]) {
-        logDebug('跳過重複訊息:', cacheKey);
-        return;
-    }
-    
-    userCache[userLogin] = user;
-    
-    msgCache[cacheKey] = {
-        content: rawMsg,
-        user: { login: userLogin, displayName: user },
-        displayName: user,
-        badges: badgeStr,
-        avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
-        timestamp: parseInt(ts),
-        msgId: msgId,
-        realMsgId: realMsgId
-    };
-    
-    const cacheKeys = Object.keys(msgCache);
-    if (cacheKeys.length > 1000) {
-        cacheKeys.sort((a, b) => (msgCache[a].timestamp || 0) - (msgCache[b].timestamp || 0));
-        cacheKeys.slice(0, 200).forEach(key => delete msgCache[key]);
-    }
-    
-    let replyHtml = "", displayMsg = rawMsg;
-    const pUser = getTagValue(tags, "reply-parent-display-name");
-    const pId = getTagValue(tags, "reply-parent-msg-id");
-    const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
-    
-    if (pUser && pId) {
-        let isMe = (pUser === myDisplayName || pUser === myLoginId);
+        const msgId = getTagValue(tags, "id");
+        const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
+        const displayName = getTagValue(tags, "display-name") || "User";
+        const login = getTagValue(tags, "login") || displayName.toLowerCase();
+        const color = getTagValue(tags, "color") || "#9147ff";
+        const badges = getTagValue(tags, "badges");
         
-        let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
-        let pBody = parseContentBasic(originalText);
-        
-        const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-        
-        replyHtml = `<div class="quote-box" data-type="native" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
-        
-        const mention = `@${pUser} `;
-        if (displayMsg.startsWith(mention)) {
-            displayMsg = displayMsg.substring(mention.length);
-        }
-    } else if (rawMsg.includes("[r]")) {
-        const myR = rawMsg.match(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/);
-        if (myR) {
-            const userIdFromTag = myR[1];
-            const refId = myR[2];  // 可能是 msg-id 或 timestamp
-            
-            const repliedMsg = msgCache[refId] || 
-                              Object.values(msgCache).find(m => m.realMsgId === refId || m.timestamp == refId);
-            
-            let parsedBody = "...";
-            let displayNameToShow = userIdFromTag;
-            let jumpTarget = refId;
-            
-            if (repliedMsg) {
-                parsedBody = parseContentBasic(repliedMsg.content || "...");
-                displayNameToShow = repliedMsg.displayName || userIdFromTag;
-                jumpTarget = repliedMsg.realMsgId || refId;
-            }
-            
-            let isMe = (displayNameToShow === myDisplayName || displayNameToShow === myLoginId);
-            const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-            
-            replyHtml = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${jumpTarget}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${displayNameToShow}:</span>${parsedBody}</div>`;
-            
-            displayMsg = rawMsg.replace(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/gi, "");
-        }
-    }
-    
-    displayMsg = parseMessageWithReplies(displayMsg);
-    
-    const badgeHtml = renderBadges(badgeStr);
-    const line = `<div class="chat-line ts-${ts} id-${realMsgId}" data-msg-id="${realMsgId}" data-timestamp="${ts}">
-        <div class="reply-btn" onclick="replyNative('${userLogin}','${realMsgId}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
-        ${replyHtml}
-        ${badgeHtml}
-        <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
-    </div>`;
-    
-    $("#messages").append(line);
-    
-    messageCount++;
-    document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
-    
-    limitMessages();
-    
-    if (autoScroll) {
-        forceScrollToBottom();
-    }
-}
+        const cacheKey = ts;
+        const realMsgId = msgId || ts;
 
-    // ===================== 聊天功能 =====================
-    function sendMessage() {
-    const msgInput = document.getElementById('msginput');
-    const val = msgInput.textContent.trim();
-    
-    if (!val || !socket || socket.readyState !== 1) return;
-    
-    const selfTs = Date.now().toString(); 
-    let finalCmd = "", replyDisplay = "";
-    
-    const myBadgeStr = getMyBadges();
-    const badgeHtml = renderBadges(myBadgeStr);
-    
-    let repliedMsg = null;
-    if (pendingReply.id) {
-        repliedMsg = msgCache[pendingReply.id];
-        
-        finalCmd = `PRIVMSG #${CHANNEL} :[r]${pendingReply.user},${pendingReply.id}[m]${val}`;
-        
-        let parsedQuote = "...";
-        if (repliedMsg) {
-            const rawQuote = repliedMsg.content || "...";
-            parsedQuote = parseContentBasic(rawQuote);
+        if (msgCache[cacheKey]) return;
+
+        msgCache[cacheKey] = {
+            content: rawMsg,
+            user: { login, displayName },
+            displayName,
+            badges,
+            avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+            timestamp: parseInt(ts),
+            realMsgId
+        };
+
+        if (Object.keys(msgCache).length > 1000) {
+            const sorted = Object.keys(msgCache).sort((a,b) => msgCache[a].timestamp - msgCache[b].timestamp);
+            sorted.slice(0, 200).forEach(k => delete msgCache[k]);
         }
-        
-        // 防呆：如果 repliedMsg 不存在，就不要讀 realMsgId
-        const jumpTarget = repliedMsg?.realMsgId || pendingReply.id;
-        
-        replyDisplay = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${jumpTarget}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName}:</span>${parsedQuote}</div>`;
-    } else {
-        finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
+
+        let replyHtml = "";
+        let displayMsg = rawMsg;
+
+        // Twitch 原生回覆優先
+        const pDisplay = getTagValue(tags, "reply-parent-display-name");
+        const pMsgId  = getTagValue(tags, "reply-parent-msg-id");
+        const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+
+        if (pDisplay && pMsgId) {
+            let isMe = pDisplay === myDisplayName || pDisplay === myLoginId;
+            let body = pBodyRaw ? parseContentBasic(pBodyRaw.replace(/\\s/g, " ")) : "...";
+            let cls = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+            replyHtml = `<div class="quote-box" data-type="native" onclick="scrollToMsg('${pMsgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${cls}">@${pDisplay}:</span>${body}</div>`;
+
+            if (displayMsg.startsWith(`@${pDisplay} `)) {
+                displayMsg = displayMsg.substring(`@${pDisplay} `.length);
+            }
+        }
+        // 舊式 [r]...[m] 只用來顯示，不用來發送
+        else if (rawMsg.includes("[r]")) {
+            const match = rawMsg.match(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/);
+            if (match) {
+                const userFromTag = match[1];
+                const refId = match[2];
+                
+                const replied = msgCache[refId] || Object.values(msgCache).find(m => m.realMsgId === refId || String(m.timestamp) === refId);
+                
+                let body = "...";
+                let nameToShow = userFromTag;
+                let jumpTo = refId;
+
+                if (replied) {
+                    body = parseContentBasic(replied.content || "...");
+                    nameToShow = replied.displayName || userFromTag;
+                    jumpTo = replied.realMsgId || refId;
+                }
+
+                let isMe = nameToShow === myDisplayName || nameToShow === myLoginId;
+                let cls = isMe ? 'quote-user mention-self-tag' : 'quote-user';
+
+                replyHtml = `<div class="quote-box" data-type="custom" onclick="scrollToMsg('${jumpTo}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${cls}">@${nameToShow}:</span>${body}</div>`;
+
+                displayMsg = rawMsg.replace(/\[r\](.*?),([^,\[]+)(?:,([^\]]*))?\[m\]/gi, "");
+            }
+        }
+
+        displayMsg = parseMessageWithReplies(displayMsg);
+
+        const badgeHtml = renderBadges(badges);
+        const line = `
+            <div class="chat-line ts-${ts} id-${realMsgId}" data-msg-id="${realMsgId}" data-timestamp="${ts}">
+                <div class="reply-btn" onclick="startReply('${realMsgId}', '${login}', '${displayName}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
+                ${replyHtml}
+                ${badgeHtml}
+                <b style="color:${color}">${displayName}:</b> <span>${parseContent(displayMsg)}</span>
+            </div>`;
+
+        $("#messages").append(line);
+        messageCount++;
+        document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
+        limitMessages();
+        if (autoScroll) forceScrollToBottom();
     }
-    
-    socket.send(finalCmd); 
-    
-    // 儲存原始訊息內容
-    msgCache[selfTs] = {
-        content: val,
-        user: { login: myLoginId, displayName: myDisplayName },
-        displayName: myDisplayName,
-        badges: myBadgeStr,
-        avatar: myAvatar,
-        timestamp: parseInt(selfTs),
-        realMsgId: selfTs  // 暫時用 ts，之後可更新為真 msg-id
-    };
-    
-    $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
-    
-    messageCount++;
-    document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
-    
-    limitMessages();
-    
-    if (autoScroll) {
-        forceScrollToBottom();
+
+    function sendMessage() {
+        const input = document.getElementById('msginput');
+        const text = input.textContent.trim();
+        if (!text || !socket || socket.readyState !== 1) return;
+
+        const selfTs = Date.now().toString();
+        let cmd = `PRIVMSG #${CHANNEL} :${text}`;
+        let quoteHtml = "";
+
+        if (pendingReply.msgId) {
+            // 使用 Twitch 原生回覆機制
+            cmd = `PRIVMSG #${CHANNEL} :@${pendingReply.displayName} ${text}`;
+            // 同時設定 reply-parent-msg-id (Twitch 需要客戶端支援，但這裡我們發送時帶 @ 讓它自動關聯)
+            // 注意：真正的 reply 屬性由 Twitch 伺服器在收到後自動加上 reply-parent-msg-id
+            // 我們這裡只負責顯示預覽
+            const replied = msgCache[pendingReply.msgId] || {};
+            const body = parseContentBasic(replied.content || "...");
+            quoteHtml = `<div class="quote-box" data-type="native" onclick="scrollToMsg('${pendingReply.msgId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName}:</span>${body}</div>`;
+        }
+
+        socket.send(cmd);
+
+        const badgeHtml = renderBadges(myBadges);
+        $("#messages").append(`
+            <div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">
+                ${quoteHtml}
+                ${badgeHtml}
+                <b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(text)}</span>
+            </div>`);
+
+        msgCache[selfTs] = {
+            content: text,
+            user: { login: myLoginId, displayName: myDisplayName },
+            displayName: myDisplayName,
+            badges: myBadges,
+            avatar: myAvatar,
+            timestamp: parseInt(selfTs),
+            realMsgId: selfTs
+        };
+
+        messageCount++;
+        document.getElementById('message-stats').textContent = `訊息: ${messageCount}`;
+        limitMessages();
+        if (autoScroll) forceScrollToBottom();
+
+        cancelReply();
+        input.textContent = "";
     }
-    
-    cancelReply(); 
-    msgInput.textContent = "";
-}
+
+    function startReply(msgId, login, displayName) {
+        pendingReply = { msgId, user: login, displayName, msgId };
+        $("#replying-to-user").text(displayName || login);
+        $("#reply-indicator").show();
+        document.getElementById('msginput').focus();
+    }
+
+    function cancelReply() {
+        pendingReply = { msgId: null, user: null, displayName: null };
+        $("#reply-indicator").hide();
+    }
 
     function startChat() {
-        if(socket) socket.close();
+        if (socket) socket.close();
         socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
         
         socket.onopen = () => {
             socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-            socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
-            socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan'+Math.floor(Math.random()*1000)}`);
+            socket.send(`PASS oauth:${ACCESS_TOKEN || 'justinfan' + Math.floor(Math.random()*9999)}`);
+            socket.send(`NICK ${ACCESS_TOKEN ? myLoginId || 'loggedinuser' : 'justinfan' + Math.floor(Math.random()*9999)}`);
             socket.send(`JOIN #${CHANNEL}`);
-            document.getElementById('status').textContent = `已連線到 ${CHANNEL} ${ACCESS_TOKEN?'（已登入）':'（匿名）'}`;
+            document.getElementById('status').textContent = `已連線到 ${CHANNEL} ${ACCESS_TOKEN ? '（已登入）' : '（匿名）'}`;
         };
         
-        socket.onmessage = (e) => {
-            logDebug('收到原始資料:', e.data);
-            
-            // 處理 PING
-            if (e.data.startsWith('PING')) { 
-                socket.send('PONG :tmi.twitch.tv'); 
-                return; 
+        socket.onmessage = e => {
+            if (e.data.startsWith('PING')) {
+                socket.send('PONG :tmi.twitch.tv');
+                return;
             }
-            
-            // 分割多行訊息
-            const lines = e.data.split('\r\n');
-            
+
+            const lines = e.data.split('\r\n').filter(Boolean);
             lines.forEach(line => {
-                if (!line.trim()) return;
-                
-                logDebug('處理行:', line);
-                
-                // 處理連線確認
-                if (line.includes('Welcome, GLHF!') || line.includes('Welcome!')) {
-                    logDebug('成功連接到 Twitch IRC');
-                    return;
+                if (line.includes('PRIVMSG')) {
+                    try {
+                        const parts = line.split(` PRIVMSG #${CHANNEL} :`);
+                        if (parts.length >= 2) {
+                            processMessage(parts[0], parts.slice(1).join(' :').trim());
+                        } else {
+                            const m = line.match(/PRIVMSG #([^ ]+) :(.+)/);
+                            if (m && m[1] === CHANNEL) {
+                                const tagPart = line.substring(0, line.indexOf('PRIVMSG')).trim();
+                                processMessage(tagPart, m[2]);
+                            }
+                        }
+                    } catch(err) {
+                        console.error('解析 PRIVMSG 失敗:', err, '原始:', line);
+                    }
                 }
-                
-                // 處理 JOIN 訊息
-                if (line.includes('JOIN')) {
-                    logDebug('已加入頻道');
-                    return;
-                }
-                
-                // 處理 CAP 確認
-                if (line.includes('CAP * ACK')) {
-                    logDebug('功能已啟用');
-                    return;
-                }
-                
-                // 處理 USERSTATE 更新徽章
+
                 if (line.includes('USERSTATE')) {
                     const badgeTag = getTagValue(line, "badges");
                     if (badgeTag) {
                         myBadges = badgeTag;
                         localStorage.setItem('twitch_my_badges', badgeTag);
                     }
-                    return;
-                }
-                
-                // 處理所有包含 PRIVMSG 的訊息
-                if (line.includes('PRIVMSG')) {
-                    try {
-                        // 嘗試標準格式解析
-                        const parts = line.split(` PRIVMSG #${CHANNEL} :`);
-                        
-                        if (parts.length >= 2) {
-                            const tags = parts[0];
-                            const rawMsg = parts.slice(1).join(' :').trim(); // 合併可能的額外冒號
-                            processMessage(tags, rawMsg);
-                        } else {
-                            // 嘗試其他格式的解析
-                            const match = line.match(/PRIVMSG #([^ ]+) :(.+)/);
-                            if (match && match[1] === CHANNEL) {
-                                // 提取標籤部分（PRIVMSG之前的所有內容）
-                                const tagPart = line.substring(0, line.indexOf('PRIVMSG')).trim();
-                                processMessage(tagPart, match[2]);
-                            } else {
-                                logDebug('無法解析的訊息格式:', line);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('解析訊息失敗:', error, '原始訊息:', line);
-                    }
                 }
             });
         };
         
-        socket.onerror = (error) => {
-            console.error('WebSocket 錯誤:', error);
-            document.getElementById('status').textContent = `連接錯誤，嘗試重新連接...`;
+        socket.onerror = e => {
+            console.error('WebSocket 錯誤:', e);
+            document.getElementById('status').textContent = '連接錯誤，3秒後重試...';
         };
         
-        socket.onclose = (event) => {
-            console.log('WebSocket 關閉，代碼:', event.code, '原因:', event.reason);
-            document.getElementById('status').textContent = `已斷線，${event.code === 1006 ? '網路問題' : '連線中斷'}，3秒後重新連接...`;
-            
-            socket = null;
+        socket.onclose = () => {
+            document.getElementById('status').textContent = '已斷線，3秒後重連...';
             setTimeout(startChat, 3000);
         };
     }
 
-    // ===================== 其他功能 =====================
-    function setupAutoTag() { 
-        document.getElementById('msginput').addEventListener('paste', (e) => {
+    function setupAutoTag() {
+        document.getElementById('msginput').addEventListener('paste', e => {
             const data = (e.clipboardData || window.clipboardData).getData('text');
-            if (!data.match(/^https?:\/\//i)) return;
+            if (!/^https?:\/\//i.test(data)) return;
             
             const input = e.target;
-            const currentText = input.textContent;
+            const txt = input.textContent;
             
-            if (currentText.endsWith('[s] ')) { 
-                e.preventDefault(); 
-                insertTextAtCursor(data + ' [e]'); 
+            if (txt.endsWith('[s] ')) {
+                e.preventDefault();
+                insertTextAtCursor(data + ' [e]');
             }
-            else if (currentText.endsWith('[y] ')) { 
-                e.preventDefault(); 
-                insertTextAtCursor(data + ' [t]'); 
+            else if (txt.endsWith('[y] ')) {
+                e.preventDefault();
+                insertTextAtCursor(data + ' [t]');
             }
-            else if (currentText.endsWith('[a] ')) { 
-                e.preventDefault(); 
-                insertTextAtCursor(data + ' [o]'); 
+            else if (txt.endsWith('[a] ')) {
+                e.preventDefault();
+                insertTextAtCursor(data + ' [o]');
             }
         });
     }
-    
-    function scrollToMsg(msgKey) {
-        const $msg = $(`[data-timestamp="${msgKey}"], .id-${msgKey}`);
-        if ($msg.length) {
-            const container = $("#chat-container")[0];
-            const msgTop = $msg.offset().top - $(container).offset().top;
-            
+
+    function scrollToMsg(key) {
+        const el = document.querySelector(`[data-msg-id="${key}"], [data-timestamp="${key}"]`);
+        if (el) {
+            const container = document.getElementById('chat-container');
+            const offset = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
             container.scrollTo({
-                top: msgTop + container.scrollTop - 50,
+                top: container.scrollTop + offset - 50,
                 behavior: 'smooth'
             });
         }
     }
-    
-    function replyNative(userLogin, msgKey, displayName) { 
-        pendingReply = { 
-            id: msgKey, 
-            user: userLogin, 
-            displayName: displayName || userLogin 
-        }; 
-        $("#replying-to-user").text(displayName || userLogin); 
-        $("#reply-indicator").show(); 
-        document.getElementById('msginput').focus(); 
-    }
-    
-    function cancelReply() { 
-        pendingReply = { id: null, user: null, displayName: null }; 
-        $("#reply-indicator").hide(); 
-    }
-    
-    // 綁定Enter鍵發送訊息
-    document.getElementById('msginput').addEventListener('keydown', (e) => {
-        if (mentionListVisible && (e.key === 'Enter' || e.key === 'Tab')) {
-            // 在提及選單開啟時，Enter/Tab 用於選擇提及
-            return;
-        }
-        
+
+    document.getElementById('msginput').addEventListener('keydown', e => {
+        if (mentionListVisible && (e.key === 'Enter' || e.key === 'Tab')) return;
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
@@ -1708,4 +1444,3 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
 </script>
 </body>
 </html>
-
