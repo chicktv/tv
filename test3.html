@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat2</title>
+    <title>Chickchat</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -497,9 +497,14 @@
         return a;
     }
 
-    // 遞迴解析訊息內容中的 [r][m] 標籤
+    // 改進的 parseMessageWithReplies 函數，增強訊息查找邏輯
     function parseMessageWithReplies(content, depth = 0, visited = new Set()) {
-        if (depth > 3) return '<span style="color:#777;font-style:italic;">[...]</span>'; // 防止無限遞迴
+        if (window.debugMode && depth === 0) {
+            console.log('[DEBUG] 解析訊息內容:', content.substring(0, 100));
+            console.log('[DEBUG] msgCache 大小:', Object.keys(msgCache).length);
+        }
+        
+        if (depth > 3) return '<span style="color:#777;font-style:italic;">[...]</span>';
         
         let result = content;
         
@@ -510,8 +515,44 @@
                 return `<span style="color: #777; font-style: italic;">[@${userLogin}]</span>`;
             }
             
-            const repliedMsg = msgCache[timestamp];
-            if (!repliedMsg) return `@${userLogin}: ...`;
+            // 嘗試多種方式查找被回覆的訊息
+            let repliedMsg = null;
+            
+            // 方法1：直接通過 timestamp 查找
+            repliedMsg = msgCache[timestamp];
+            
+            // 方法2：如果找不到，嘗試在所有訊息中查找匹配的 timestamp
+            if (!repliedMsg) {
+                for (const key in msgCache) {
+                    const msg = msgCache[key];
+                    if (msg && msg.timestamp && msg.timestamp.toString() === timestamp) {
+                        repliedMsg = msg;
+                        break;
+                    }
+                }
+            }
+            
+            // 方法3：如果還是找不到，嘗試通過用戶名查找最近訊息
+            if (!repliedMsg) {
+                const userMessages = Object.keys(msgCache)
+                    .filter(key => {
+                        const msg = msgCache[key];
+                        return msg && msg.user && 
+                               (msg.user.login === userLogin || msg.displayName === userLogin);
+                    })
+                    .sort((a, b) => (msgCache[b].timestamp || 0) - (msgCache[a].timestamp || 0));
+                    
+                if (userMessages.length > 0) {
+                    repliedMsg = msgCache[userMessages[0]];
+                }
+            }
+            
+            if (!repliedMsg) {
+                if (window.debugMode) {
+                    console.log('[DEBUG] 找不到被回覆的訊息:', {timestamp, userLogin});
+                }
+                return `@${userLogin}: ...`;
+            }
             
             // 添加當前訊息到已訪問集合
             const newVisited = new Set(visited);
@@ -522,7 +563,7 @@
             // 遞迴解析被回覆訊息中的 [r] 標籤
             let body = parseMessageWithReplies(rawBody, depth + 1, newVisited);
             
-            return `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
+            return `<span style="color: #9147ff; cursor: pointer;" onclick="scrollToMsg('${repliedMsg.timestamp || timestamp}')">@${repliedMsg.displayName || userLogin}</span>: ${body}`;
         });
         
         return result;
@@ -1294,7 +1335,7 @@
             a = a.replace(htmlMatch.match[0], e);
         }
 
-        // 6. 處理 [r] 標籤 - 新增這部分！！！
+        // 6. 處理 [r] 標籤 - 使用改進的查找邏輯
         a = a.replace(/\[r\](.*?),([\d\w-]+)\[m\]/gi, (match, userLogin, timestamp) => {
             const repliedMsg = msgCache[timestamp];
             if (!repliedMsg) return `@${userLogin}: ...`;
@@ -1398,6 +1439,54 @@
         return html;
     }
 
+    // ===================== 改進的 replyNative 函數 =====================
+    function replyNative(userLogin, msgKey, displayName) { 
+        // 嘗試從 msgCache 中查找訊息，確保使用正確的鍵
+        let foundKey = null;
+        for (const key in msgCache) {
+            const msg = msgCache[key];
+            if (msg && msg.user && msg.user.login === userLogin && msg.timestamp == msgKey) {
+                foundKey = msg.timestamp.toString();
+                break;
+            }
+        }
+        
+        pendingReply = { 
+            id: foundKey || msgKey, // 優先使用找到的鍵
+            user: userLogin, 
+            displayName: displayName || userLogin 
+        }; 
+        $("#replying-to-user").text(displayName || userLogin); 
+        $("#reply-indicator").show(); 
+        document.getElementById('msginput').focus(); 
+    }
+
+    // ===================== 改進的 scrollToMsg 函數 =====================
+    function scrollToMsg(msgKey) {
+        // 嘗試多種選擇器查找訊息
+        let $msg = $(`[data-timestamp="${msgKey}"]`);
+        
+        if (!$msg.length) {
+            $msg = $(`.ts-${msgKey}`);
+        }
+        
+        if (!$msg.length) {
+            $msg = $(`.id-${msgKey}`);
+        }
+        
+        if ($msg.length) {
+            const container = $("#chat-container")[0];
+            const msgTop = $msg.offset().top - $(container).offset().top;
+            
+            container.scrollTo({
+                top: msgTop + container.scrollTop - 50,
+                behavior: 'smooth'
+            });
+        } else if (window.debugMode) {
+            console.log('[DEBUG] 無法找到訊息:', msgKey);
+        }
+    }
+
     // ===================== 處理單條訊息 =====================
     function processMessage(tags, rawMsg) {
         const msgId = getTagValue(tags, "id");
@@ -1407,7 +1496,7 @@
         const color = getTagValue(tags, "color") || "#9147ff";
         const badgeStr = getTagValue(tags, "badges");
         
-        // 使用 timestamp 作為主要鍵（因為 [r] 使用的是 timestamp）
+        // 使用 timestamp 作為主要鍵
         const cacheKey = ts;
         
         // 避免重複處理相同訊息
@@ -1419,7 +1508,7 @@
         userCache[userLogin] = user;
         
         // 儲存原始訊息內容
-        msgCache[cacheKey] = {
+        const messageData = {
             content: rawMsg,
             user: { login: userLogin, displayName: user },
             displayName: user,
@@ -1429,13 +1518,16 @@
             msgId: msgId
         };
         
-        // 限制緩存大小
-        const cacheKeys = Object.keys(msgCache);
-        if (cacheKeys.length > 1000) {
-            // 刪除最舊的 200 條緩存
-            cacheKeys.sort((a, b) => (msgCache[a].timestamp || 0) - (msgCache[b].timestamp || 0));
-            cacheKeys.slice(0, 200).forEach(key => delete msgCache[key]);
+        // 儲存訊息到快取，使用多個鍵以確保能查找
+        msgCache[cacheKey] = messageData;
+        
+        // 如果有 msgId，也儲存一份
+        if (msgId) {
+            msgCache[msgId] = messageData;
         }
+        
+        // 儲存用戶名和 timestamp 的映射
+        msgCache[`${userLogin}_${ts}`] = messageData;
         
         let replyHtml = "", displayMsg = rawMsg;
         const pUser = getTagValue(tags, "reply-parent-display-name");
@@ -1447,7 +1539,6 @@
             let isMe = (pUser === myDisplayName || pUser === myLoginId);
             
             let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
-            // 使用 parseMessageWithReplies 處理被引用訊息內容
             let pBody = parseMessageWithReplies(originalText, 1);
             
             const userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
@@ -1459,21 +1550,31 @@
                 displayMsg = displayMsg.substring(mention.length);
             }
         } else if (rawMsg.includes("[r]")) {
-            // 處理自定義 [r] 回覆 - 使用 timestamp
+            // 處理自定義 [r] 回覆
             const myR = rawMsg.match(/\[r\](.*?),([\d\w-]+)\[m\]/);
             if(myR) {
                 const repliedTimestamp = myR[2];
                 const userIdFromTag = myR[1];
                 
-                // 從快取中獲取原始訊息內容
-                let rawBody = "...";
-                const repliedMsg = msgCache[repliedTimestamp];
-                if (repliedMsg) {
-                    rawBody = repliedMsg.content || "...";
+                // 改進被回覆訊息的查找邏輯
+                let repliedMsg = msgCache[repliedTimestamp];
+                
+                // 如果直接找不到，嘗試在所有訊息中查找
+                if (!repliedMsg) {
+                    for (const key in msgCache) {
+                        const msg = msgCache[key];
+                        if (msg && msg.timestamp && msg.timestamp.toString() === repliedTimestamp) {
+                            repliedMsg = msg;
+                            break;
+                        }
+                    }
                 }
                 
+                let rawBody = "...";
                 let displayNameToShow = userIdFromTag;
-                if (repliedMsg && typeof repliedMsg === 'object') {
+                
+                if (repliedMsg) {
+                    rawBody = repliedMsg.content || "...";
                     displayNameToShow = repliedMsg.displayName || userIdFromTag;
                 }
                 
@@ -1490,12 +1591,12 @@
             }
         }
         
-        // 處理顯示訊息中的 [r] 標籤（如果有的話）
+        // 處理顯示訊息中的 [r] 標籤
         displayMsg = parseMessageWithReplies(displayMsg, 0);
         
         const badgeHtml = renderBadges(badgeStr);
         const line = `<div class="chat-line ts-${ts} id-${msgId || cacheKey}" data-msg-id="${msgId || cacheKey}" data-timestamp="${ts}">
-            <div class="reply-btn" onclick="replyNative('${userLogin}','${cacheKey}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
+            <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${user}')"><img src="https://chicktv.github.io/tv/re2.png" width="35" height="35"></div>
             ${replyHtml}
             ${badgeHtml}
             <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
@@ -1551,7 +1652,7 @@
         socket.send(finalCmd); 
         
         // 儲存自己發送的訊息，使用 timestamp 作為鍵
-        msgCache[selfTs] = {
+        const selfMessageData = {
             content: val,
             user: { login: myLoginId, displayName: myDisplayName },
             displayName: myDisplayName,
@@ -1559,6 +1660,9 @@
             avatar: myAvatar,
             timestamp: parseInt(selfTs)
         };
+        
+        msgCache[selfTs] = selfMessageData;
+        msgCache[`${myLoginId}_${selfTs}`] = selfMessageData;
         
         $("#messages").append(`<div class="chat-line ts-${selfTs} id-${selfTs}" data-timestamp="${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
         
@@ -1702,30 +1806,6 @@
         });
     }
     
-    function scrollToMsg(msgKey) {
-        const $msg = $(`[data-timestamp="${msgKey}"], .id-${msgKey}`);
-        if ($msg.length) {
-            const container = $("#chat-container")[0];
-            const msgTop = $msg.offset().top - $(container).offset().top;
-            
-            container.scrollTo({
-                top: msgTop + container.scrollTop - 50,
-                behavior: 'smooth'
-            });
-        }
-    }
-    
-    function replyNative(userLogin, msgKey, displayName) { 
-        pendingReply = { 
-            id: msgKey, // 使用 timestamp 作為 ID
-            user: userLogin, 
-            displayName: displayName || userLogin 
-        }; 
-        $("#replying-to-user").text(displayName || userLogin); 
-        $("#reply-indicator").show(); 
-        document.getElementById('msginput').focus(); 
-    }
-    
     function cancelReply() { 
         pendingReply = { id: null, user: null, displayName: null }; 
         $("#reply-indicator").hide(); 
@@ -1746,4 +1826,3 @@
 </script>
 </body>
 </html> 
-
