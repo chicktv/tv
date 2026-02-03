@@ -222,6 +222,7 @@
         font-weight: 500;
         color: #00ff00;
         font-size: 10px;
+		display:none;
     }
     
     /* @提及選單樣式 - 類似Twitch */
@@ -374,7 +375,7 @@
 <script>
     // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const CHANNEL = "whitewing940920";
+    const CHANNEL = "69nodomcon";
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
 
@@ -729,7 +730,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
@@ -1035,12 +1036,12 @@
             const localAudios = JSON.parse(localStorage.getItem('myAudios') || '[]');
             if (response.ok) {
                 const remoteAudios = await response.json();
-                audioLists["音訊"] = { audios: mergeAudioLists(remoteAudios, localAudios), image: "" };
+                audioLists["音訊"] = { audios: mergeAudioLists(remoteAudios, localAudios), image: "🔊" };
             } else { 
                 throw new Error(); 
             }
         } catch (e) {
-            audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "" };
+            audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "🔊" };
         }
     }
 
@@ -1072,7 +1073,7 @@
             tabs.append(tab);
         });
 
-        const audioTab = $('<div class="emoji-tab" style="color:white; text-align:center; line-height:32px;"></div>')
+        const audioTab = $('<div class="emoji-tab" style="color:white; text-align:center; line-height:32px;">🔊</div>')
             .on('click', function() { 
                 $(".emoji-tab").css("opacity", "0.6"); 
                 $(this).css("opacity", "1"); 
@@ -1115,8 +1116,8 @@
                     </div>
                 </div>`);
             audioLists[name].audios.forEach((a, index) => {
-                const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">
-${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${index})">✕</div></div>`);
+                               const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">🔊<br>${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${index})">✕</div></div>`);
+
                 item.on('click', () => { 
                     if(!isAudioDeleteMode) { 
                         insertTextAtCursor(` [a] ${a.url} [o] `); 
@@ -1220,14 +1221,14 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
             btn.currentAudio = audioElem;
             btn.dataset.isPlaying = "true";
             btn.classList.add('playing');
-            btn.innerHTML = '';
+            btn.innerHTML = '🔊';
             btn.title = '播放中...點擊停止';
 
             audioElem.play().catch(error => {
                 console.error('音訊播放失敗:', error);
                 resetAudioState(btn);
                 btn.title = '播放失敗';
-                btn.innerHTML = '';
+                btn.innerHTML = '❌';
             });
 
             audioElem.onended = () => {
@@ -1239,7 +1240,7 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
     function resetAudioState(btn) {
         btn.dataset.isPlaying = "false";
         btn.classList.remove('playing');
-        btn.innerHTML = '';
+        btn.innerHTML = '🔈';
         btn.title = '點擊播放音訊';
         btn.currentAudio = null;
     }
@@ -1313,7 +1314,7 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
             const url = content.trim(); 
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊"></span>`);
+            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url}')" data-is-playing="false" title="點擊播放音訊">🔈</span>`);
             return id;
         });
 
@@ -1414,7 +1415,9 @@ ${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${
         const color = getTagValue(tags, "color") || "#9147ff";
         const badgeStr = getTagValue(tags, "badges");
         
-        const cacheKey = ts;
+                // 使用複合鍵避免衝突
+        const cacheKey = msgId ? msgId : `ts_${ts}`;
+
         
         if (msgCache[cacheKey]) {
             logDebug('跳過重複訊息:', cacheKey);
