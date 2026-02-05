@@ -2,9 +2,10 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat88</title>
+    <title>Chickchat7 - TMI.js 版本</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
+    <script src="https://chicktv.github.io/tv/tmi.min.js"></script>
+       <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
@@ -344,7 +345,7 @@
 <script>
     // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-    const CHANNEL = "69nodomcon";
+    const CHANNEL = "whitewing940920";
     const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
     const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
 
@@ -354,7 +355,7 @@
     let myDisplayName = "";
     let myAvatar = "";
     let myBadges = "";
-    let socket;
+    let client = null;
     let altMap = {};
     let emojiLists = {};
     let audioLists = {};
@@ -365,6 +366,10 @@
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
     let myColor = "#9147ff";
+    
+    // 新增：用於追蹤已處理訊息的集合
+    let processedMessageIds = new Set();
+    
     // ===================== 拖曳功能變數 =====================
     let dragging = false;
     let offsetX = 0;
@@ -372,7 +377,6 @@
     
     // ===================== 捲動控制變數 =====================
     let autoScroll = true;
-    let userScrolling = false;
     let scrollTimeout = null;
     const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
     
@@ -385,10 +389,6 @@
     let mentionListVisible = false;
     let mentionSelectedIndex = 0;
     let mentionSearchTerm = "";
-    
-    // ===================== 訊息佇列機制 =====================
-    let messageQueue = [];
-    let processingQueue = false;
 
     // ===================== 輔助函數 =====================
     function getParameterByName(name, url) {
@@ -410,12 +410,6 @@
         } else {
             return null;
         }
-    }
-
-    function getTagValue(tags, key) { 
-        const regex = new RegExp(`${key}=([^;\\s]+)`); 
-        const match = tags.match(regex); 
-        return match ? match[1] : null; 
     }
 
     // ===================== 捲動控制功能 =====================
@@ -587,18 +581,21 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         
-        if (socket) {
-            socket.close();
+        if (client) {
+            client.disconnect();
         }
         startChat();
     }
 
     function logout() {
         localStorage.removeItem('twitch_token');
+        if (client) {
+            client.disconnect();
+        }
         location.reload();
     }
 
@@ -1132,7 +1129,7 @@
                 } else if (b.match(/www.threads.com/g)) {
                     let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
                     e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen="true" frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%"></iframe>` : b;
-                } else if (b.match(/\.(webm|mp4|m3u8)/g)) {
+                } else if (b.match(/\.(webm|mp4|m3u8|flv)/g)) {
                     e = `<video controls class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
                 } else if (b.match(/steampowered|steamcommunity/g)) {
                     let appId = b.match("app/([0-9]+)");
@@ -1143,7 +1140,7 @@
                 placeholders.push(e);
                 return id;
             });
-			// --- 新增：支援沒有 [e] 的 [s] 標籤 ---
+            // --- 新增：支援沒有 [e] 的 [s] 標籤 ---
             a = a.replace(/\[s\]\s*([^\s\[]+)/gi, (m, url) => {
                 // 如果這個網址已經被上面的 [s]...e] 處理過（變成 __PH_...），就跳過
                 if (url.includes('__PH_')) return m;
@@ -1165,7 +1162,7 @@
                     let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
                     e = `<iframe class="media-preview"  onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
                 } 
-                else if (b.match(/\.(webm|mp4)/g)) {
+                else if (b.match(/\.(webm|mp4|m3u8|flv)/g)) {
                     e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;}
                 else if (b.match(/twitter|https:\/\/x.com/g)) {
                     let twUrl = b.replace('https://x.com', 'https://twitter.com');
@@ -1277,145 +1274,171 @@
         return html;
     }
 
-    // ===================== 改善的聊天功能 =====================
-    function sendMessage() {
-        const msgInput = document.getElementById('msginput');
-        const val = msgInput.textContent.trim();
-        
-        if (!val || !socket || socket.readyState !== 1) return;
-        
-        const selfTs = Date.now().toString(); 
-        let finalCmd = "", replyDisplay = "";
-        
-        const myBadgeStr = getMyBadges();
-        const badgeHtml = renderBadges(myBadgeStr);
-        
-        if (pendingReply.id) {
-            finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
-            
-            const repliedMsg = msgCache[pendingReply.id];
-            let rawQuote = "...";
-            if (repliedMsg) {
-                rawQuote = typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg;
+    // ===================== 使用 TMI.js 的聊天功能 =====================
+    function startChat() {
+        const options = {
+            channels: [CHANNEL],
+            connection: {
+                secure: true,
+                reconnect: true,
+                reconnectDecay: 1.4,
+                reconnectInterval: 1000,
+                maxReconnectAttempts: 10
+            },
+            // 添加這些選項來減少重複訊息
+            options: {
+                debug: false,
+                skipUpdatingEmotesets: true
             }
-            
-            let parsedQuote = parseContent(rawQuote);
-            const displayNameToShow = pendingReply.displayName || pendingReply.user;
-            
-            replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
-
-        } else {
-            finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
-        }
-        
-        socket.send(finalCmd); 
-        
-        msgCache[selfTs] = {
-            content: val,
-            user: { login: myLoginId, displayName: myDisplayName },
-            displayName: myDisplayName,
-            badges: myBadgeStr,
-            avatar: myAvatar,
-            timestamp: Date.now()
         };
-        
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
-        
-        limitMessages();
-        
-        if (autoScroll) {
-            forceScrollToBottom();
+
+        // 如果有登入，使用 token 連線
+        if (ACCESS_TOKEN && myLoginId) {
+            options.identity = {
+                username: myLoginId,
+                password: `oauth:${ACCESS_TOKEN}`
+            };
+            console.log('使用已登入身份連線:', myLoginId);
+        } else {
+            // 匿名連線
+            options.identity = {
+                username: `justinfan${Math.floor(Math.random() * 10000)}`,
+                password: 'SCHMOOPIIE'
+            };
+            console.log('使用匿名身份連線');
         }
+
+        // 建立 TMI.js 客戶端
+        client = new tmi.Client(options);
         
-        cancelReply(); 
-        msgInput.textContent = "";
+        // 連接事件
+        client.on('connecting', (address, port) => {
+            console.log('正在連接到 Twitch IRC...');
+            document.getElementById('status').textContent = '正在連線中...';
+        });
+        
+        client.on('connected', (address, port) => {
+            console.log(`已連接到 ${address}:${port}`);
+            const statusText = ACCESS_TOKEN ? 
+                `已連線到 ${CHANNEL}（已登入為 ${myDisplayName || myLoginId}）` : 
+                `已連線到 ${CHANNEL}（匿名模式）`;
+            document.getElementById('status').textContent = statusText;
+            
+            // 清空已處理訊息ID集合（新連線）
+            processedMessageIds.clear();
+        });
+        
+        client.on('disconnected', (reason) => {
+            console.log('已斷開連線:', reason);
+            document.getElementById('status').textContent = `已斷開連線: ${reason}，重新連線中...`;
+        });
+        
+        client.on('reconnect', () => {
+            console.log('正在重新連線...');
+            document.getElementById('status').textContent = '重新連線中...';
+        });
+        
+        // 用戶狀態事件（取得自己的徽章和顏色）
+        client.on('userstate', (channel, userstate) => {
+            if (userstate.badges) {
+                myBadges = userstate.badges;
+                localStorage.setItem('twitch_my_badges', JSON.stringify(userstate.badges));
+            }
+            if (userstate.color) {
+                myColor = userstate.color;
+            }
+        });
+        
+        // 聊天訊息事件
+        client.on('message', (channel, tags, message, self) => {
+            // 使用防重複機制處理所有訊息
+            handleChatMessageWithDuplicateProtection(tags, message);
+        });
+        
+        // 開始連線
+        client.connect().catch(err => {
+            console.error('連線失敗:', err);
+            document.getElementById('status').textContent = `連線失敗: ${err.message}，3秒後重試...`;
+            setTimeout(startChat, 3000);
+        });
     }
 
-    // ===================== 改善的聊天連線處理 =====================
-    function startChat() {
-        if(socket && socket.readyState === WebSocket.OPEN) {
-            socket.close();
+    // 新增：帶有防重複保護的訊息處理函數
+    function handleChatMessageWithDuplicateProtection(tags, message) {
+        const msgId = tags.id;
+        const timestamp = tags['tmi-sent-ts'] || Date.now().toString();
+        
+        // 建立唯一識別符：優先使用 msgId，如果沒有則使用 timestamp + 用戶 + 訊息內容的前20個字符
+        const uniqueId = msgId || `${timestamp}_${tags.username}_${message.substring(0, 20)}`;
+        
+        // 檢查是否已經處理過此訊息
+        if (processedMessageIds.has(uniqueId)) {
+            console.log('跳過重複訊息:', uniqueId, message.substring(0, 30));
+            return;
         }
         
-        socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        // 標記為已處理
+        processedMessageIds.add(uniqueId);
         
-        socket.onopen = () => {
-            console.log('WebSocket 連線已開啟');
-            socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-            socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
-            socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan'+Math.floor(Math.random()*1000)}`);
-            socket.send(`JOIN #${CHANNEL}`);
-            document.getElementById('status').textContent = `已連線到 ${CHANNEL} ${ACCESS_TOKEN?'（已登入）':'（匿名）'}`;
+        // 限制已處理訊息的集合大小，避免記憶體洩漏
+        if (processedMessageIds.size > 1000) {
+            // 刪除最舊的 200 個項目
+            const iterator = processedMessageIds.values();
+            for (let i = 0; i < 200 && i < processedMessageIds.size; i++) {
+                processedMessageIds.delete(iterator.next().value);
+            }
+        }
+        
+        // 處理訊息
+        handleChatMessage(tags, message);
+    }
+
+    // 處理聊天訊息（移除防重複檢查）
+    function handleChatMessage(tags, message) {
+        try {
+            const msgId = tags.id;
+            const ts = tags['tmi-sent-ts'] || Date.now().toString();
+            const user = tags['display-name'] || tags.username || "User";
+            const userLogin = tags.username || user.toLowerCase();
+            const color = tags.color || "#9147ff";
+            const badges = tags.badges || {};
             
-            messageQueue = [];
-            processingQueue = false;
-        };
-        
-        socket.onerror = (error) => {
-            console.error('WebSocket 錯誤:', error);
-            document.getElementById('status').textContent = '連線錯誤，嘗試重新連線...';
-        };
-        
-        socket.onclose = () => { 
-            console.log('WebSocket 連線關閉，3秒後重新連線');
-            document.getElementById('status').textContent = '連線中斷，重新連線中...';
-            setTimeout(startChat, 3000); 
-        };
-        
-        socket.onmessage = (e) => {
-            try {
-                if (e.data.startsWith('PING')) { 
-                    socket.send('PONG :tmi.twitch.tv'); 
-                    return; 
-                }
-                
-                if (e.data.includes('USERSTATE')) {
-                    const badgeTag = getTagValue(e.data, "badges");
-                    if (badgeTag) {
-                        myBadges = badgeTag;
-                        localStorage.setItem('twitch_my_badges', badgeTag);
-                    }
-					// 新增：取得並儲存自己的顏色
-                const colorTag = getTagValue(e.data, "color");
-                if (colorTag) {
-                 myColor = colorTag;
-                 }
-                    return;
-                }
-                
-                if (!e.data.includes('PRIVMSG')) return;
-                
-                const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
-                if (parts.length < 2) return;
-                
-                const tags = parts[0], rawMsg = parts[1].trim();
-                const msgId = getTagValue(tags, "id");
-                const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
-                const user = getTagValue(tags, "display-name") || "User";
-                const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-                const color = getTagValue(tags, "color") || "#9147ff";
-                const badgeStr = getTagValue(tags, "badges");
-                
-                userCache[userLogin] = user;
-                
-                const msgRecord = {
-                    content: rawMsg,
-                    user: { login: userLogin, displayName: user },
-                    displayName: user,
-                    badges: badgeStr,
-                    avatar: `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
-                    timestamp: parseInt(ts)
-                };
-                
-                if (msgId) {
-                    msgCache[msgId] = msgRecord;
-                }
-                msgCache[ts] = msgRecord;
-                
-                let replyHtml = "", displayMsg = rawMsg;
-                const pUser = getTagValue(tags, "reply-parent-display-name");
-                const pId = getTagValue(tags, "reply-parent-msg-id");
-                const pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+            // 將 badges 物件轉換為字串格式（與原程式相容）
+            let badgeStr = "";
+            if (badges) {
+                badgeStr = Object.entries(badges)
+                    .map(([key, value]) => `${key}/${value}`)
+                    .join(',');
+            }
+            
+            // 快取用戶資訊
+            userCache[userLogin] = user;
+            
+            // 儲存訊息到快取
+            const msgRecord = {
+                content: message,
+                user: { login: userLogin, displayName: user },
+                displayName: user,
+                badges: badgeStr,
+                avatar: tags['profile-image-url'] || `https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png`,
+                timestamp: parseInt(ts)
+            };
+            
+            if (msgId) {
+                msgCache[msgId] = msgRecord;
+            }
+            msgCache[ts] = msgRecord;
+            
+            // 更新最近用戶列表（用於@提及）
+            updateRecentUsersForMention(userLogin, user, badgeStr, msgRecord.avatar);
+            
+            // 處理回覆訊息
+            let replyHtml = "", displayMsg = message;
+            
+            if (tags['reply-parent-msg-id']) {
+                const pUser = tags['reply-parent-display-name'] || tags['reply-parent-user-login'];
+                const pId = tags['reply-parent-msg-id'];
+                const pBodyRaw = tags['reply-parent-msg-body'];
                 
                 if (pUser && pId) {
                     let isMe = (pUser === myDisplayName || pUser === myLoginId);
@@ -1437,32 +1460,91 @@
                         displayMsg = displayMsg.substring(mention.length);
                     }
                 }
-                
-                const badgeHtml = renderBadges(badgeStr);
-                const line = `<div class="chat-line ts-${ts} id-${msgId || ts}" data-msg-id="${msgId || ts}">
-                    <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId || ts}','${user}')">
-                        <img src="https://chicktv.github.io/tv/re2.png" width="35" height="35">
-                    </div>
-                    ${replyHtml}
-                    ${badgeHtml}
-                    <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
-                </div>`;
-                
-                requestAnimationFrame(() => {
-                    const $messages = $("#messages");
-                    $messages.append(line);
-                    
-                    limitMessages();
-                    
-                    if (autoScroll) {
-                        forceScrollToBottom();
-                    }
-                });
-                
-            } catch (error) {
-                console.error('處理訊息時發生錯誤:', error, e.data);
             }
-        };
+            
+            // 渲染徽章
+            const badgeHtml = renderBadges(badgeStr);
+            
+            // 建立聊天行
+            const line = `<div class="chat-line ts-${ts} id-${msgId || ts}" data-msg-id="${msgId || ts}">
+                <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId || ts}','${user}')">
+                    <img src="https://chicktv.github.io/tv/re2.png" width="35" height="35">
+                </div>
+                ${replyHtml}
+                ${badgeHtml}
+                <b style="color:${color}">${user}:</b> <span>${parseContent(displayMsg)}</span>
+            </div>`;
+            
+            // 添加到聊天室
+            requestAnimationFrame(() => {
+                const $messages = $("#messages");
+                $messages.append(line);
+                
+                limitMessages();
+                
+                if (autoScroll) {
+                    forceScrollToBottom();
+                }
+            });
+            
+        } catch (error) {
+            console.error('處理聊天訊息時發生錯誤:', error, tags, message);
+        }
+    }
+
+    // 新增：更新最近用戶列表用於@提及
+    function updateRecentUsersForMention(login, displayName, badges, avatar) {
+        // 移除已存在的相同用戶
+        recentUsers = recentUsers.filter(user => user.login !== login);
+        
+        // 添加新用戶到開頭
+        recentUsers.unshift({
+            login: login,
+            displayName: displayName,
+            badges: badges,
+            avatar: avatar || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
+        });
+        
+        // 限制列表大小
+        if (recentUsers.length > 50) {
+            recentUsers = recentUsers.slice(0, 50);
+        }
+    }
+
+    // 傳送訊息
+    function sendMessage() {
+        const msgInput = document.getElementById('msginput');
+        const val = msgInput.textContent.trim();
+        
+        if (!val || !client || client.readyState() !== 'OPEN') {
+            console.log('無法傳送訊息: 用戶端未準備好');
+            return;
+        }
+        
+        // 清空輸入框
+        msgInput.textContent = "";
+        
+        // 如果有回覆，使用 Twitch 的回覆格式
+        let messageToSend = val;
+        if (pendingReply.id) {
+            // 注意：Twitch 的 reply 指令格式
+            messageToSend = `/reply ${pendingReply.id} ${val}`;
+        }
+        
+        // 使用 TMI.js 傳送訊息
+        client.say(CHANNEL, val).then(() => {
+            console.log('訊息已傳送:', val.substring(0, 50));
+            
+            // 取消回覆狀態
+            cancelReply();
+        }).catch(err => {
+            console.error('傳送訊息失敗:', err);
+            
+            // 恢復訊息到輸入框
+            msgInput.textContent = val;
+            
+            alert(`傳送訊息失敗: ${err.message}`);
+        });
     }
 
     // ===================== 其他功能 =====================
@@ -1527,4 +1609,3 @@
 </script>
 </body>
 </html>
-
