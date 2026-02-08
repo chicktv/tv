@@ -1185,27 +1185,13 @@
             }
 
             // 6. 處理一般網址與自訂表情
-                  let words = a.split(' ');
-        a = words.map(w => { 
-            // 跳過已經是佔位符的內容
-            if (w.includes('__PH_')) return w;
-            
-            // 檢查是否為網址（但排除已經處理過的標籤）
-            const urlPattern = /^(https?:\/\/[^\s<>"']+)/i;
-            const urlMatch = w.match(urlPattern);
-            
-            if (urlMatch) {
-                // 如果是網址，轉換為超連結
-                const url = urlMatch[1];
-                // 保留網址後面的標點符號
-                const remaining = w.substring(url.length);
-                return `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>${remaining}`;
-            }
-            
-            // 檢查是否為自訂表情
-            const src = altMap[w.toLowerCase()]; 
-            return src ? `<img src="${src}" class="alt-emoji" alt="${w}">` : w; 
-        }).join(' ');
+            a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
+            let words = a.split(' ');
+            a = words.map(w => { 
+                if(w.includes('__PH_')) return w; 
+                const src = altMap[w.toLowerCase()]; 
+                return src ? `<img src="${src}" class="alt-emoji">` : w; 
+            }).join(' ');
 
             // 最後還原所有預留佔位符
             placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
@@ -1471,28 +1457,44 @@
     }
 
     // ===================== 其他功能 =====================
-    function setupAutoTag() { 
-        document.getElementById('msginput').addEventListener('paste', (e) => {
-            const data = (e.clipboardData || window.clipboardData).getData('text');
-            if (!data.match(/^https?:\/\//i)) return;
-            
-            const input = e.target;
-            const currentText = input.textContent;
-            
-            if (currentText.endsWith('[s] ')) { 
-                e.preventDefault(); 
-                insertTextAtCursor(data + ' [e]'); 
-            }
-            else if (currentText.endsWith('[y] ')) { 
-                e.preventDefault(); 
-                insertTextAtCursor(data + ' [t]'); 
-            }
-            else if (currentText.endsWith('[a] ')) { 
-                e.preventDefault(); 
-                insertTextAtCursor(data + ' [o]'); 
-            }
-        });
-    }
+  function setupAutoTag() { 
+    const input = document.getElementById('msginput');
+    
+    input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        
+        // 獲取剪貼簿中的純文本
+        const clipboardData = e.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text/plain');
+        
+        if (!pastedText) return;
+        
+        // 獲取當前游標位置
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        
+        const range = selection.getRangeAt(0);
+        
+        // 檢查是否需要添加標籤
+        const textBeforeCursor = input.textContent.substring(0, range.startOffset);
+        let finalText = pastedText;
+        
+        if (textBeforeCursor.endsWith('[s] ')) {
+            finalText = pastedText + ' [e]';
+        } else if (textBeforeCursor.endsWith('[y] ')) {
+            finalText = pastedText + ' [t]';
+        } else if (textBeforeCursor.endsWith('[a] ')) {
+            finalText = pastedText + ' [o]';
+        }
+        
+        // 插入文字
+        document.execCommand('insertText', false, finalText);
+        
+        // 觸發輸入事件
+        const inputEvent = new Event('input', { bubbles: true });
+        input.dispatchEvent(inputEvent);
+    });
+}
     
     function scrollToMsg(msgId) {
         const $msg = $(`.id-${msgId}`);
