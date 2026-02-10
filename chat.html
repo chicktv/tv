@@ -1145,6 +1145,17 @@
                 return id;
             });
 
+             // --- 新增：支援沒有 [e] 的 [s] 標籤 ---
+            a = a.replace(/\[s\]\s*([^\s\[]+)/gi, (m, url) => {
+                // 如果這個網址已經被上面的 [s]...e] 處理過（變成 __PH_...），就跳過
+                if (url.includes('__PH_')) return m;
+                
+                let id = `__PH_${placeholders.length}__`;
+                let e = `<a href="${url}" target="_blank"><img src="${url}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" /></a>`;
+                placeholders.push(e);
+                return id;
+            });
+            
             // 3. 處理影片標籤 [y]...[t] (新邏輯)
             a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m, content) => {
                 let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
@@ -1168,6 +1179,32 @@
                 return id;
             });
 
+                 // --- 新增：支援沒有 [t] 的 [y] 標籤 ---
+            a = a.replace(/\[y\]\s*([^\s\[]+)/gi, (m, b) => {
+                // 防止重複處理已轉換為佔位符的內容
+                if (b.includes('__PH_')) return m;
+
+                let id = `__PH_${placeholders.length}__`;
+                let e = "";
+                
+                if (b.match(/facebook/g)) {
+                    e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
+                } else if (b.match(/youtu/g)) {
+                    let vid = b.match(/watch\?/g) ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
+                    e = `<iframe class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+                } else if (b.match(/\.(webm|mp4)/g)) {
+                    e = `<video class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" autoplay loop muted playsinline src="${b}"></video>`;
+                } else if (b.match(/twitter|https:\/\/x.com/g)) {
+                    let twUrl = b.replace('https://x.com', 'https://twitter.com');
+                    e = `<div class="twitter-tweet-container" style="width:300px;height:400px;overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js"><\/script>`;
+                } else {
+                    e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
+                }
+                
+                placeholders.push(e);
+                return id;
+            });
+            
             // 4. 處理音訊標籤 [a]...[o]
             a = a.replace(/\[a\](.*?)\[o\]/gi, (m, content) => {
                 const url = content.trim(); 
