@@ -343,4 +343,6 @@
 "60-seconds_2/1": "https://chicktv.github.io/tv/badges/v1/64513f7d-21dd-4a05-a699-d73761945cf9/1",
 "60-seconds_1/1": "https://chicktv.github.io/tv/badges/v1/1e7252f9-7e80-4d3d-ae42-319f030cca99/1",
 "1979-revolution_1/1": "https://chicktv.github.io/tv/badges/v1/7833bb6e-d20d-48ff-a58d-67fe827a4f84/1"
+"marathon-silkworm/1": "https://chicktv.github.io/tv/badges/v1/eabd1994-d054-4eb1-a740-7cce1ad4f0cb/1"
+"marathon-sub-burger/1": "https://chicktv.github.io/tv/badges/v1/5bc8a500-12f5-42c4-86f7-a678d1f930a1/1"
 }
