@@ -3,13 +3,14 @@ N,Eastsnake25,kick
 ATV,collartv,kick
 西,nanase-maru525,kick
 爵,jeukpo,kick
-QT,qt369,kick
+wc,wingchihappy1,kick
 哥,cobra-and-godzilla,kick
 A,falconjurer,kick
 絕,ppkkkp,at
 木,muse_tw2,twitch
 友,yaubotai,kick
 w,10268974521971,ok
+
 
 
 
