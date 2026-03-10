@@ -1311,7 +1311,11 @@
         const val = msgInput.textContent.trim();
         
         if (!val || !socket || socket.readyState !== 1) return;
-        
+         // 新增：檢查字數上限
+        if (val.length > 500) {
+        alert('訊息超過 500 字元限制！');
+        return;
+        }
         const selfTs = Date.now().toString(); 
         let finalCmd = "", replyDisplay = "";
         
