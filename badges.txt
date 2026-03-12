@@ -1,4 +1,7 @@
 {
+    "first-strike-2026-viewer/1": "https://chicktv.github.io/tv/badges/v1/2ae99aac-ac5b-4d69-884b-3eb20621340d/1",
+    "first-strike-2026-supporter/1": "https://chicktv.github.io/tv/badges/v1/ea899f87-f7f5-4d9d-9de9-173331341199/1",
+    "crimson-butterfly/1": "https://chicktv.github.io/tv/badges/v1/63243824-6d43-45cf-8d21-fe0b06ab587f/1",
     "ditto/1": "https://chicktv.github.io/tv/badges/v1/b577304e-7dc9-49f2-bee1-68caf56a91e6/1",
     "never-grave---witch-hat/1": "https://chicktv.github.io/tv/badges/v1/fb752b70-4eb6-45dd-8ee1-1194c38d2ac3/1",
     "twitchcon-2026-europe-windmill/1": "https://chicktv.github.io/tv/badges/v1/ed34b8e2-7c1c-4551-b4d7-63b44d61fb31/1",
