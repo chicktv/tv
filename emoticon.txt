@@ -9,13 +9,13 @@
         "showicon": "true"
     },
 	{
-        "id": "69177212b1e0d3871752676b",
+        "id": "679247a3621f71863d061507",
         "code": "Kappa",
         "width": 15,
         "height": 23,
         "dis": "",
         "alt": "Kappa",
-        "src": "https:\/\/static-cdn.jtvnw.net\/emoticons\/v2\/emotesv2_7de6575583e44682af236d819e106b86\/static\/light\/1.0",
+        "src": "https:\/\/static-cdn.jtvnw.net\/emoticons\/v2\/25\/static\/light\/1.0",
         "showicon": "true"
     },
 	{
@@ -2489,6 +2489,16 @@
         "src": "https:\/\/static-cdn.jtvnw.net\/emoticons\/v2\/34875\/static\/light\/1.0",
         "showicon": "true"
     },
+	{
+        "id": "69177212b1e0d3871752676b",
+        "code": "Kappa",
+        "width": 15,
+        "height": 23,
+        "dis": "",
+        "alt": "Kappa",
+        "src": "https:\/\/static-cdn.jtvnw.net\/emoticons\/v2\/emotesv2_7de6575583e44682af236d819e106b86\/static\/light\/1.0",
+        "showicon": "true"
+    },
     {
         "id": "679247a4621f71863d061613",
         "code": "PeoplesChamp",
@@ -2858,16 +2868,6 @@
         "dis": "",
         "alt": "JonCarnage",
         "src": "https:\/\/static-cdn.jtvnw.net\/emoticons\/v2\/26\/static\/light\/1.0",
-        "showicon": "true"
-    },
-    {
-        "id": "679247a3621f71863d061507",
-        "code": "Kappa",
-        "width": 15,
-        "height": 23,
-        "dis": "",
-        "alt": "Kappa",
-        "src": "https:\/\/static-cdn.jtvnw.net\/emoticons\/v2\/25\/static\/light\/1.0",
         "showicon": "true"
     },
     {
