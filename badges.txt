@@ -1,4 +1,8 @@
 {
+    "star-force-mega-man/1": "https://chicktv.github.io/tv/badges/v1/ce4e940c-025b-42fa-99f0-776459c511e9/1",
+    "puacl2026-finals-charizard/1": "https://chicktv.github.io/tv/badges/v1/0ff76959-0c05-4406-b18a-779fd6debdd6/1",
+    "borderlands-4---c4sh/1": "https://chicktv.github.io/tv/badges/v1/42e19e2e-a07a-4446-862b-1b1567d344b8/1",
+    "crimson-desert---crest/1": "https://chicktv.github.io/tv/badges/v1/2107571b-2db3-401b-b8e1-13b9e9696ea7/1", 
     "qsmp2/1": "https://chicktv.github.io/tv/badges/v1/2fa68fb9-fcdd-4795-bfab-f408e10efaef/1",
     "first-stand-2026-viewer/1": "https://chicktv.github.io/tv/badges/v1/2ae99aac-ac5b-4d69-884b-3eb20621340d/1",
     "first-stand-2026-supporter/1": "https://chicktv.github.io/tv/badges/v1/ea899f87-f7f5-4d9d-9de9-173331341199/1",
