@@ -455,7 +455,15 @@
             </div>
         </div>
     </div>
-
+<!-- 漢堡菜單彈出層 -->
+    <div id="channel-menu" style="display: none;">
+        <div id="channel-menu-header">
+            <h3 style="margin: 0; font-size: 1.2rem;">頻道列表 (共 <span id="channel-count">0</span> 個頻道)</h3>
+            <button onclick="toggleChannelMenu()" style="background: rgba(255, 50, 50, 0.7); padding: 8px 15px; font-size: 0.9rem;">✕ 關閉</button>
+        </div>
+        <div id="menu-channel-list"></div>
+    </div>
+    
     <!-- 加台專用彈窗面板 -->
     <div id="addChannelModal" class="modal-mask">
         <div class="add-channel-panel">
@@ -743,37 +751,53 @@
 
         // 漢堡菜單
         function toggleChannelMenu() {
-            const menu = document.getElementById('channel-menu');
-            const listContainer = document.getElementById('menu-channel-list');
-            if (menu.style.display === 'none' || getComputedStyle(menu).display === 'none') {
-                document.getElementById('channel-count').textContent = channels.length;
-                listContainer.innerHTML = '';
-                channels.forEach(channel => {
-                    const safeId = channel.id.replace(/[^a-zA-Z0-9]/g, '_');
-                    const btn = document.createElement('button');
-                    btn.className = 'menu-status-button status-button';
-                    btn.id = `menu-btn-${safeId}`;
-                    const statusSpan = document.createElement('span');
-                    statusSpan.className = 'status-indicator';
-                    statusSpan.id = `menu-status-${safeId}`;
-                    const textSpan = document.createElement('span');
-                    textSpan.textContent = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
-                    btn.appendChild(statusSpan);
-                    btn.appendChild(textSpan);
-                    btn.onclick = () => {
-                        changeSrc(getStreamUrl(channel));
-                        toggleChannelMenu();
-                    };
-                    listContainer.appendChild(btn);
-                    updateMenuButtonStatus(channel.id);
-                });
-                menu.style.display = 'block';
-                document.body.style.overflow = 'hidden';
-            } else {
-                menu.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
+    const menu = document.getElementById('channel-menu');
+    const listContainer = document.getElementById('menu-channel-list');
+
+    // 防止元素缺失时报错
+    if (!menu) {
+        console.warn('找不到 #channel-menu 元素，无法打开菜单');
+        return;
+    }
+
+    // 判断菜单当前是否可见（考虑内联 style 和计算样式）
+    const isHidden = menu.style.display === 'none' || getComputedStyle(menu).display === 'none';
+
+    if (isHidden) {
+        // 打开菜单
+        if (!listContainer) {
+            console.warn('找不到 #menu-channel-list 元素');
+            return;
         }
+        document.getElementById('channel-count').textContent = channels.length;
+        listContainer.innerHTML = '';
+        channels.forEach(channel => {
+            const safeId = channel.id.replace(/[^a-zA-Z0-9]/g, '_');
+            const btn = document.createElement('button');
+            btn.className = 'menu-status-button status-button';
+            btn.id = `menu-btn-${safeId}`;
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'status-indicator';
+            statusSpan.id = `menu-status-${safeId}`;
+            const textSpan = document.createElement('span');
+            textSpan.textContent = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
+            btn.appendChild(statusSpan);
+            btn.appendChild(textSpan);
+            btn.onclick = () => {
+                changeSrc(getStreamUrl(channel));
+                toggleChannelMenu();
+            };
+            listContainer.appendChild(btn);
+            updateMenuButtonStatus(channel.id);
+        });
+        menu.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    } else {
+        // 关闭菜单
+        menu.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
 
         function toggleChannelSelection() {
             const div = document.getElementById("channel-selection");
@@ -827,34 +851,121 @@
 
         // 狀態檢查 (沿用原有邏輯，精簡保留)
         async function fetchStatus(channel) {
-            if (channel.platform === "at") {
+            const btn = document.getElementById(`btn-${channel.id}`);
+            const label = document.getElementById(`status-${channel.id}`);
+            let url = getPlatformUrl(channel);
+            
+            // angelthump 的狀態檢查
+            if (channel.platform === "m3u8" || channel.platform === "at") {
                 channelStatuses[channel.id] = 'unknown2';
-                updateButtonStatus(channel.id); updateMenuButtonStatus(channel.id);
+                updateButtonStatus(channel.id);
+                updateMenuButtonStatus(channel.id);
+                if (label) {
+                    label.classList.add("unknown2");
+                    label.classList.remove("live", "not-live");
+                }
                 return;
             }
-            let url = getPlatformUrl(channel);
-            if (!url) return;
-            try {
-                if (channel.platform === "ok") {
-                    const resp = await fetch(url);
-                    const html = await resp.text();
-                    let isLive = html.includes('status:"online"') || html.includes('"status":"online"');
-                    channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
-                } else {
-                    const headers = channel.platform === "twitch" ? { "Authorization": `Bearer ${TWITCH_TOKEN}`, "Client-Id": TWITCH_CLIENT_ID } : {};
-                    const resp = await fetch(url, { headers });
-                    const data = await resp.json();
+
+            if (channel.platform === "ok") {
+                try {
+                    const response = await fetch(url);
+                    const html = await response.text();
+                    
                     let isLive = false;
-                    if (channel.platform === "kick") isLive = data.livestream?.is_live === true;
-                    if (channel.platform === "twitch") isLive = data.data?.length > 0;
-                    channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
+
+                    // 提取 data-options 屬性
+                    const optionsMatch = html.match(/data-options="([^"]*flashvars[^"]*)"/);
+                    if (optionsMatch && optionsMatch[1]) {
+                        // 清理 HTML 實體並解析為 JSON
+                        const optionsStr = optionsMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+                        let options;
+                        try {
+                            options = JSON.parse(optionsStr);
+                        } catch (parseError) {
+                            console.error(`Failed to parse data-options for ${channel.id}:`, parseError);
+                        }
+
+                        if (options && options.flashvars) {
+                            const flashvars = options.flashvars;
+                            // 提取 metadata
+                            const metadataMatch = flashvars.metadata.match(/^\{.*\}$/);
+                            if (metadataMatch) {
+                                const metadataStr = metadataMatch[0];
+                                try {
+                                    const metadata = JSON.parse(metadataStr);
+                                    isLive = metadata.movie && metadata.movie.status === "ONLINE";
+                                } catch (parseError) {
+                                    console.error(`JSON parse error for metadata in ${channel.id}:`, parseError);
+                                    isLive = metadataStr.includes('status:"online"');
+                                }
+                            } else {
+                                isLive = flashvars.metadata.includes('status:"online"');
+                            }
+                        }
+                    } else {
+                        // 後備檢查整個 HTML
+                        isLive = html.includes('status:"online"');
+                    }
+
+                    if (isLive) {
+                        channelStatuses[channel.id] = 'live';
+                        updateButtonStatus(channel.id);
+                        updateMenuButtonStatus(channel.id);
+                        if (label) label.classList.add("live"), label.classList.remove("not-live");
+                    } else {
+                        channelStatuses[channel.id] = 'not-live';
+                        updateButtonStatus(channel.id);
+                        updateMenuButtonStatus(channel.id);
+                        if (label) label.classList.add("not-live"), label.classList.remove("live");
+                    }
+                } catch (error) {
+                    console.error(`Error fetching status for ${channel.name}:`, error);
+                    channelStatuses[channel.id] = 'unknown';
+                    updateButtonStatus(channel.id);
+                    updateMenuButtonStatus(channel.id);
+                    if (label) label.classList.add("not-live"), label.classList.remove("live");
                 }
-            } catch(e) {
-                channelStatuses[channel.id] = 'unknown';
+                return;
             }
-            updateButtonStatus(channel.id);
-            updateMenuButtonStatus(channel.id);
+
+            try {
+                const headers = channel.platform === "twitch" ? {
+                    "Authorization": `Bearer ${TWITCH_TOKEN}`,
+                    "Client-Id": TWITCH_CLIENT_ID
+                } : {};
+
+                const response = await fetch(url, { headers });
+                const data = await response.json();
+                let isLive = false;
+
+                if (channel.platform === "kick") {
+                    isLive = data.livestream && data.livestream.is_live;
+                } else if (channel.platform === "twitch") {
+                    isLive = data.data && data.data.length > 0 || 
+                          (data.pagination && data.pagination.cursor);
+                }
+
+                if (isLive) {
+                    channelStatuses[channel.id] = 'live';
+                    updateButtonStatus(channel.id);
+                    updateMenuButtonStatus(channel.id);
+                    if (label) label.classList.add("live"), label.classList.remove("not-live");
+                } else {
+                    channelStatuses[channel.id] = 'not-live';
+                    updateButtonStatus(channel.id);
+                    updateMenuButtonStatus(channel.id);
+                    if (label) label.classList.add("not-live"), label.classList.remove("live");
+                }
+            } catch (error) {
+                console.error(`Error fetching status for ${channel.name}:`, error);
+                channelStatuses[channel.id] = 'unknown';
+                updateButtonStatus(channel.id);
+                updateMenuButtonStatus(channel.id);
+                if (label) label.classList.add("not-live"), label.classList.remove("live");
+            }
         }
+        
         function getPlatformUrl(channel) {
             if (channel.platform === "kick") return `https://kick.com/api/v2/channels/${channel.id}`;
             if (channel.platform === "twitch") return `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
@@ -882,7 +993,7 @@
         document.getElementById('chatToggleBtn').addEventListener('click', function() {
             const iframeChat = document.getElementById('chat_embed');
             if (isSK) {
-                iframeChat.src = 'https://chicktv.github.io/tv/dark.html';
+                iframeChat.src = 'https://chicktv.github.io/tv/chat.html';
                 this.textContent = '💬 TCHAT';
             } else {
                 iframeChat.src = 'https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io';
