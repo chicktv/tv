@@ -1108,6 +1108,11 @@
         try {
             let a = str, placeholders = [];
 
+            // ========== 新增：處理 [r] 標籤 ==========
+        a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
+            const displayName = userCache[login] || login;
+            return `@${displayName}`;
+        });
             // 1. 處理大寫 [S]...E] (原創簡易圖片)
             a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
                 b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
@@ -1392,7 +1397,7 @@
             socket.send(`NICK ${nick}`);
             socket.send(`JOIN #${CHANNEL}`);
             
-            const statusMsg = ACCESS_TOKEN ? `已登入連線到 ${CHANNEL}` : `匿名連線到 ${CHANNEL} (僅觀看)`;
+            const statusMsg = ACCESS_TOKEN ? `已登入連線到 ${CHANNEL}` : `已連線到 ${CHANNEL} `;
             document.getElementById('status').textContent = statusMsg;
             
             if (!ACCESS_TOKEN) {
