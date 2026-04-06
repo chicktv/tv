@@ -1,2 +1,2 @@
- "bloom-badge/1": "https://static-cdn.jtvnw.net/badges/v1/6c119c4d-adb3-4199-a0cb-3e09d7bc14c3/1",
- "nasa-artemis-ii/1": "https://static-cdn.jtvnw.net/badges/v1/52f0ea34-b35a-4bab-97a0-c7d354a27268/1"
+"cdawg-cyclethon-5-badge/1": "https://static-cdn.jtvnw.net/badges/v1/bc969f36-b221-487f-ab5b-8ecb3a60ded2/1",
+"baby-chick-chat-badge/1": "https://static-cdn.jtvnw.net/badges/v1/846a8d2c-b94e-4db6-8f8f-31885e3c187a/1"
