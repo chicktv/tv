@@ -371,9 +371,10 @@
     let isDeleteMode = false;
     let isAudioDeleteMode = false;
     let myColor = "#9147ff";
-    
-    // 重連計時器
     let reconnectTimer = null;
+    let isConnecting = false;
+    // 重連計時器
+    
     
     // ===================== 拖曳功能變數 =====================
     let dragging = false;
@@ -1148,6 +1149,16 @@
     function parseContent(str) {
         try {
             let a = str, placeholders = [];
+			a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
+    const displayName = userCache[login] || login;
+    // 檢查是否為自己（已登入且名稱相符）
+    const isSelf = (myLoginId && (login === myLoginId || displayName === myDisplayName));
+    if (isSelf) {
+        return `<span class="mention-self-tag">@${displayName}</span>`;
+    } else {
+        return `@${displayName}`;
+    }
+});
 
             // 1. 處理大寫 [S]...E] (原創簡易圖片)
             a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
@@ -1407,36 +1418,61 @@
         msgInput.textContent = "";
     }
 
-    // ===================== 改善的聊天連線處理 =====================
+    // ===================== 連線邏輯 (修復匿名斷線) =====================
     function startChat() {
-        if(socket && socket.readyState === WebSocket.OPEN) {
+        if (isConnecting) return;
+        if (socket && socket.readyState === WebSocket.OPEN) {
             socket.close();
         }
+        isConnecting = true;
         
         socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
         
         socket.onopen = () => {
-            console.log('WebSocket 連線已開啟');
+            console.log('[Chat] WebSocket 已開啟');
+            isConnecting = false;
             socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-            socket.send(`PASS oauth:${ACCESS_TOKEN || 'dummy'}`);
-            socket.send(`NICK ${ACCESS_TOKEN ? 'user' : 'justinfan'+Math.floor(Math.random()*1000)}`);
+            let pass, nick;
+            if (ACCESS_TOKEN) {
+                pass = `oauth:${ACCESS_TOKEN}`;
+                nick = myLoginId || 'user';
+            } else {
+                // 匿名模式：使用官方 justinfan 格式
+                const randomNum = Math.floor(Math.random() * 900000) + 100000;
+                pass = `justinfan${randomNum}`;
+                nick = `justinfan${randomNum}`;
+            }
+            socket.send(`PASS ${pass}`);
+            socket.send(`NICK ${nick}`);
             socket.send(`JOIN #${CHANNEL}`);
-            document.getElementById('status').textContent = `已連線到 ${CHANNEL} ${ACCESS_TOKEN?'（已登入）':'（匿名）'}`;
             
-            messageQueue = [];
-            processingQueue = false;
+            const statusMsg = ACCESS_TOKEN ? `已登入連線到 ${CHANNEL}` : `匿名連線到 ${CHANNEL} (僅觀看)`;
+            document.getElementById('status').textContent = statusMsg;
+            
+            if (!ACCESS_TOKEN) {
+                document.getElementById('msginput').disabled = true;
+                document.getElementById('sendbtn').disabled = true;
+            } else {
+                document.getElementById('msginput').disabled = false;
+                document.getElementById('sendbtn').disabled = false;
+            }
         };
         
-        socket.onerror = (error) => {
-            console.error('WebSocket 錯誤:', error);
-            document.getElementById('status').textContent = '連線錯誤，嘗試重新連線...';
+        socket.onerror = (err) => {
+            console.error('[Chat] WebSocket 錯誤:', err);
+            document.getElementById('status').textContent = '連線錯誤，重試中...';
         };
         
-        socket.onclose = () => { 
-            console.log('WebSocket 連線關閉，3秒後重新連線');
-            document.getElementById('status').textContent = '連線中斷，重新連線中...';
+        socket.onclose = (event) => {
+            console.log(`[Chat] 連線關閉，代碼: ${event.code} 原因: ${event.reason}`);
+            isConnecting = false;
             if (reconnectTimer) clearTimeout(reconnectTimer);
-            reconnectTimer = setTimeout(startChat, 3000); 
+            reconnectTimer = setTimeout(() => {
+                if (!isConnecting) {
+                    console.log('[Chat] 嘗試重新連線...');
+                    startChat();
+                }
+            }, 5000);
         };
         
         socket.onmessage = (e) => {
@@ -1444,6 +1480,12 @@
                 if (e.data.startsWith('PING')) { 
                     socket.send('PONG :tmi.twitch.tv'); 
                     return; 
+                }
+                if (e.data.includes('CAP')) return;
+                if (e.data.includes('NOTICE') && (e.data.includes('Login unsuccessful') || e.data.includes('Invalid NICK'))) {
+                    console.warn('[Chat] 認證失敗，重新連線');
+                    socket.close();
+                    return;
                 }
                 
                 if (e.data.includes('USERSTATE')) {
