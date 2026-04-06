@@ -1,6 +1,8 @@
 {
-    "bloom-badge/1": "https://static-cdn.jtvnw.net/badges/v1/6c119c4d-adb3-4199-a0cb-3e09d7bc14c3/1",
-    "nasa-artemis-ii/1": "https://static-cdn.jtvnw.net/badges/v1/52f0ea34-b35a-4bab-97a0-c7d354a27268/1",
+    "cdawg-cyclethon-5-badge/1": "https://chicktv.github.io/tv/badges/v1/bc969f36-b221-487f-ab5b-8ecb3a60ded2/1",
+    "baby-chick-chat-badge/1": "https://chicktv.github.io/tv/badges/v1/846a8d2c-b94e-4db6-8f8f-31885e3c187a/1",
+    "bloom-badge/1": "https://chicktv.github.io/tv/badges/v1/6c119c4d-adb3-4199-a0cb-3e09d7bc14c3/1",
+    "nasa-artemis-ii/1": "https://chicktv.github.io/tv/badges/v1/52f0ea34-b35a-4bab-97a0-c7d354a27268/1",
     "star-force-mega-man/1": "https://chicktv.github.io/tv/badges/v1/ce4e940c-025b-42fa-99f0-776459c511e9/1",
     "puacl2026-finals-charizard/1": "https://chicktv.github.io/tv/badges/v1/0ff76959-0c05-4406-b18a-779fd6debdd6/1",
     "borderlands-4---c4sh/1": "https://chicktv.github.io/tv/badges/v1/42e19e2e-a07a-4446-862b-1b1567d344b8/1",
