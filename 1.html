@@ -850,6 +850,7 @@ channels = Array.from(seen.values());
                 // 初始化狀態樣式
                 updateChannelOptionLabel(channel.id);
             });
+			fetchAllStatuses();
         }
 
         function watchSelectedChannels() {
