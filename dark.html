@@ -1109,14 +1109,14 @@
             let a = str, placeholders = [];
 			
 			 // ========== 新增：處理 [r] 標籤 ==========
-       a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
-    const displayName = userCache[login] || login;
-    // 檢查是否為自己（已登入且名稱相符）
-    const isSelf = (myLoginId && (login === myLoginId || displayName === myDisplayName));
+   // 處理 [r] 標籤（不使用 displayName，只顯示 login）
+a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
+    // 檢查是否為自己（僅比較登入名稱）
+    const isSelf = (myLoginId && login === myLoginId);
     if (isSelf) {
-        return `<span class="mention-self-tag">@${displayName}</span>`;
+        return `<span class="mention-self">@${login}</span>`;
     } else {
-        return `@${displayName}`;
+        return `@${login}`;
     }
 });
 
