@@ -1114,7 +1114,7 @@ a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
     // 檢查是否為自己（僅比較登入名稱）
     const isSelf = (myLoginId && login === myLoginId);
     if (isSelf) {
-        return `<span class="mention-self">@${login}</span>`;
+        return `<span class="mention-self-tag">@${login}</span>`;
     } else {
         return `@${login}`;
     }
