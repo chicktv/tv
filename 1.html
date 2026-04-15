@@ -610,7 +610,7 @@
 
             // 1. 舊txt來源
             try {
-                const response = await fetch('https://young-cloud-e59f.chicktv001.workers.dev/https://chicktv01.42web.io/channel.txt');
+                const response = await fetch('https://young-cloud-e59f.chicktv001.workers.dev/https://chicktv01.42web.io/ch1.txt');
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.text();
                 const channelLines = data.split('\n').filter(line => line.trim());
@@ -985,7 +985,7 @@ channels = Array.from(seen.values());
            
             
            
-         window.open("https://chicktv01.42web.io", "_blank", "width=800,height=600");
+         window.open("https://chicktv01.42web.io/add.php", "_blank", "width=800,height=600");
         }
     </script>
 </body>
