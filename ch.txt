@@ -1,2 +1,3 @@
 g,https://tencentplaybusiness.gztv.com/live/zonghes.m3u8,m3u8,$2y$10$wPaaVCxRmd812UQvYbFO.u7HnjU1AjkyoEnPyoiWmfuxOUwrlrtxq,210.6.142.164
 絕,ppkkkp,at,$2y$10$Qo8OQAHZWuVV7y.2xPYkMu.xV1zML7bUoxOBkYb/jVqUd6Dc47Spy,ADMIN
+木,muse_tw2,twitch,$2y$10$WBgcuqVHPC1hsry/PgRPwufSovzzUQmIlcCL2zAVjfxklEDReeE/.,ADMIN
