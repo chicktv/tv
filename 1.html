@@ -2,9 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>多平台直播聚合工具 | 完整版支援YouTube+M3U8</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- HLS.js 播放 M3U8 串流 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -197,6 +199,8 @@
             padding: 0.9375em;
             border: 1px solid rgba(255, 255, 255, 0.1);
             min-height: 400px;
+            display: flex;
+            flex-direction: column;
         }
 
         .chat {
@@ -229,8 +233,16 @@
             justify-content: center;
             gap: 0.625em;
             height: 100%;
+            width: 100%;
+            overflow: auto;
         }
-
+        .hls-video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+            border-radius: 8px;
+        }
         /* 漢堡菜單樣式 */
         #mobile-menu-btn {
             display: none;
@@ -387,7 +399,6 @@
             border: 1px solid #555;
         }
 
-        /* 看更台面板中的頻道項目狀態樣式 */
         .channel-option-label {
             display: inline-block;
             margin: 5px 0;
@@ -427,15 +438,14 @@
             }
             #input-container::-webkit-scrollbar { display: none; }
             .video-wrapper {
-            width: 100% !important;
-            min-height: 40vh;
-            padding: 0.625em; /* 改用em單位 */
-        }
-
-        .chat {
-            width: 100% !important;
-            min-height: 50vh;
-        }
+                width: 100% !important;
+                min-height: 40vh;
+                padding: 0.625em;
+            }
+            .chat {
+                width: 100% !important;
+                min-height: 50vh;
+            }
             #lists { display: none; }
             #mobile-menu-btn { display: inline-flex; }
             .top-container {
@@ -466,26 +476,26 @@
             <div id="lists"></div>
             <div id="input-container">
                 <button id="mobile-menu-btn" onclick="toggleChannelMenu()">☰ 頻道</button>
-                <button id="addChannelBtn" style="background: ">➕ 加台</button>
+                <button id="addChannelBtn">➕ 加台</button>
                 <button onclick="editClick()">🗑 del台</button>
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">📺 看更台</button>
                 <button id="chatToggleBtn">💬 chat(免插件)</button>
-				<button onclick="showPopup()">成為台主</button>
+                <button onclick="showPopup()">成為台主</button>
             </div>
         </div>
     </div>
 
-    <!-- 加台專用彈窗面板 -->
+    <!-- 加台專用彈窗面板 (新增YouTube選項) -->
     <div id="addChannelModal" class="modal-mask">
         <div class="add-channel-panel">
             <h3>✨ 新增直播頻道</h3>
             <div class="form-group">
                 <label>頻道名稱</label>
-                <input type="text" id="modal-channel-name" placeholder="" autocomplete="off">
+                <input type="text" id="modal-channel-name" placeholder="例: 我的YT頻道" autocomplete="off">
             </div>
             <div class="form-group">
-                <label>頻道ID</label>
-                <input type="text" id="modal-channel-id" placeholder="ID" autocomplete="off">
+                <label>頻道ID / 影片ID / M3U8網址</label>
+                <input type="text" id="modal-channel-id" placeholder="YouTube頻道代碼/影片ID 或 .m3u8網址" autocomplete="off">
             </div>
             <div class="form-group">
                 <label>平台</label>
@@ -494,6 +504,8 @@
                     <option value="kick">Kick</option>
                     <option value="ok">OK.ru</option>
                     <option value="at">AngelThump</option>
+                    <option value="m3u8">📺 M3U8 (HLS)</option>
+                    <option value="youtube">▶️ YouTube Live</option>
                 </select>
             </div>
             <div class="modal-buttons">
@@ -526,12 +538,184 @@
     </div>
 
     <script>
+        // ======================== 全域變數 ========================
         let TWITCH_TOKEN = "";
         let TWITCH_CLIENT_ID = "";
-        let channels = [];
-        let channelStatuses = {};
+        let channels = [];               // 儲存所有頻道物件
+        let channelStatuses = {};       // 記錄每個頻道的直播狀態
+        let currentHLSInstances = [];   // 存放 HLS.js 實例便於銷毀
 
-        // ========== 加台彈窗邏輯 ==========
+        // ======================== HLS 清理函式 ========================
+        function destroyAllHLSInstances() {
+            if (currentHLSInstances.length) {
+                currentHLSInstances.forEach(instance => {
+                    if (instance && typeof instance.destroy === 'function') instance.destroy();
+                });
+                currentHLSInstances = [];
+            }
+        }
+
+        // ======================== 單一頻道播放（主畫面）================
+        function displaySingleChannel(channel) {
+            const container = document.getElementById("multi-stream-container");
+            if (!container) return;
+            destroyAllHLSInstances();
+            container.innerHTML = "";
+            if (!channel) {
+                container.innerHTML = `<div style="color:#aaa; text-align:center; padding:2rem;">未選擇頻道</div>`;
+                return;
+            }
+            const platform = channel.platform;
+            const idOrUrl = channel.id;
+
+            // M3U8 使用 HLS.js
+            if (platform === "m3u8") {
+                const videoElem = document.createElement("video");
+                videoElem.className = "hls-video-element";
+                videoElem.controls = true;
+                videoElem.autoplay = true;
+                videoElem.muted = false;
+                videoElem.playsInline = true;
+                videoElem.style.width = "100%";
+                videoElem.style.height = "100%";
+                container.appendChild(videoElem);
+                if (Hls.isSupported()) {
+                    const hls = new Hls({ enableWorker: true, autoStartLoad: true });
+                    hls.loadSource(idOrUrl);
+                    hls.attachMedia(videoElem);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        videoElem.play().catch(e => console.warn("自動播放失敗", e));
+                    });
+                    currentHLSInstances.push(hls);
+                } else if (videoElem.canPlayType('application/vnd.apple.mpegurl')) {
+                    videoElem.src = idOrUrl;
+                } else {
+                    container.innerHTML = `<div style="color:red; text-align:center;">⚠️ 瀏覽器不支援 HLS 播放</div>`;
+                }
+            }
+            // YouTube 直播嵌入
+            else if (platform === "youtube") {
+                const iframe = document.createElement("iframe");
+                iframe.className = "full-screen-video";
+                // 判斷是頻道 ID (UC開頭) 或是影片 ID
+                let embedSrc = "";
+                if (idOrUrl.startsWith("UC") || idOrUrl.startsWith("HC") || idOrUrl.includes("channel")) {
+                    embedSrc = `https://www.youtube.com/embed/live_stream?channel=${idOrUrl}&autoplay=1&mute=0`;
+                } else {
+                    embedSrc = `https://www.youtube.com/embed/${idOrUrl}?autoplay=1&mute=0`;
+                }
+                iframe.src = embedSrc;
+                iframe.allowFullscreen = true;
+				iframe.referrerpolicy = "strict-origin-when-cross-origin";
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                iframe.frameBorder = "0";
+                container.appendChild(iframe);
+            }
+            // 其他平台（Twitch、Kick、OK、AngelThump）使用 iframe
+            else {
+                const iframe = document.createElement("iframe");
+                iframe.className = "full-screen-video";
+                iframe.src = getStreamUrl(channel);
+                iframe.allowFullscreen = true;
+                iframe.allow = "autoplay";
+                iframe.frameBorder = "0";
+                container.appendChild(iframe);
+            }
+        }
+
+        // 取得各平台 iframe 嵌入網址（不包含 M3U8 / YouTube）
+        function getStreamUrl(channel) {
+            if (!channel) return "";
+            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=false&autoplay=true`;
+            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
+            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
+            if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}`;
+            return "";
+        }
+
+        // ======================== 看更台（多視窗）=====================
+        function watchSelectedChannels() {
+            const selectionDiv = document.getElementById("channel-selection");
+            if (selectionDiv) selectionDiv.style.display = "none";
+            const container = document.getElementById("multi-stream-container");
+            if (!container) return;
+            destroyAllHLSInstances();
+            container.innerHTML = "";
+            const checkboxes = document.querySelectorAll("#channel-options input:checked");
+            const selected = Array.from(checkboxes).map(cb => ({ 
+                id: cb.value, 
+                platform: cb.dataset.platform,
+                name: cb.dataset.name || ""
+            }));
+            const fullSelected = selected.map(sel => channels.find(ch => ch.id === sel.id && ch.platform === sel.platform)).filter(Boolean);
+            if (fullSelected.length === 0) {
+                container.innerHTML = `<div style="color:#aaa; text-align:center; padding:2rem;">未選擇任何頻道</div>`;
+                return;
+            }
+            const isOnlyOne = fullSelected.length === 1;
+            fullSelected.forEach(ch => {
+                const platform = ch.platform;
+                const idOrUrl = ch.id;
+                const wrapperClass = isOnlyOne ? "full-screen-video" : "video";
+                if (platform === "m3u8") {
+                    const videoElem = document.createElement("video");
+                    videoElem.className = `hls-video-element ${wrapperClass}`;
+                    videoElem.controls = true;
+                    videoElem.autoplay = true;
+                    videoElem.muted = false;
+                    videoElem.playsInline = true;
+                    if (!isOnlyOne) {
+                        videoElem.style.width = "48%";
+                        videoElem.style.height = "48%";
+                        
+                    } else {
+                        videoElem.style.width = "100%";
+                        videoElem.style.height = "100%";
+                    }
+                    container.appendChild(videoElem);
+                    if (Hls.isSupported()) {
+                        const hls = new Hls({ enableWorker: true, autoStartLoad: true });
+                        hls.loadSource(idOrUrl);
+                        hls.attachMedia(videoElem);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => videoElem.play().catch(e=>console.warn));
+                        currentHLSInstances.push(hls);
+                    } else if (videoElem.canPlayType('application/vnd.apple.mpegurl')) {
+                        videoElem.src = idOrUrl;
+                    } else {
+                        videoElem.outerHTML = `<div style="color:red;">不支援HLS</div>`;
+                    }
+                } else if (platform === "youtube") {
+                    const iframe = document.createElement("iframe");
+                    iframe.className = wrapperClass;
+                    let embedSrc = "";
+                    if (idOrUrl.startsWith("UC") || idOrUrl.startsWith("HC") || idOrUrl.includes("channel")) {
+                        embedSrc = `https://www.youtube.com/embed/live_stream?channel=${idOrUrl}&autoplay=1`;
+                    } else {
+                        embedSrc = `https://www.youtube.com/embed/${idOrUrl}?autoplay=1`;
+                    }
+                    iframe.src = embedSrc;
+                    iframe.allowFullscreen = true;
+					iframe.referrerpolicy = "strict-origin-when-cross-origin";
+                    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                    iframe.frameBorder = "0";
+                    if (!isOnlyOne) {
+                        iframe.style.width = "48%%";
+                        iframe.style.height = "48%";
+                    }
+                    container.appendChild(iframe);
+                } else {
+                    const iframe = document.createElement("iframe");
+                    iframe.className = wrapperClass;
+                    iframe.src = getStreamUrl(ch);
+                    iframe.allowFullscreen = true;
+                    iframe.allow = "autoplay";
+                    iframe.frameBorder = "0";
+                    container.appendChild(iframe);
+                }
+            });
+        }
+
+        // ======================== 加台彈窗邏輯 ========================
         function openAddChannelModal() {
             const modal = document.getElementById('addChannelModal');
             if (!modal) return;
@@ -548,21 +732,20 @@
             const name = document.getElementById('modal-channel-name').value.trim();
             const id = document.getElementById('modal-channel-id').value.trim();
             const platform = document.getElementById('modal-channel-platform').value.toLowerCase();
-
             if (!name || !id || !platform) {
                 alert("❌ 請完整填寫頻道名稱、ID 及平台");
                 return;
             }
-
+            if (platform === "m3u8" && !id.match(/\.m3u8($|\?)/i) && !id.startsWith("http")) {
+                if (!confirm("⚠️ 網址可能不是標準 .m3u8 格式，仍要新增嗎？")) return;
+            }
             const existingIndex = channels.findIndex(ch => 
                 ch.name.toLowerCase() === name.toLowerCase() && 
                 ch.platform.toLowerCase() === platform
             );
-
             const newChannel = { name, id, platform };
             delete newChannel._fromAPI;
             delete newChannel._fromTxt;
-
             if (existingIndex > -1) {
                 channels[existingIndex] = newChannel;
                 console.log(`✅ 更新頻道: ${name} (${platform})`);
@@ -570,13 +753,13 @@
                 channels.push(newChannel);
                 console.log(`✅ 新增頻道: ${name} (${platform})`);
             }
-
             saveChannelsToStorage();
             generateButtons();
             closeAddChannelModal();
             fetchAllStatuses();
         }
 
+        // 儲存自訂頻道到 localStorage
         function saveChannelsToStorage() {
             let customChannels = channels.filter(ch => !ch._fromAPI && !ch._fromTxt);
             customChannels = customChannels.map(ch => {
@@ -584,9 +767,10 @@
                 return cleanCh;
             });
             localStorage.setItem("customChannels1", JSON.stringify(customChannels));
-            console.log(`💾 已儲存 ${customChannels.length} 個自訂頻道`);
+            console.log(`💾 已儲存 ${customChannels.length} 個自訂頻道 (含M3U8/YouTube)`);
         }
 
+        // ======================== 載入 Twitch 憑證 ========================
         async function loadTwitchCredentials() {
             try {
                 const response = await fetch('https://chicktv.github.io/tv/token.txt');
@@ -604,11 +788,11 @@
             }
         }
 
+        // ======================== 從外部來源載入頻道清單 =================
         async function loadChannelsFromUrl() {
             let txtChannels = [];
             let apiChannelsTemp = [];
-
-            // 1. 舊txt來源
+            // 1. 舊 txt 來源
             try {
                 const response = await fetch('https://chicktv.github.io/tv/ch1.txt');
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -628,11 +812,8 @@
                     return null;
                 }).filter(ch => ch && ch.id);
                 console.log(`📁 舊txt來源載入 ${txtChannels.length} 個頻道`);
-            } catch (error) {
-                console.warn('舊txt來源失敗', error);
-            }
-
-            // 2. API來源
+            } catch (error) { console.warn('舊txt失敗', error); }
+            // 2. API 來源
             try {
                 const response = await fetch('https://api.codetabs.com/v1/proxy/?quest=https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918');
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -654,38 +835,28 @@
                     }).filter(ch => ch && ch.id);
                     console.log(`🌐 API來源載入 ${apiChannelsTemp.length} 個頻道`);
                 }
-            } catch (error) {
-                console.warn('API來源失敗', error);
-            }
-
+            } catch (error) { console.warn('API失敗', error); }
             // 3. localStorage 自訂頻道
             const storedChannels = JSON.parse(localStorage.getItem("customChannels1") || "[]");
-            
-            
-            // 4. 合併去重，API 優先
-let allRaw = [...apiChannelsTemp, ...txtChannels, ...storedChannels];
-const seen = new Map();
-for (const ch of allRaw) {
-    const key = `${(ch.name || "").trim().toLowerCase()}|${(ch.platform || "").trim().toLowerCase()}`;
-    if (!seen.has(key)) {
-        seen.set(key, ch);
-    } else {
-        // 若已存在的不是 API，而新的是 API，則覆蓋
-        const existing = seen.get(key);
-        if (!existing._fromAPI && ch._fromAPI) {
-            seen.set(key, ch);
-        }
-    }
-}
-channels = Array.from(seen.values());
-            console.log(`🎯 最終頻道總數: ${channels.length}`);
-            if (channels.length === 0 && storedChannels.length) {
-                channels = [...storedChannels];
+            // 合併去重，API 優先保留
+            let allRaw = [...apiChannelsTemp, ...txtChannels, ...storedChannels];
+            const seen = new Map();
+            for (const ch of allRaw) {
+                const key = `${(ch.name || "").trim().toLowerCase()}|${(ch.platform || "").trim().toLowerCase()}`;
+                if (!seen.has(key)) seen.set(key, ch);
+                else {
+                    const existing = seen.get(key);
+                    if (!existing._fromAPI && ch._fromAPI) seen.set(key, ch);
+                }
             }
+            channels = Array.from(seen.values());
+            console.log(`🎯 最終頻道總數: ${channels.length} (支援YouTube/M3U8)`);
+            if (channels.length === 0 && storedChannels.length) channels = [...storedChannels];
             saveChannelsToStorage();
             generateButtons();
         }
 
+        // ======================== 產生頂部按鈕 & 刪除模式 =================
         function generateButtons() {
             const container = document.getElementById("lists");
             if (!container) return;
@@ -703,10 +874,15 @@ channels = Array.from(seen.values());
             const safeId = (channel.id || "unknown").replace(/[^a-zA-Z0-9]/g, '_');
             btn.className = "status-button";
             btn.id = `btn-${safeId}`;
-            btn.innerText = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
-            btn.onclick = () => {
-                changeSrc(getStreamUrl(channel));
-            };
+            let platformIcon = "ⓞ";
+            if (channel.platform === "kick") platformIcon = "Ⓚ";
+            else if (channel.platform === "twitch") platformIcon = "Ⓣ";
+            else if (channel.platform === "at") platformIcon = "Ⓐ";
+            else if (channel.platform === "m3u8") platformIcon = "📺";
+            else if (channel.platform === "youtube") platformIcon = "▶️";
+            else if (channel.platform === "ok") platformIcon = "ⓞ";
+            btn.innerText = `${platformIcon}${channel.name}`;
+            btn.onclick = () => { displaySingleChannel(channel); };
             const deleteBtn = document.createElement("button");
             deleteBtn.innerText = "x";
             deleteBtn.style.display = "none";
@@ -715,11 +891,8 @@ channels = Array.from(seen.values());
                 channels = channels.filter(ch => !(ch.id === channel.id && ch.platform === channel.platform));
                 saveChannelsToStorage();
                 generateButtons();
-                if (channels.length === 0) changeSrc("about:blank");
-                // 重新產生看更台選項以保持同步
-                if (document.getElementById("channel-selection").style.display !== "none") {
-                    generateChannelOptions();
-                }
+                if (channels.length === 0) displaySingleChannel(null);
+                if (document.getElementById("channel-selection").style.display !== "none") generateChannelOptions();
             };
             const wrapper = document.createElement("div");
             wrapper.className = "button-wrapper";
@@ -729,6 +902,18 @@ channels = Array.from(seen.values());
             updateButtonStatus(channel.id);
         }
 
+        function editClick() {
+            document.querySelectorAll(".button-wrapper button:last-child").forEach(btn => {
+                if (btn.innerText === "x") btn.style.display = "inline-flex";
+            });
+            setTimeout(() => {
+                document.querySelectorAll(".button-wrapper button:last-child").forEach(btn => {
+                    if (btn.innerText === "x") btn.style.display = "none";
+                });
+            }, 8000);
+        }
+
+        // ======================== 狀態更新（UI 樣式）====================
         function updateButtonStatus(channelId) {
             const safeId = (channelId || "unknown").replace(/[^a-zA-Z0-9]/g, '_');
             const btn = document.getElementById(`btn-${safeId}`);
@@ -760,7 +945,6 @@ channels = Array.from(seen.values());
             else menuBtn.classList.add('unknown');
         }
 
-        // 看更台面板中的 label 狀態更新
         function updateChannelOptionLabel(channelId) {
             const label = document.getElementById(`status-label-${channelId.replace(/[^a-zA-Z0-9]/g, '_')}`);
             if (!label) return;
@@ -772,23 +956,13 @@ channels = Array.from(seen.values());
             else label.classList.add('unknown');
         }
 
-        // 修復後的 toggleChannelMenu (防呆)
+        // ======================== 漢堡選單 ========================
         function toggleChannelMenu() {
             const menu = document.getElementById('channel-menu');
             const listContainer = document.getElementById('menu-channel-list');
-
-            if (!menu) {
-                console.warn('找不到 #channel-menu 元素，無法操作菜單');
-                return;
-            }
-
+            if (!menu) return;
             const isHidden = menu.style.display === 'none' || getComputedStyle(menu).display === 'none';
-
             if (isHidden) {
-                if (!listContainer) {
-                    console.warn('找不到 #menu-channel-list 元素');
-                    return;
-                }
                 document.getElementById('channel-count').textContent = channels.length;
                 listContainer.innerHTML = '';
                 channels.forEach(channel => {
@@ -800,13 +974,16 @@ channels = Array.from(seen.values());
                     statusSpan.className = 'status-indicator';
                     statusSpan.id = `menu-status-${safeId}`;
                     const textSpan = document.createElement('span');
-                    textSpan.textContent = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
+                    let icon = "ⓞ";
+                    if (channel.platform === "kick") icon = "Ⓚ";
+                    else if (channel.platform === "twitch") icon = "Ⓣ";
+                    else if (channel.platform === "at") icon = "Ⓐ";
+                    else if (channel.platform === "m3u8") icon = "📺";
+                    else if (channel.platform === "youtube") icon = "▶️";
+                    textSpan.textContent = `${icon}${channel.name}`;
                     btn.appendChild(statusSpan);
                     btn.appendChild(textSpan);
-                    btn.onclick = () => {
-                        changeSrc(getStreamUrl(channel));
-                        toggleChannelMenu();
-                    };
+                    btn.onclick = () => { displaySingleChannel(channel); toggleChannelMenu(); };
                     listContainer.appendChild(btn);
                     updateMenuButtonStatus(channel.id);
                 });
@@ -818,6 +995,7 @@ channels = Array.from(seen.values());
             }
         }
 
+        // ======================== 看更台面板 ========================
         function toggleChannelSelection() {
             const div = document.getElementById("channel-selection");
             if (!div) return;
@@ -838,62 +1016,44 @@ channels = Array.from(seen.values());
                 cb.type = "checkbox";
                 cb.value = channel.id;
                 cb.dataset.platform = channel.platform;
+                cb.dataset.name = channel.name;
                 cb.id = `chk_${channel.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
                 const label = document.createElement("label");
                 label.htmlFor = cb.id;
                 label.className = "channel-option-label";
                 label.id = `status-label-${channel.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                label.textContent = `${channel.platform === "kick" ? "Ⓚ" : channel.platform === "twitch" ? "Ⓣ" : channel.platform === "at" ? "Ⓐ" : "ⓞ"}${channel.name}`;
+                let icon = "ⓞ";
+                if (channel.platform === "kick") icon = "Ⓚ";
+                else if (channel.platform === "twitch") icon = "Ⓣ";
+                else if (channel.platform === "at") icon = "Ⓐ";
+                else if (channel.platform === "m3u8") icon = "📺";
+                else if (channel.platform === "youtube") icon = "▶️";
+                label.textContent = `${icon}${channel.name}`;
                 wrapper.appendChild(cb);
                 wrapper.appendChild(label);
                 container.appendChild(wrapper);
-                // 初始化狀態樣式
                 updateChannelOptionLabel(channel.id);
             });
 			fetchAllStatuses();
         }
 
-        function watchSelectedChannels() {
-            const selectionDiv = document.getElementById("channel-selection");
-            if (selectionDiv) selectionDiv.style.display = "none";
-            const container = document.getElementById("multi-stream-container");
-            if (!container) return;
-            container.innerHTML = "";
-            const checkboxes = document.querySelectorAll("#channel-options input:checked");
-            const selected = Array.from(checkboxes).map(cb => ({ id: cb.value, platform: cb.dataset.platform }));
-            selected.forEach(ch => {
-                const iframe = document.createElement("iframe");
-                iframe.className = selected.length === 1 ? "full-screen-video" : "video";
-                iframe.src = getStreamUrl({ id: ch.id, platform: ch.platform });
-                iframe.allowFullscreen = true;
-                container.appendChild(iframe);
-            });
-            if (selected.length === 0) changeSrc("about:blank");
-        }
-
-        function getStreamUrl(channel) {
-            if (!channel) return "";
-            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=false&autoplay=true`;
-            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=chicktv.github.io`;
-            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
-            if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}`;
-            return "";
-        }
-
-        function changeSrc(url) {
-            const container = document.getElementById("multi-stream-container");
-            if (container) {
-                container.innerHTML = `<iframe id="MyFrame" class="video1" src="${url}" frameborder="0" allowfullscreen allow="autoplay" controls></iframe>`;
-            }
-        }
-
+        // ======================== 直播狀態查詢 ========================
         async function fetchStatus(channel) {
             if (!channel || !channel.id) return;
             if (channel.platform === "at") {
                 channelStatuses[channel.id] = 'unknown2';
-                updateButtonStatus(channel.id);
-                updateMenuButtonStatus(channel.id);
-                updateChannelOptionLabel(channel.id);
+                updateUIForChannel(channel.id);
+                return;
+            }
+            if (channel.platform === "youtube") {
+                // YouTube 暫不做精確檢測，顯示特殊動畫
+                channelStatuses[channel.id] = 'unknown2';
+                updateUIForChannel(channel.id);
+                return;
+            }
+            if (channel.platform === "m3u8") {
+                channelStatuses[channel.id] = 'live';
+                updateUIForChannel(channel.id);
                 return;
             }
             let url = getPlatformUrl(channel);
@@ -916,11 +1076,15 @@ channels = Array.from(seen.values());
             } catch(e) {
                 channelStatuses[channel.id] = 'unknown';
             }
-            updateButtonStatus(channel.id);
-            updateMenuButtonStatus(channel.id);
-            updateChannelOptionLabel(channel.id);
+            updateUIForChannel(channel.id);
         }
-
+        
+        function updateUIForChannel(channelId) {
+            updateButtonStatus(channelId);
+            updateMenuButtonStatus(channelId);
+            updateChannelOptionLabel(channelId);
+        }
+        
         function getPlatformUrl(channel) {
             if (channel.platform === "kick") return `https://kick.com/api/v2/channels/${channel.id}`;
             if (channel.platform === "twitch") return `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
@@ -933,24 +1097,13 @@ channels = Array.from(seen.values());
             channels.forEach(ch => fetchStatus(ch));
         }
 
-        function editClick() {
-            document.querySelectorAll(".button-wrapper button:last-child").forEach(btn => {
-                if (btn.innerText === "x") btn.style.display = "inline-flex";
-            });
-            setTimeout(() => {
-                document.querySelectorAll(".button-wrapper button:last-child").forEach(btn => {
-                    if (btn.innerText === "x") btn.style.display = "none";
-                });
-            }, 8000);
-        }
-
-        // chat切換
+        // ======================== 聊天室切換 ========================
         let isSK = true;
         document.getElementById('chatToggleBtn')?.addEventListener('click', function() {
             const iframeChat = document.getElementById('chat_embed');
             if (!iframeChat) return;
             if (isSK) {
-                iframeChat.src = 'https://chicktv.github.io/tv/dark.html';
+                iframeChat.src = 'https://chicktv.github.io/tv/chat.html';
                 this.textContent = '💬 TCHAT';
             } else {
                 iframeChat.src = 'https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=chicktv.github.io';
@@ -959,6 +1112,7 @@ channels = Array.from(seen.values());
             isSK = !isSK;
         });
 
+        // ======================== 彈窗事件綁定 ========================
         function bindModalEvents() {
             const addBtn = document.getElementById('addChannelBtn');
             if (addBtn) addBtn.onclick = openAddChannelModal;
@@ -968,12 +1122,11 @@ channels = Array.from(seen.values());
             if (cancelBtn) cancelBtn.onclick = closeAddChannelModal;
             const modalMask = document.getElementById('addChannelModal');
             if (modalMask) {
-                modalMask.addEventListener('click', (e) => {
-                    if (e.target === modalMask) closeAddChannelModal();
-                });
+                modalMask.addEventListener('click', (e) => { if (e.target === modalMask) closeAddChannelModal(); });
             }
         }
 
+        // ======================== 初始化與響應式 ========================
         window.addEventListener('resize', () => generateButtons());
         document.addEventListener('DOMContentLoaded', async () => {
             await loadTwitchCredentials();
@@ -981,11 +1134,8 @@ channels = Array.from(seen.values());
             bindModalEvents();
             setInterval(fetchAllStatuses, 480000);
         });
-		function showPopup() {
-           
-            
-           
-         window.open("https://chicktv01.42web.io", "_blank", "width=800,height=600");
+        function showPopup() {
+            window.open("https://chicktv01.42web.io/add.php", "_blank", "width=800,height=600");
         }
     </script>
 </body>
