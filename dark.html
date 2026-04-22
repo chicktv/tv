@@ -1114,7 +1114,7 @@ a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
     console.log('[DEBUG] 提取的login:', login);
     console.log('[DEBUG] 當前myLoginId:', myLoginId);
     const isSelf = (myLoginId && login === myLoginId);
-    const result = isSelf ? `<span class="mention-self">@${login}</span>` : `@${login}`;
+    const result = isSelf ? `<span class="mention-self">@${myLoginId}</span>` : `@${login}`;
     console.log('[DEBUG] 輸出結果:', result);
     return result;
 });
