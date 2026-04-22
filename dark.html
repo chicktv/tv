@@ -1110,12 +1110,13 @@
 			
 			 // ========== 新增：處理 [r] 標籤 ==========
 a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
+    console.log('[DEBUG] 原始match:', match);
+    console.log('[DEBUG] 提取的login:', login);
+    console.log('[DEBUG] 當前myLoginId:', myLoginId);
     const isSelf = (myLoginId && login === myLoginId);
-    if (isSelf) {
-        return `<span class="mention-self">@${myDisplayName}</span>`;   // ⚠️ 使用了 myDisplayName
-    } else {
-        return `@${login}`;
-    }
+    const result = isSelf ? `<span class="mention-self">@${login}</span>` : `@${login}`;
+    console.log('[DEBUG] 輸出結果:', result);
+    return result;
 });
 
             // 1. 處理大寫 [S]...E] (原創簡易圖片)
