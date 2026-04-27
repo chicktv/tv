@@ -602,7 +602,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'flex';
+        document.getElementById('userInfo').style.display = 'none';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         if (socket) socket.close();
@@ -1031,7 +1031,7 @@
         return str.replace(/\[r\]([^,]+),([0-9]+)\[m\]/gi, (match, login, ts) => {
             const displayName = getUserDisplayName(login, login);
             const isSelf = (myLoginId && login === myLoginId);
-            const mentionHtml = isSelf ? `<span class="mention-self">@${myDisplayName || displayName}</span>` : `@${displayName}`;
+            const mentionHtml = isSelf ? `<span class="mention-self-tag">@${myDisplayName || displayName}</span>` : `@${displayName}`;
             const quotedMsg = msgCache[ts];
             if (!quotedMsg || !quotedMsg.content) return mentionHtml;
             let quotedContent = quotedMsg.content;
