@@ -60,7 +60,7 @@
         }
 
         .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; }
+        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
         .chat-line { position: relative; border-radius: 4px; line-height: 1.6; word-wrap: break-word; color: var(--t-text); transition: background 0.3s, border 0.3s; padding: 1px; margin-bottom: 5px; border: 1px solid transparent; }
         .chat-line:hover { background: rgba(255,255,255,0.08); }
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
@@ -73,95 +73,109 @@
         .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
         .reply-btn:hover {background-color: #3c3a39;}
         .chat-line:hover .reply-btn { display: flex; }
-        .quote-box { color: #adadb8; padding: 1px; border-radius: 4px; margin-bottom: 1px; line-height: 1.4; display: block; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-        .quote-box:hover { background: rgba(255,255,255,0.15); }
-        .quote-user { color: #adadb8; margin-right: 5px; }
-        .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
         
-        /* --- 根據圖片優化輸入區佈局 --- */
-        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
+        /* ---------- 引用區塊優化 - 增強嵌套引用可讀性 ---------- */
+        .quote-box { 
+            color: #adadb8; 
+            padding: 6px 8px; 
+            border-radius: 8px; 
+            margin-bottom: 6px; 
+            margin-top: 2px;
+            line-height: 1.45; 
+            display: block; 
+            cursor: pointer; 
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0, 0, 0, 0.2);
+            transition: all 0.1s ease;
+            word-break: break-word;
+        }
+        .quote-box:hover { 
+            background: rgba(145, 71, 255, 0.15);
+            border-color: rgba(145, 71, 255, 0.4);
+        }
         
-        #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
+        /* 嵌套引用层级视觉优化：缩进 + 左侧紫色边框 + 背景微调 */
+        .quote-box .quote-box {
+            margin-left: 12px;
+            border-left: 3px solid #9147ff;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            background: rgba(20, 20, 30, 0.4);
+        }
         
-        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
-        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
-        .tool-link:hover { color: #fff; }
-        .tool-link svg { margin-left: 1px; }
-        .tool-link svg:hover { fill: #9147ff; }
-        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
-        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
-        #msginput { 
-            flex: 1; 
-            background: transparent; 
-            border: none; 
-            color: #efeff1; 
-            font-size: 14px; 
-            outline: none; 
-            padding: 10px 0; 
-            font-family: inherit; 
-            box-sizing: border-box; 
-            font-family: inherit; 
-            overflow-wrap: break-word; 
-            max-height: calc(5lh + 20px); 
-            overflow: hidden auto;
-            white-space: pre-wrap;
-            min-height: 20px;
+        /* 第三层引用 */
+        .quote-box .quote-box .quote-box {
+            margin-left: 20px;
+            border-left-color: #b77eff;
+            background: rgba(30, 25, 45, 0.5);
         }
-        #msginput:empty:before {
-            content: attr(placeholder);
-            color: #777;
-        }
-        #msginput:focus:empty:before {
-            content: attr(placeholder);
-            color: #777;
-        }
-        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
-
-        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
-        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
-        #sendbtn:hover { background: #a970ff; }
-        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
         
-        /* 表情面板 */
-        #emojiPanel { 
-            position: fixed; 
-            display: none; 
-            width: 350px; 
-            height: 400px; 
-            background: #1f182e; 
-            border: 2px solid #443a5a; 
-            border-radius: 12px; 
-            z-index: 5000; 
-            left: 50%; 
-            top: 50%; 
-            transform: translate(-50%, -50%); 
-            flex-direction: column; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            cursor: default;
+        /* 第四层引用 */
+        .quote-box .quote-box .quote-box .quote-box {
+            margin-left: 28px;
+            border-left-color: #d4a5ff;
+            background: rgba(40, 32, 55, 0.55);
         }
-        #emojiPanel.dragging { cursor: grabbing; }
-        .emoji-header { 
-            padding: 12px; 
-            display: flex; 
-            justify-content: space-between; 
-            background: #26262c; 
-            border-radius: 12px 12px 0 0; 
-            align-items: center;
-            cursor: grab;
-            user-select: none;
-        }
-        .emoji-header:active { cursor: grabbing; }
-        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
-        #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
-        .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
-        .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-        .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-        .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
-        .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
         
-
-        /* ========== 新添加：捲動到底部按鈕 ========== */
+        /* 第五层引用 (最多常见深度) */
+        .quote-box .quote-box .quote-box .quote-box .quote-box {
+            margin-left: 36px;
+            border-left-color: #eac7ff;
+            background: rgba(50, 42, 68, 0.6);
+        }
+        
+        /* 第六层以上保持继续缩进，避免过于拥挤，給予極限保護 */
+        .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box,
+        .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box {
+            margin-left: 44px;
+            border-left-color: #f5e0ff;
+            background: rgba(60, 52, 78, 0.65);
+        }
+        
+        /* 在深層引用內的小型文字及預覽縮緊，避免過長溢出 */
+        .quote-box .quote-box .media-preview,
+        .quote-box .quote-box .alt-emoji {
+            max-width: 200px !important;
+            max-height: 200px !important;
+        }
+        
+        /* 引用區塊內的SVG圖標與回覆提示維持整齊 */
+        .quote-box svg {
+            vertical-align: middle;
+            margin-right: 4px;
+            flex-shrink: 0;
+        }
+        
+        /* 在深層嵌套裡，讓被引用用戶的名稱格外醒目 */
+        .quote-box .quote-user {
+            font-weight: 500;
+            color: #c9a5ff;
+            margin-left: 2px;
+            margin-right: 4px;
+        }
+        
+        .mention-self-tag {
+            background-color: #9147ff;
+            color: #ffffff !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 2px;
+        }
+        
+        /* 針對原本回覆系統的引用塊內嵌遞迴強化覆蓋 */
+        .quote-box .mention-self-tag {
+            background: #b77eff;
+            color: white;
+        }
+        
+        /* 確保最上層引用框與上下文保持視覺區隔 */
+        .chat-line .quote-box:first-child {
+            margin-top: 2px;
+        }
+        
+        /* --- 捲動到底部按鈕 --- */
         #scrollToBottomBtn {
             position: absolute;
             bottom: 80px;
@@ -280,6 +294,85 @@
             margin-bottom: 4px;
             background: rgba(0,0,0,0.2);
         }
+
+        /* 輸入區塊保留原有設計 */
+        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
+        #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
+        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
+        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
+        .tool-link:hover { color: #fff; }
+        .tool-link svg { margin-left: 1px; }
+        .tool-link svg:hover { fill: #9147ff; }
+        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
+        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
+        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
+        #msginput { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            color: #efeff1; 
+            font-size: 14px; 
+            outline: none; 
+            padding: 10px 0; 
+            font-family: inherit; 
+            box-sizing: border-box; 
+            font-family: inherit; 
+            overflow-wrap: break-word; 
+            max-height: calc(5lh + 20px); 
+            overflow: hidden auto;
+            white-space: pre-wrap;
+            min-height: 20px;
+        }
+        #msginput:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:focus:empty:before {
+            content: attr(placeholder);
+            color: #777;
+        }
+        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
+        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
+        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        #sendbtn:hover { background: #a970ff; }
+        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
+        
+        /* 表情面板 */
+        #emojiPanel { 
+            position: fixed; 
+            display: none; 
+            width: 350px; 
+            height: 400px; 
+            background: #1f182e; 
+            border: 2px solid #443a5a; 
+            border-radius: 12px; 
+            z-index: 5000; 
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%); 
+            flex-direction: column; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: default;
+        }
+        #emojiPanel.dragging { cursor: grabbing; }
+        .emoji-header { 
+            padding: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            background: #26262c; 
+            border-radius: 12px 12px 0 0; 
+            align-items: center;
+            cursor: grab;
+            user-select: none;
+        }
+        .emoji-header:active { cursor: grabbing; }
+        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
+        #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
+        .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
+        .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
+        .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
+        .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
     </style>
 </head>
 <body onload="initApp()">
