@@ -1107,7 +1107,38 @@
         try {
             let a = str, placeholders = [];
 			
+            					 // ========== 新增：處理 [r] 標籤 ==========
+// 处理 [r]标签：显示引用框 + @用户名
+a = a.replace(/\[r\]([^,]+),([0-9]+)\[m\]/gi, (match, login, ts) => {
+    const displayName = getUserDisplayName(login, login);
+    const isSelf = (myLoginId && login === myLoginId);
+    const mentionHtml = isSelf ? `<span class="mention-self-tag">@${myDisplayName || displayName}</span>` : `@${displayName}`;
 
+    // 从 msgCache 中通过 timestamp 获取原始消息
+    const quotedMsg = msgCache[ts];
+    if (quotedMsg && quotedMsg.content) {
+        // 避免无限递归：将引用内容中的 [r] 标签暂时移除或不做二次解析，但为了支持嵌套，可以保留 parseContent
+        let quotedContent = quotedMsg.content;
+        // 可选：防止自己递归引用自身（简单过滤）
+        if (quotedContent.includes(`[r]${login},${ts}[m]`)) {
+            quotedContent = '[递归引用已忽略]';
+        }
+        const parsedQuote = parseContent(quotedContent); // 递归解析引用内容中的其他标签
+        
+        // 构建引用框，样式与现有 .quote-box 一致，但不需要点击滚动（因为没有 msgId）
+        const quoteHtml = `<div class="quote-box" style="cursor:default; margin-bottom: 4px;">
+            <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor" style="vertical-align: middle;">
+                <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
+                <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
+            </svg> 
+            引用 ${mentionHtml}${parsedQuote}
+        </div>`;
+        return `${quoteHtml}`;
+    } else {
+        // 找不到引用消息，仅显示 @用户名
+        return mentionHtml;
+    }
+});
 
             // 1. 處理大寫 [S]...E] (原創簡易圖片)
             a = a.replace(/\[S\](.*?)E\]/g, (m, b) => {
@@ -1239,38 +1270,6 @@
             console.error('解析內容時出錯:', error, str);
             return str;
         }
-					 // ========== 新增：處理 [r] 標籤 ==========
-// 处理 [r]标签：显示引用框 + @用户名
-a = a.replace(/\[r\]([^,]+),([0-9]+)\[m\]/gi, (match, login, ts) => {
-    const displayName = getUserDisplayName(login, login);
-    const isSelf = (myLoginId && login === myLoginId);
-    const mentionHtml = isSelf ? `<span class="mention-self">@${myDisplayName || displayName}</span>` : `@${displayName}`;
-
-    // 从 msgCache 中通过 timestamp 获取原始消息
-    const quotedMsg = msgCache[ts];
-    if (quotedMsg && quotedMsg.content) {
-        // 避免无限递归：将引用内容中的 [r] 标签暂时移除或不做二次解析，但为了支持嵌套，可以保留 parseContent
-        let quotedContent = quotedMsg.content;
-        // 可选：防止自己递归引用自身（简单过滤）
-        if (quotedContent.includes(`[r]${login},${ts}[m]`)) {
-            quotedContent = '[递归引用已忽略]';
-        }
-        const parsedQuote = parseContent(quotedContent); // 递归解析引用内容中的其他标签
-        
-        // 构建引用框，样式与现有 .quote-box 一致，但不需要点击滚动（因为没有 msgId）
-        const quoteHtml = `<div class="quote-box" style="cursor:default; margin-bottom: 4px;">
-            <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor" style="vertical-align: middle;">
-                <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
-            </svg> 
-            引用 <span class="quote-user">@${quotedMsg.displayName || displayName}:</span> ${parsedQuote}
-        </div>`;
-        return `${quoteHtml}`;
-    } else {
-        // 找不到引用消息，仅显示 @用户名
-        return mentionHtml;
-    }
-});
     }
 
     // 媒體載入完成的回調函數
