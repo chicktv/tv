@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat7</title>
+    <title>Chickchat7 - 完整功能版（雙引用按鈕）</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -70,11 +70,36 @@
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
         .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
-        .reply-btn { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 10px; z-index: 10; border: 1px solid #444; }
-        .reply-btn:hover {background-color: #3c3a39;}
-        .chat-line:hover .reply-btn { display: flex; }
         
-        /* ---------- 引用區塊優化 - 增強嵌套引用可讀性 ---------- */
+        /* 兩個按鈕組：reply-btn 和 reply-btn2 並列在右上 */
+        .reply-btn-group {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .reply-btn, .reply-btn2 {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #fff;
+            font-size: 14px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #555;
+            transition: all 0.15s;
+        }
+        .reply-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .reply-btn:hover, .reply-btn2:hover { background-color: #9147ff; border-color: #fff; transform: scale(1.05);}
+        .chat-line:hover .reply-btn-group { display: flex; }
+        .reply-btn-group { display: none; }
+        
+        /* 引用區塊優化 - 增強嵌套引用可讀性 */
         .quote-box { 
             color: #adadb8; 
             padding: 6px 8px; 
@@ -94,7 +119,7 @@
             border-color: rgba(145, 71, 255, 0.4);
         }
         
-        /* 嵌套引用层级视觉优化：缩进 + 左侧紫色边框 + 背景微调 */
+        /* 嵌套引用層級視覺優化：縮進 + 左側紫色邊框 + 背景微調 */
         .quote-box .quote-box {
             margin-left: 12px;
             border-left: 3px solid #9147ff;
@@ -103,59 +128,25 @@
             background: rgba(20, 20, 30, 0.4);
         }
         
-        /* 第三层引用 */
         .quote-box .quote-box .quote-box {
             margin-left: 20px;
             border-left-color: #b77eff;
             background: rgba(30, 25, 45, 0.5);
         }
         
-        /* 第四层引用 */
         .quote-box .quote-box .quote-box .quote-box {
             margin-left: 28px;
             border-left-color: #d4a5ff;
             background: rgba(40, 32, 55, 0.55);
         }
         
-        /* 第五层引用 (最多常见深度) */
         .quote-box .quote-box .quote-box .quote-box .quote-box {
             margin-left: 36px;
             border-left-color: #eac7ff;
             background: rgba(50, 42, 68, 0.6);
         }
         
-        /* 第六层以上保持继续缩进，避免过于拥挤，給予極限保護 */
-        .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box,
-        .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box {
-            margin-left: 44px;
-            border-left-color: #f5e0ff;
-            background: rgba(60, 52, 78, 0.65);
-        }
-        
-        /* 在深層引用內的小型文字及預覽縮緊，避免過長溢出 */
-        .quote-box .quote-box .media-preview,
-        .quote-box .quote-box .alt-emoji {
-            max-width: 200px !important;
-            max-height: 200px !important;
-        }
-        
-        /* 引用區塊內的SVG圖標與回覆提示維持整齊 */
-        .quote-box svg {
-            vertical-align: middle;
-            margin-right: 4px;
-            flex-shrink: 0;
-        }
-        
-        /* 在深層嵌套裡，讓被引用用戶的名稱格外醒目 */
-        .quote-box .quote-user {
-            font-weight: 500;
-            color: #c9a5ff;
-            font-weight: bold;
-            margin-left: 2px;
-            margin-right: 4px;
-        }
-        
-        .mention-self-tag {
+        .quote-box .mention-self-tag {
             background-color: #9147ff;
             color: #ffffff !important;
             padding: 2px 6px;
@@ -165,18 +156,7 @@
             margin-bottom: 2px;
         }
         
-        /* 針對原本回覆系統的引用塊內嵌遞迴強化覆蓋 */
-        .quote-box .mention-self-tag {
-            background: #b77eff;
-            color: white;
-        }
-        
-        /* 確保最上層引用框與上下文保持視覺區隔 */
-        .chat-line .quote-box:first-child {
-            margin-top: 2px;
-        }
-        
-        /* --- 捲動到底部按鈕 --- */
+        /* 捲動到底部按鈕 */
         #scrollToBottomBtn {
             position: absolute;
             bottom: 80px;
@@ -192,7 +172,7 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
             font-size: 20px;
         }
@@ -202,15 +182,6 @@
             transform: scale(1.1);
         }
         
-        #scrollToBottomBtn:active {
-            transform: scale(0.95);
-        }
-        
-        #scrollToBottomBtn svg {
-            width: 24px;
-            height: 24px;
-        }
-
         .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
         .show-del .delete-btn { display: block; }
         .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
@@ -231,7 +202,7 @@
         #loginBtn:hover { background: #772ce8; }
         #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
         
-        /* @提及選單樣式 - 類似Twitch */
+        /* @提及選單樣式 */
         #mention-list {
             position: absolute;
             bottom: 100%;
@@ -247,7 +218,6 @@
             overflow-y: auto;
             padding: 4px 0;
         }
-        
         .mention-item {
             padding: 8px 12px;
             cursor: pointer;
@@ -258,35 +228,24 @@
             color: var(--t-text);
             font-size: 14px;
         }
-        
         .mention-item:hover, .mention-item.selected {
             background: rgba(145, 71, 255, 0.2);
         }
-        
-        .mention-item .badge {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-        }
-        
         .mention-item .user-avatar {
             width: 24px;
             height: 24px;
             border-radius: 50%;
             object-fit: cover;
         }
-        
         .mention-item .display-name {
             font-weight: 600;
             color: var(--t-purp);
         }
-        
         .mention-item .login-name {
             color: #adadb8;
             font-size: 12px;
             margin-left: 4px;
         }
-        
         .mention-header {
             padding: 8px 12px;
             font-size: 12px;
@@ -296,14 +255,13 @@
             background: rgba(0,0,0,0.2);
         }
 
-        /* 輸入區塊保留原有設計 */
+        /* 輸入區塊 */
         .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
         .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
         .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
         .tool-link:hover { color: #fff; }
         .tool-link svg { margin-left: 1px; }
-        .tool-link svg:hover { fill: #9147ff; }
         .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
         .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
         .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
@@ -317,7 +275,6 @@
             padding: 10px 0; 
             font-family: inherit; 
             box-sizing: border-box; 
-            font-family: inherit; 
             overflow-wrap: break-word; 
             max-height: calc(5lh + 20px); 
             overflow: hidden auto;
@@ -325,10 +282,6 @@
             min-height: 20px;
         }
         #msginput:empty:before {
-            content: attr(placeholder);
-            color: #777;
-        }
-        #msginput:focus:empty:before {
             content: attr(placeholder);
             color: #777;
         }
@@ -462,19 +415,24 @@
     let reconnectTimer = null;
     let isConnecting = false;
     let dragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
+    let offsetX = 0, offsetY = 0;
     let autoScroll = true;
     let scrollTimeout = null;
     const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
     const MAX_MESSAGES = 70;
-    let mediaLoadCount = 0;
-    let mediaLoadTimer = null;
+    let mediaLoadCount = 0, mediaLoadTimer = null;
     let recentUsers = [];
     let mentionListVisible = false;
     let mentionSelectedIndex = 0;
     let mentionSearchTerm = "";
-    const MAX_RTAG_DEPTH = 5;  // 防止无限递归的最大深度
+    const MAX_RTAG_DEPTH = 5;
+
+    // ===================== 新增函數: 插入遞迴引用標籤 =====================
+    window.insertRecursiveQuote = function(login, ts) {
+        if (!login || !ts) return;
+        const tag = `[r]${login},${ts}[m]`;
+        insertTextAtCursor(tag);
+    };
 
     // ===================== 輔助函數 =====================
     function getParameterByName(name, url) {
@@ -496,7 +454,6 @@
         return match ? match[1] : null; 
     }
 
-    // ===================== 捲動控制 =====================
     function checkScrollPosition() {
         const chat = document.getElementById('chat-container');
         const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
@@ -531,7 +488,6 @@
         }, 100);
     }
 
-    // ===================== 拖曳表情面板 =====================
     function setupEmojiPanelDrag() {
         const panel = document.getElementById('emojiPanel');
         const header = panel.querySelector('.emoji-header');
@@ -557,7 +513,6 @@
         closeBtn.addEventListener('click', () => panel.style.display = 'none');
     }
 
-    // ===================== 登入 & 初始化 =====================
     function checkLogin() {
         const saved = localStorage.getItem('twitch_token');
         if (saved) {
@@ -603,7 +558,7 @@
         document.getElementById('msginput').disabled = false;
         document.getElementById('sendbtn').disabled = false;
         document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
         document.getElementById('userAvatar').src = myAvatar;
         document.getElementById('userName').textContent = myDisplayName;
         if (socket) socket.close();
@@ -640,7 +595,7 @@
         if (!ACCESS_TOKEN) startChat();
     }
 
-    // ===================== @提及功能 =====================
+    // ===================== @提及功能完整實作 =====================
     function setupMentionEvents() {
         const input = document.getElementById('msginput');
         input.addEventListener('input', handleMentionInput);
@@ -817,7 +772,7 @@
             content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
             emojiLists[name].emojis.forEach(e => {
                 const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
-                item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` [s] ${e.src} [e] `); $("#emojiPanel").hide(); } });
+                item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` ${e.alt} `); $("#emojiPanel").hide(); } });
                 content.append(item);
             });
         } else if (name === "音訊") {
@@ -914,18 +869,16 @@
         btn.currentAudio = null;
     }
 
-    // ===================== 核心解析（不再包含 [r] 递归处理，仅处理媒体标签） =====================
+    // ===================== 核心解析 =====================
     function parseContent(str) {
         try {
             let a = str, placeholders = [];
-            // [S]...E]
             a = a.replace(/\[S\](.*?)E\]/g, (m,b) => {
                 b = b.replace(/[\r\n]/g,"").replace(/ /g,'').replace('[S]','').replace('[','');
                 let id = `__PH_${placeholders.length}__`;
                 placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
                 return id;
             });
-            // [s]...e]
             a = a.replace(/\[s\](.*?)e\]/g, (m,content) => {
                 let b = content.replace(/[\r\n]/g,"").replace(/ /g,'').replace('[s]','').replace('[','');
                 let id = `__PH_${placeholders.length}__`, e="";
@@ -950,14 +903,12 @@
                 placeholders.push(e);
                 return id;
             });
-            // [s] 無 [e]
             a = a.replace(/\[s\]\s*([^\s\[]+)/gi, (m,url) => {
                 if(url.includes('__PH_')) return m;
                 let id = `__PH_${placeholders.length}__`;
                 placeholders.push(`<a href="${url}" target="_blank"><img src="${url}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
                 return id;
             });
-            // [y]...[t]
             a = a.replace(/\[y\](.*?)[\[]?t\]/gi, (m,content) => {
                 let b = content.replace(/[\r\n]/g,"").replace(/ /g,'').replace('[y]','').replace('[','');
                 let id = `__PH_${placeholders.length}__`, e="";
@@ -977,7 +928,6 @@
                 placeholders.push(e);
                 return id;
             });
-            // [y] 無 [t]
             a = a.replace(/\[y\]\s*([^\s\[]+)/gi, (m,b) => {
                 if(b.includes('__PH_')) return m;
                 let id = `__PH_${placeholders.length}__`, e="";
@@ -997,23 +947,19 @@
                 placeholders.push(e);
                 return id;
             });
-            // [a]...[o]
             a = a.replace(/\[a\](.*?)\[o\]/gi, (m,url) => {
                 let id = `__PH_${placeholders.length}__`;
                 placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url.trim()}')" data-is-playing="false" title="點擊播放">🔈</span>`);
                 return id;
             });
-            // 自動解析連結中的圖片
             let htmlMatch = extractTagAndUrl(a);
             if(htmlMatch){
                 a = a.replace(htmlMatch.match, `<a href="${htmlMatch.url}" target="_blank"><img src="${htmlMatch.url}" style="max-height:150px;max-width:100%;border-radius:6px;"/></a>`);
             }
-            // 處理裸露 URL 但避免匹配已生成的 HTML 標籤內的 URL
             a = a.replace(/(^|\s)(https?:\/\/[^\s]+)/gi, (match, space, url) => {
                 if (url.includes('__PH_')) return match;
                 return space + `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`;
             });
-            // 自訂表情
             let words = a.split(' ');
             a = words.map(w => {
                 if(w.includes('__PH_')) return w;
@@ -1025,7 +971,6 @@
         } catch(e) { console.error(e); return str; }
     }
 
-    // ===================== 獨立處理 [r] 標籤（支援遞迴引用，深度限制） =====================
     function processRTag(str, depth = 0) {
         if (!str) return str;
         if (depth > MAX_RTAG_DEPTH) return '[遞迴引用達最大深度]';
@@ -1036,20 +981,11 @@
             const quotedMsg = msgCache[ts];
             if (!quotedMsg || !quotedMsg.content) return mentionHtml;
             let quotedContent = quotedMsg.content;
-            // 自引用檢測 (防止無限循環)
             if (quotedContent.includes(`[r]${login},${ts}[m]`)) {
                 return `${mentionHtml} (自引用已忽略)`;
             }
-            // 遞迴解析引用內容中的 [r] 標籤（深度+1）
             const parsedQuote = parseContent(processRTag(quotedContent, depth + 1));
-            const quoteHtml = `<div class="quote-box" style="cursor:default; margin-bottom: 4px;">
-                <svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor" style="vertical-align: middle;">
-                    <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
-                    <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
-                </svg> 
-                引用${mentionHtml}:${parsedQuote}
-            </div>`;
-            return `${quoteHtml}`;
+            return `<div class="quote-box"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor" style="vertical-align: middle;"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 引用${mentionHtml}${parsedQuote}</div>`;
         });
     }
 
@@ -1121,7 +1057,14 @@
         }
         socket.send(finalCmd);
         msgCache[selfTs] = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: Date.now() };
-        $("#messages").append(`<div class="chat-line ts-${selfTs}">${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span></div>`);
+        let line = `<div class="chat-line ts-${selfTs} id-${selfTs}" data-user-login="${myLoginId}" data-msg-ts="${selfTs}">
+            <div class="reply-btn-group">
+                <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
+                <div class="reply-btn2" onclick="insertRecursiveQuote('${myLoginId}','${selfTs}')" title="插入引用代碼 [r]">🔗</div>
+            </div>
+            ${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
+        </div>`;
+        $("#messages").append(line);
         limitMessages();
         if(autoScroll) forceScrollToBottom();
         cancelReply();
@@ -1179,7 +1122,6 @@
                     return;
                 }
                 if(!e.data.includes('PRIVMSG')) return;
-                // 解析 PRIVMSG
                 let privmsgIdx = e.data.indexOf(` PRIVMSG #${CHANNEL} :`);
                 if(privmsgIdx === -1) return;
                 let leftPart = e.data.substring(0, privmsgIdx);
@@ -1228,14 +1170,13 @@
                     let mention = `@${pUser} `;
                     if(displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
                 }
-                // 處理 [r] 標籤（支援遞迴）
                 displayMsg = processRTag(displayMsg, 0);
-                // 最後對剩餘文字進行一般解析（已不包含未處理的 [r]）
                 let contentHtml = parseContent(displayMsg);
                 let badgeHtml = renderBadges(badgeStr);
-                let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-msg-id="${msgId||ts}">
-                    <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId||ts}','${user}')">
-                        <img src="https://chicktv.github.io/tv/re2.png" width="35" height="35">
+                let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-user-login="${userLogin}" data-msg-ts="${ts}">
+                    <div class="reply-btn-group">
+                        <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId||ts}','${user}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
+                        <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="插入引用代碼 [r]">🔗</div>
                     </div>
                     ${replyHtml}
                     ${badgeHtml}
@@ -1250,7 +1191,6 @@
         };
     }
 
-    // ===================== 其他功能 =====================
     function setupAutoTag() {
         const input = document.getElementById('msginput');
         input.addEventListener('paste', (e) => {
@@ -1300,4 +1240,3 @@
 </script>
 </body>
 </html>
-
