@@ -1133,7 +1133,7 @@ a = a.replace(/\[r\]([^,]+),([0-9]+)\[m\]/gi, (match, login, ts) => {
             </svg> 
             引用 <span class="quote-user">@${quotedMsg.displayName || displayName}:</span> ${parsedQuote}
         </div>`;
-        return `${quoteHtml}${mentionHtml}`;
+        return `${quoteHtml}`;
     } else {
         // 找不到引用消息，仅显示 @用户名
         return mentionHtml;
