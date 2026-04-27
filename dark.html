@@ -1475,9 +1475,12 @@ a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
                 const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
                 const user = getTagValue(tags, "display-name") || "User";
                 const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-				console.log("原始 tags:", tags);
-                console.log("解析 login:", getTagValue(tags, "login"));
+				console.log("=== DEBUG START ===");
+                console.log("原始 tags:", tags);
                 console.log("解析 display-name:", user);
+                console.log("解析 login (原始):", getTagValue(tags, "login"));
+                console.log("最終 userLogin:", userLogin);
+                console.log("=== DEBUG END ===");
                 const color = getTagValue(tags, "color") || "#9147ff";
                 const badgeStr = getTagValue(tags, "badges");
                 
