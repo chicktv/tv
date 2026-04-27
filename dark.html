@@ -1467,22 +1467,32 @@ a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
                 
                 if (!e.data.includes('PRIVMSG')) return;
                 
-                const parts = e.data.split(` PRIVMSG #${CHANNEL} :`);
-                if (parts.length < 2) return;
-                
-                const tags = parts[0], rawMsg = parts[1].trim();
-                const msgId = getTagValue(tags, "id");
-                const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
-                const user = getTagValue(tags, "display-name") || "User";
-                const userLogin = getTagValue(tags, "login") || user.toLowerCase();
-				console.log("=== DEBUG START ===");
-                console.log("原始 tags:", tags);
-                console.log("解析 display-name:", user);
-                console.log("解析 login (原始):", getTagValue(tags, "login"));
-                console.log("最終 userLogin:", userLogin);
-                console.log("=== DEBUG END ===");
-                const color = getTagValue(tags, "color") || "#9147ff";
-                const badgeStr = getTagValue(tags, "badges");
+                const privmsgPos = e.data.indexOf(` PRIVMSG #${CHANNEL} :`);
+if (privmsgPos === -1) return;
+const leftPart = e.data.substring(0, privmsgPos);
+const rawMsg = e.data.substring(privmsgPos + ` PRIVMSG #${CHANNEL} :`.length).trim();
+
+let tags = leftPart;
+let source = "";
+if (leftPart.includes(' :')) {
+    const spaceIdx = leftPart.lastIndexOf(' :');
+    if (spaceIdx !== -1) {
+        tags = leftPart.substring(0, spaceIdx);
+        source = leftPart.substring(spaceIdx + 2);
+    }
+}
+let nickFromSource = "";
+if (source) {
+    const exclamIdx = source.indexOf('!');
+    if (exclamIdx !== -1) nickFromSource = source.substring(0, exclamIdx);
+}
+
+const msgId = getTagValue(tags, "id");
+const ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
+const user = getTagValue(tags, "display-name") || "User";
+const color = getTagValue(tags, "color") || "#9147ff";
+const badgeStr = getTagValue(tags, "badges");
+const userLogin = nickFromSource || getTagValue(tags, "login") || user.toLowerCase();
                 
                 userCache[userLogin] = user;
                 
