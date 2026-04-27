@@ -1110,29 +1110,31 @@
 			
 			 // ========== 新增：處理 [r] 標籤 ==========
 a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
-    console.log(`[DEBUG] 原始match: ${match}`);
-    console.log(`[DEBUG] 提取的login: ${login}`);
-    console.log(`[DEBUG] 當前myLoginId: ${myLoginId}`);
-    console.log(`[DEBUG] 當前myDisplayName: ${myDisplayName}`);
+    console.log(`\n===== [r] 標籤處理 START =====`);
+    console.log(`[r] 原始匹配字串: ${match}`);
+    console.log(`[r] 提取的 login: "${login}"`);
+    console.log(`[r] 當前 myLoginId: "${myLoginId}"`);
+    console.log(`[r] 當前 myDisplayName: "${myDisplayName}"`);
     
-    // 從 userCache 取得顯示名稱
-    const displayName = userCache[login] || login;
-    console.log(`[DEBUG] userCache[login] 值: ${userCache[login]}`);
-    console.log(`[DEBUG] 最終使用的displayName: ${displayName}`);
+    // 呼叫加強版函數
+    const displayName = getUserDisplayName(login, login);
+    console.log(`[r] getUserDisplayName 回傳結果: "${displayName}"`);
     
-    // 判斷是否為自己
     const isSelf = (myLoginId && login === myLoginId);
-    console.log(`[DEBUG] isSelf: ${isSelf}`);
+    console.log(`[r] isSelf: ${isSelf} (login === myLoginId: ${login === myLoginId})`);
     
     let result;
     if (isSelf) {
-        result = `<span class="mention-self">@${myDisplayName || displayName}</span>`;
-        console.log(`[DEBUG] 輸出結果(自己高亮): ${result}`);
+        const selfName = myDisplayName || displayName;
+        result = `<span class="mention-self">@${selfName}</span>`;
+        console.log(`[r] 自己高亮，使用名稱: "${selfName}"`);
     } else {
         result = `@${displayName}`;
-        console.log(`[DEBUG] 輸出結果(他人): ${result}`);
+        console.log(`[r] 他人提及，輸出: "${result}"`);
     }
     
+    console.log(`[r] 最終輸出 HTML: ${result}`);
+    console.log(`===== [r] 標籤處理 END =====\n`);
     return result;
 });
 
