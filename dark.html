@@ -1060,7 +1060,7 @@
         let line = `<div class="chat-line ts-${selfTs} id-${selfTs}" data-user-login="${myLoginId}" data-msg-ts="${selfTs}">
             <div class="reply-btn-group">
                 <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
-                <div class="reply-btn2" onclick="insertRecursiveQuote('${myLoginId}','${selfTs}')" title="插入引用代碼 [r]">🔗</div>
+                <div class="reply-btn2" onclick="insertRecursiveQuote('${myLoginId}','${selfTs}')" title="sk回覆格式">🔗</div>
             </div>
             ${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
         </div>`;
