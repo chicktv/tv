@@ -612,7 +612,6 @@
             list.appendChild(item);
         });
         list.style.display = 'block'; mentionListVisible = true; mentionSelectedIndex = 0;
-        // 定位
         const input = document.getElementById('msginput');
         const footer = document.querySelector('.footer');
         const span = document.createElement('span');
@@ -914,8 +913,13 @@
             if(htmlMatch){
                 a = a.replace(htmlMatch.match, `<a href="${htmlMatch.url}" target="_blank"><img src="${htmlMatch.url}" style="max-height:150px;max-width:100%;border-radius:6px;"/></a>`);
             }
-            // 一般網址與自訂表情
-            a = a.replace(/https?:\/\/[^\s]+/gi, (url) => url.includes('__PH_') ? url : `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`);
+            // ========== 修正：處理裸露 URL 但避免匹配已生成的 HTML 標籤內的 URL ==========
+            // 只匹配前面是空白或行首的 URL，防止匹配 src/href 中的內容
+            a = a.replace(/(^|\s)(https?:\/\/[^\s]+)/gi, (match, space, url) => {
+                if (url.includes('__PH_')) return match;
+                return space + `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`;
+            });
+            // 自訂表情
             let words = a.split(' ');
             a = words.map(w => {
                 if(w.includes('__PH_')) return w;
@@ -927,7 +931,7 @@
         } catch(e) { console.error(e); return str; }
     }
 
-    // ===================== 獨立處理 [r] 標籤（方案 A，內部使用 parseContent） =====================
+    // ===================== 獨立處理 [r] 標籤（內部呼叫 parseContent 解析引用內容） =====================
     function processRTag(str) {
         if (!str) return str;
         return str.replace(/\[r\]([^,]+),([0-9]+)\[m\]/gi, (match, login, ts) => {
@@ -945,9 +949,9 @@
                     <path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path>
                     <path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path>
                 </svg> 
-                引用 ${mentionHtml}${parsedQuote}
+                引用 <span class="quote-user">@${quotedMsg.displayName || displayName}:</span> ${parsedQuote}
             </div>`;
-            return `${quoteHtml}`;
+            return `${quoteHtml}${mentionHtml}`;
         });
     }
 
@@ -1125,9 +1129,9 @@
                     let mention = `@${pUser} `;
                     if(displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
                 }
-                // 方案A：先處理 [r] 標籤（內部會呼叫 parseContent 處理引用內容）
+                // 處理 [r] 標籤（內部會呼叫 parseContent 解析引用內容）
                 displayMsg = processRTag(displayMsg);
-                // 最後對剩餘文字進行一般解析（不再包含 [r]）
+                // 最後對剩餘文字進行一般解析（已經不包含未處理的 [r]）
                 let contentHtml = parseContent(displayMsg);
                 let badgeHtml = renderBadges(badgeStr);
                 let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-msg-id="${msgId||ts}">
