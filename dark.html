@@ -414,12 +414,11 @@
         }
     }
 
-    function getTagValue(tags, key) { 
-        const regex = new RegExp(`${key}=([^;\\s]+)`); 
+     function getTagValue(tags, key) { 
+        const regex = new RegExp(`(?:^|;)${key}=([^;\\s]+)`); 
         const match = tags.match(regex); 
         return match ? match[1] : null; 
     }
-
     // ===================== 捲動控制功能 =====================
     function checkScrollPosition() {
         const chat = document.getElementById('chat-container');
@@ -1110,31 +1109,19 @@
 			
 			 // ========== 新增：處理 [r] 標籤 ==========
 a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
-    console.log(`\n===== [r] 標籤處理 START =====`);
-    console.log(`[r] 原始匹配字串: ${match}`);
-    console.log(`[r] 提取的 login: "${login}"`);
-    console.log(`[r] 當前 myLoginId: "${myLoginId}"`);
-    console.log(`[r] 當前 myDisplayName: "${myDisplayName}"`);
+    console.log('[DEBUG] 原始match:', match);
+    console.log('[DEBUG] 提取的login:', login);
+    console.log('[DEBUG] 當前myLoginId:', myLoginId);
     
-    // 呼叫加強版函數
+    // 取得顯示名稱（自動從 userCache 或 msgCache 查找）
     const displayName = getUserDisplayName(login, login);
-    console.log(`[r] getUserDisplayName 回傳結果: "${displayName}"`);
+    console.log('[DEBUG] 查到的顯示名稱:', displayName);
     
     const isSelf = (myLoginId && login === myLoginId);
-    console.log(`[r] isSelf: ${isSelf} (login === myLoginId: ${login === myLoginId})`);
-    
-    let result;
-    if (isSelf) {
-        const selfName = myDisplayName || displayName;
-        result = `<span class="mention-self">@${selfName}</span>`;
-        console.log(`[r] 自己高亮，使用名稱: "${selfName}"`);
-    } else {
-        result = `@${displayName}`;
-        console.log(`[r] 他人提及，輸出: "${result}"`);
-    }
-    
-    console.log(`[r] 最終輸出 HTML: ${result}`);
-    console.log(`===== [r] 標籤處理 END =====\n`);
+    const result = isSelf 
+        ? `<span class="mention-self">@${myDisplayName || displayName}</span>` 
+        : `@${displayName}`;
+    console.log('[DEBUG] 輸出結果:', result);
     return result;
 });
 
