@@ -1110,12 +1110,29 @@
 			
 			 // ========== 新增：處理 [r] 標籤 ==========
 a = a.replace(/\[r\]([^,]+),[0-9]+\[m\]/gi, (match, login) => {
-    console.log('[DEBUG] 原始match:', match);
-    console.log('[DEBUG] 提取的login:', login);
-    console.log('[DEBUG] 當前myLoginId:', myLoginId);
+    console.log(`[DEBUG] 原始match: ${match}`);
+    console.log(`[DEBUG] 提取的login: ${login}`);
+    console.log(`[DEBUG] 當前myLoginId: ${myLoginId}`);
+    console.log(`[DEBUG] 當前myDisplayName: ${myDisplayName}`);
+    
+    // 從 userCache 取得顯示名稱
+    const displayName = userCache[login] || login;
+    console.log(`[DEBUG] userCache[login] 值: ${userCache[login]}`);
+    console.log(`[DEBUG] 最終使用的displayName: ${displayName}`);
+    
+    // 判斷是否為自己
     const isSelf = (myLoginId && login === myLoginId);
-    const result = isSelf ? `<span class="mention-self">@${myLoginId}</span>` : `@${login}`;
-    console.log('[DEBUG] 輸出結果:', result);
+    console.log(`[DEBUG] isSelf: ${isSelf}`);
+    
+    let result;
+    if (isSelf) {
+        result = `<span class="mention-self">@${myDisplayName || displayName}</span>`;
+        console.log(`[DEBUG] 輸出結果(自己高亮): ${result}`);
+    } else {
+        result = `@${displayName}`;
+        console.log(`[DEBUG] 輸出結果(他人): ${result}`);
+    }
+    
     return result;
 });
 
