@@ -658,17 +658,17 @@
                 const platform = ch.platform;
                 const idOrUrl = ch.id;
                 const wrapperClass = isOnlyOne ? "full-screen-video" : "video";
+                
                 if (platform === "m3u8") {
                     const videoElem = document.createElement("video");
                     videoElem.className = `hls-video-element ${wrapperClass}`;
                     videoElem.controls = true;
                     videoElem.autoplay = true;
-                    videoElem.muted = false;
+                    videoElem.muted = true; // M3U8 靜音
                     videoElem.playsInline = true;
                     if (!isOnlyOne) {
                         videoElem.style.width = "48%";
                         videoElem.style.height = "48%";
-                        
                     } else {
                         videoElem.style.width = "100%";
                         videoElem.style.height = "100%";
@@ -689,28 +689,44 @@
                     const iframe = document.createElement("iframe");
                     iframe.className = wrapperClass;
                     let embedSrc = "";
+                    // YouTube 靜音參數: mute=1
                     if (idOrUrl.startsWith("UC") || idOrUrl.startsWith("HC") || idOrUrl.includes("channel")) {
-                        embedSrc = `https://www.youtube.com/embed/live_stream?channel=${idOrUrl}&autoplay=1`;
+                        embedSrc = `https://www.youtube.com/embed/live_stream?channel=${idOrUrl}&autoplay=1&mute=1`;
                     } else {
-                        embedSrc = `https://www.youtube.com/embed/${idOrUrl}?autoplay=1`;
+                        embedSrc = `https://www.youtube.com/embed/${idOrUrl}?autoplay=1&mute=1`;
                     }
                     iframe.src = embedSrc;
                     iframe.allowFullscreen = true;
-					iframe.referrerpolicy = "strict-origin-when-cross-origin";
+                    iframe.referrerpolicy = "strict-origin-when-cross-origin";
                     iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
                     iframe.frameBorder = "0";
                     if (!isOnlyOne) {
-                        iframe.style.width = "48%%";
+                        iframe.style.width = "48%";
                         iframe.style.height = "48%";
                     }
                     container.appendChild(iframe);
                 } else {
                     const iframe = document.createElement("iframe");
                     iframe.className = wrapperClass;
-                    iframe.src = getStreamUrl(ch);
+                    let src = getStreamUrl(ch);
+                    
+                    // 針對不同平台修正 URL 靜音參數
+                    if (ch.platform === "twitch") {
+                        // Twitch 靜音參數: muted=true
+                        if (!src.includes("muted=true")) src += "&muted=true";
+                    } else if (ch.platform === "kick") {
+                        // Kick 確保參數為 muted=true
+                        src = src.replace("muted=false", "muted=true");
+                    }
+                    
+                    iframe.src = src;
                     iframe.allowFullscreen = true;
                     iframe.allow = "autoplay";
-                    iframe.frameBorder = "0";
+                    iframe.frameBorder = "0";					
+                    if (!isOnlyOne) {
+                        iframe.style.width = "48%";
+                        iframe.style.height = "48%";
+                    }
                     container.appendChild(iframe);
                 }
             });
