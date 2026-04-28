@@ -1,3 +1,2 @@
 絕,ppkkkp,at,$2y$10$Qo8OQAHZWuVV7y.2xPYkMu.xV1zML7bUoxOBkYb/jVqUd6Dc47Spy,ADMIN
 木,muse_tw2,twitch,$2y$10$WBgcuqVHPC1hsry/PgRPwufSovzzUQmIlcCL2zAVjfxklEDReeE/.,ADMIN
-1,1,twitch,$2y$10$K6Pd8qoSwEEwnQjRpXM8UeP46jr9yZ/peT1bBW.LYRmBO0lBjjRAm,218.250.93.77
