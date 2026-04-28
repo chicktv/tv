@@ -426,7 +426,6 @@
 </div>
 
 <script>
-
     // ===================== 重要設定 =====================
     const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
     let CHANNEL = "whitewing940920"; 
@@ -656,44 +655,8 @@
         setupMentionEvents();
         setupEmojiPanelDrag();
         if (!ACCESS_TOKEN) startChat();
+		fetchRecentMessages();
     }
-// 在 initApp 函數最後面加入此調用
-async function fetchRecentMessages() {
-    const channelName = "whitewing940920";
-    try {
-        // 使用常見的第三方 Twitch 歷史訊息 API (免 Token 快速實作)
-        const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${channelName}?limit=50`);
-        const data = await response.json();
-        
-        if (data.messages) {
-            const $msgs = $("#messages");
-            data.messages.forEach(msgRaw => {
-                // 這裡需要根據您的 parseContent 結構來模擬 Twitch 訊息格式
-                // 簡單示範：直接將文字內容顯示出來
-                const timestamp = new Date().getTime(); // 模擬時間戳
-                const msgContent = msgRaw.split(' ').slice(2).join(' ').substring(1); // 簡單解析 IRC 格式
-                const userMatch = msgRaw.match(/:(\w+)!/);
-                const userName = userMatch ? userMatch[1] : "System";
-
-                // 調用您原本處理訊息顯示的邏輯
-                const parsed = parseContent(msgContent); 
-                const line = `<div class="chat-line">
-                    <span class="display-name" style="color:#9147ff;font-weight:bold;">${userName}</span>: 
-                    <span class="message">${parsed}</span>
-                </div>`;
-                
-                $msgs.append(line);
-            });
-            
-            // 限制訊息總數並滾動到底部
-            limitMessages(); [cite: 345]
-            scrollToBottom(); [cite: 420]
-        }
-    } catch (e) {
-        console.error("無法獲取歷史訊息:", e);
-    }
-}
-
 
     // ===================== @提及功能完整實作 =====================
     function setupMentionEvents() {
@@ -1262,7 +1225,66 @@ function insertVoiceTag(url) {
         cancelReply();
         input.textContent = "";
     }
+// ===================== 獲取歷史訊息 =====================
+async function fetchRecentMessages() {
+    try {
+        const url = `https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=50`;
+        const response = await fetch(url);
+        const data = await response.json();
 
+        if (data && data.messages) {
+            const $msgs = $("#messages");
+            
+            data.messages.forEach(rawIrcMsg => {
+                // 1. 解析 IRC 格式
+                const match = rawIrcMsg.match(/:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
+                if (match) {
+                    const userLogin = match[1];
+                    const messageContent = match[2];
+                    // 為了區分歷史訊息，我們在 ID 前加個 prefix，避免與即時訊息衝突
+                    const ts = "hist_" + new Date().getTime() + "_" + Math.random().toString(36).substr(2, 5);
+
+                    // 2. 存入快取以支援引用功能 [cite: 151-157]
+                    msgCache[ts] = {
+                        content: messageContent,
+                        user: { login: userLogin, displayName: userLogin },
+                        displayName: userLogin,
+                        timestamp: Date.now()
+                    };
+
+                    // 3. 核心修正：先執行 processRTag 處理 [r][m]，再執行 parseContent 處理媒體 [cite: 116, 144]
+                    const rTagProcessed = processRTag(messageContent, 0); 
+                    const contentHtml = parseContent(rTagProcessed);
+
+                    // 4. 渲染 HTML [cite: 191-193, 226-227]
+                    const line = `<div class="chat-line historical-msg ts-${ts} id-${ts}" data-user-login="${userLogin}">
+                        <div class="reply-btn-group">
+                            <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')">
+                                <img src="https://chicktv.github.io/tv/re2.png">
+                            </div>
+                            <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="插入引用代碼 [r]">🔗</div>
+                        </div>
+                        <b style="color:#9147ff; opacity: 0.8;">${userLogin}:</b> 
+                        <span style="opacity: 0.9;">${contentHtml}</span>
+                    </div>`;
+                    
+                    $msgs.append(line);
+                }
+            });
+
+            // 5. 處理數量限制與自動滾動 [cite: 15-16, 150-151]
+            limitMessages();
+            if(autoScroll) {
+                setTimeout(() => {
+                    const chat = document.getElementById('chat-container');
+                    chat.scrollTop = chat.scrollHeight;
+                }, 200);
+            }
+        }
+    } catch (err) {
+        console.error('獲取歷史訊息失敗:', err);
+    }
+}
     // ===================== 連線邏輯 =====================
     function startChat() {
         if(isConnecting) return;
@@ -1429,7 +1451,6 @@ function insertVoiceTag(url) {
             sendMessage();
         }
     });
-
 </script>
 </body>
 </html>
