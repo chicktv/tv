@@ -1,3 +1,4 @@
 絕,ppkkkp,at,$2y$10$Qo8OQAHZWuVV7y.2xPYkMu.xV1zML7bUoxOBkYb/jVqUd6Dc47Spy,ADMIN
 木,muse_tw2,twitch,$2y$10$WBgcuqVHPC1hsry/PgRPwufSovzzUQmIlcCL2zAVjfxklEDReeE/.,ADMIN
 wc,no52no52,kick,$2y$10$n/OzvV4Ll4.LmKIj9swXseRoHjrm367KjwYf9oeiBRDah1w8WSj/e,218.250.218.39
+隨便台,justin_yu_1,twitch,$2y$10$TTp5ooe6Zo2nVCOwLub/Re/.yJMo8n9I8.CxxrF4lLS58SldgSyui,42.98.116.37
