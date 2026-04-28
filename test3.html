@@ -1226,6 +1226,7 @@ function insertVoiceTag(url) {
         input.textContent = "";
     }
 // ===================== 獲取歷史訊息 =====================
+
 async function fetchRecentMessages() {
     try {
         const url = `https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=50`;
@@ -1236,15 +1237,18 @@ async function fetchRecentMessages() {
             const $msgs = $("#messages");
             
             data.messages.forEach(rawIrcMsg => {
-                // 1. 解析 IRC 格式
-                const match = rawIrcMsg.match(/:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
+                // 修正後的新正則：
+                // 1. (?:^@.* )?  -> 選擇性匹配並忽略開頭的 @標籤部分
+                // 2. :([^!]+)    -> 抓取用戶登入名
+                // 3. PRIVMSG #[^ ]+ :(.+) -> 抓取頻道名之後的所有訊息內容
+                const match = rawIrcMsg.match(/(?:^@\S+ )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
+                
                 if (match) {
                     const userLogin = match[1];
                     const messageContent = match[2];
-                    // 為了區分歷史訊息，我們在 ID 前加個 prefix，避免與即時訊息衝突
                     const ts = "hist_" + new Date().getTime() + "_" + Math.random().toString(36).substr(2, 5);
 
-                    // 2. 存入快取以支援引用功能 [cite: 151-157]
+                    // 存入快取
                     msgCache[ts] = {
                         content: messageContent,
                         user: { login: userLogin, displayName: userLogin },
@@ -1252,11 +1256,10 @@ async function fetchRecentMessages() {
                         timestamp: Date.now()
                     };
 
-                    // 3. 核心修正：先執行 processRTag 處理 [r][m]，再執行 parseContent 處理媒體 [cite: 116, 144]
+                    // 先處理引用 [r][m]，再處理媒體標籤 [s][y][a]
                     const rTagProcessed = processRTag(messageContent, 0); 
                     const contentHtml = parseContent(rTagProcessed);
 
-                    // 4. 渲染 HTML [cite: 191-193, 226-227]
                     const line = `<div class="chat-line historical-msg ts-${ts} id-${ts}" data-user-login="${userLogin}">
                         <div class="reply-btn-group">
                             <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')">
@@ -1272,7 +1275,6 @@ async function fetchRecentMessages() {
                 }
             });
 
-            // 5. 處理數量限制與自動滾動 [cite: 15-16, 150-151]
             limitMessages();
             if(autoScroll) {
                 setTimeout(() => {
