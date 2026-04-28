@@ -295,6 +295,29 @@
         #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
         .setting-btn { cursor: pointer; color: #efeff1; opacity: 0.8; display: flex; align-items: center; }
         .setting-btn:hover { opacity: 1; color: #9147ff; }
+		/* 只針對語音按鈕 */
+#voice-btn {
+    font-size: 1.5rem; /* 或者用 24px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s; /* 增加點擊縮放效果的過渡 */
+}
+
+/* 滑鼠移上去時稍微放大，增加互動感 */
+#voice-btn:hover {
+    transform: scale(1.1);
+}
+
+/* 錄音中變色的效果優化 */
+#voice-btn.recording {
+    color: #e91916;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0.5; }
+}
         /* 表情面板 */
         #emojiPanel { 
             position: fixed; 
@@ -393,10 +416,10 @@
                     <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
                 </svg>
             </div>
+			<button class="tool-link" id="voice-btn" onclick="toggleRecording()" title="錄製語音">🗣📢</button>
+<span id="recording-status" style="color: #e91916; font-size: 10px; display: none; margin-left: 10px;"></span>
             <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
 			
-		<button class="tool-link" id="voice-btn" onclick="toggleRecording()" title="錄製語音">錄音</button>
-<span id="recording-status" style="color: #e91916; font-size: 12px; display: none; margin-left: 10px;"></span>
         </div>
 		
     </div>
@@ -1095,17 +1118,17 @@ async function toggleRecording() {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
                 if (status) {
                     status.style.display = "inline";
-                    status.textContent = "⏳ 上傳中...";
+                    status.textContent = "";
                 }
                 await uploadAudioAndInsertTag(audioBlob);
                 if (status) status.style.display = 'none';
-                btn.textContent = "錄音";
+                btn.textContent = "🗣📢";
                 btn.style.color = "";
             };
 
             mediaRecorder.start();
             isRecording = true;
-            btn.textContent = "停止";
+            btn.textContent = "🟥";
             btn.style.color = "#e91916";
         } catch (err) {
             alert("無法開啟麥克風: " + err);
