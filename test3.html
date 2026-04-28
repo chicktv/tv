@@ -1237,7 +1237,7 @@ async function fetchRecentMessages() {
             let combinedHtml = ""; 
 
             data.messages.forEach(rawIrcMsg => {
-                // 正則解析：分為 Tags, User, Content 三部分
+                // 正則解析：分為 Tags, User, Content
                 const match = rawIrcMsg.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
                 
                 if (match) {
@@ -1246,35 +1246,18 @@ async function fetchRecentMessages() {
                     const messageContent = match[3];
                     const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
 
-                    // --- 解析 Tags (顏色與勳章) ---
-                    let userColor = "#9147ff"; // 預設紫色
-                    let badgesHtml = "";
-                    
+                    // --- 只解析顏色 ---
+                    let userColor = "#9147ff"; 
                     if (tagStr) {
                         const tags = {};
                         tagStr.split(';').forEach(t => {
-                            const [key, val] = t.split('=');
-                            tags[key] = val;
+                            const pair = t.split('=');
+                            if(pair.length === 2) tags[pair[0]] = pair[1];
                         });
-
-                        // 1. 提取顏色
                         if (tags['color']) userColor = tags['color'];
-
-                        // 2. 提取勳章 (格式: badges=subscriber/0,premium/1)
-                        if (tags['badges']) {
-                            const badgeParts = tags['badges'].split(',');
-                            badgeParts.forEach(part => {
-                                const [name, version] = part.split('/');
-                                // 調用你原有的 getBadgeUrl 邏輯
-                                const bUrl = getBadgeUrl(name, version);
-                                if (bUrl) {
-                                    badgesHtml += `<img class="badge" src="${bUrl}">`;
-                                }
-                            });
-                        }
                     }
 
-                    // 存入快取支援引用
+                    // 存入快取支援引用系統
                     msgCache[ts] = {
                         content: messageContent,
                         user: { login: userLogin, displayName: userLogin },
@@ -1282,29 +1265,29 @@ async function fetchRecentMessages() {
                         timestamp: Date.now()
                     };
 
-                    // 處理內容 (引用與媒體)
+                    // 處理 [r][m] 引用與 [s][y][a] 媒體標籤
                     const rTagProcessed = processRTag(messageContent, 0); 
                     const contentHtml = parseContent(rTagProcessed);
 
-                    // 構建 HTML (保持與即時訊息結構一致)
+                    // 構建 HTML (移除 badgesHtml 部分)
                     combinedHtml += `
-                        <div class="chat-line historical-msg ts-${ts} id-${ts}" data-user-login="${userLogin}">
+                        <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
                             <div class="reply-btn-group">
                                 <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')">
                                     <img src="https://chicktv.github.io/tv/re2.png">
                                 </div>
                                 <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="引用">🔗</div>
                             </div>
-                            ${badgesHtml}
                             <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${userLogin}')">${userLogin}</b>: 
                             <span class="message">${contentHtml}</span>
                         </div>`;
                 }
             });
 
+            // 一次性加入 DOM 減少 CPU 消耗
             $msgs.append(combinedHtml);
 
-            // 處理滾動
+            // 自動滾動到底部
             requestAnimationFrame(() => {
                 limitMessages();
                 if(autoScroll) {
