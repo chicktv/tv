@@ -1406,7 +1406,8 @@ async function initApp() {
             }
         }
     } else checkLogin();
-
+     document.getElementById('loginBtn').onclick = loginWithPopup;
+     document.getElementById('logoutBtn').onclick = logout;
     // 频道切换按鈕
     const settingBtn = document.querySelector('.setting-btn');
     if (settingBtn) {
