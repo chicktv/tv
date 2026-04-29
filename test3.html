@@ -1124,13 +1124,16 @@ function scrollToBottom(isManual = false) {
     }
 
     function onMediaLoaded() {
-    // 媒體載入後，如果處於自動滾動模式，則「補一槍」滾動
     if (autoScroll) {
-        // 這裡不需要檢查次數，直接用一次 rAF 即可
+        // 第一個 rAF：等待下一幀
         requestAnimationFrame(() => {
-		forceScrollToBottom();
-            const chat = document.getElementById('chat-container');
-            chat.scrollTop = chat.scrollHeight;
+            // 第二個 rAF：確保佈局計算已完成
+            requestAnimationFrame(() => {
+                const chat = document.getElementById('chat-container');
+                if (chat) {
+                    chat.scrollTop = chat.scrollHeight;
+                }
+            });
         });
     }
 }
