@@ -427,9 +427,9 @@
 </div>
 
 <script>
-  // ===================== 重要設定 =====================
+ // ===================== 重要設定 =====================
 const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
-let CHANNEL = "whitewing940920"; 
+let CHANNEL = "69nocondom"; 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
 const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
 
@@ -452,7 +452,7 @@ let isAudioDeleteMode = false;
 let myColor = "#9147ff";
 let reconnectTimer = null;
 let reconnectAttempts = 0;
-let maxReconnectDelay = 30000; // 最长30秒
+let maxReconnectDelay = 30000;   // 最大重连延迟30秒（修复未定义错误）
 let isConnecting = false;
 let dragging = false;
 let offsetX = 0, offsetY = 0;
@@ -466,7 +466,7 @@ let mentionSelectedIndex = 0;
 let mentionSearchTerm = "";
 const MAX_RTAG_DEPTH = 5;
 
-// ===================== 預編譯正則表達式 =====================
+// 预编译正则
 const RE_S_TAG = /\[S\](.*?)E\]/g;
 const RE_s_TAG = /\[s\](.*?)e\]/g;
 const RE_s_URL = /\[s\]\s*([^\s\[]+)/gi;
@@ -481,89 +481,23 @@ const RE_IS_THREADS = /www\.threads\.com/i;
 const RE_IS_VIDEO_EXT = /\.(webm|mp4|m3u8|flv)/i;
 const RE_IS_STEAM = /steampowered|steamcommunity/i;
 
-// ===================== 修復滾動：增強型自動滾動 =====================
-function forceScrollToBottom(force = false) {
-    if (!force && !autoScroll) return;
-    const chat = document.getElementById('chat-container');
-    if (!chat) return;
-    chat.scrollTop = chat.scrollHeight;
-    requestAnimationFrame(() => { if (chat) chat.scrollTop = chat.scrollHeight; });
-    setTimeout(() => { if (chat && (force || autoScroll)) chat.scrollTop = chat.scrollHeight; }, 80);
-    setTimeout(() => { if (chat && (force || autoScroll)) chat.scrollTop = chat.scrollHeight; }, 200);
-}
-
-function onMediaLoaded() {
-    if (autoScroll) forceScrollToBottom(false);
-}
-
-function bindMediaLoadEvents() {
-    const container = document.getElementById('messages');
-    if (!container) return;
-    container.querySelectorAll('iframe').forEach(iframe => {
-        if (!iframe.hasAttribute('data-scroll-bound')) {
-            iframe.setAttribute('data-scroll-bound', 'true');
-            iframe.addEventListener('load', onMediaLoaded);
-            if (iframe.complete || iframe.readyState === 'complete') onMediaLoaded();
-        }
-    });
-    container.querySelectorAll('video').forEach(video => {
-        if (!video.hasAttribute('data-scroll-bound')) {
-            video.setAttribute('data-scroll-bound', 'true');
-            video.addEventListener('loadeddata', onMediaLoaded);
-            if (video.readyState >= 2) onMediaLoaded();
-        }
-    });
-    container.querySelectorAll('img').forEach(img => {
-        if (!img.hasAttribute('data-scroll-bound')) {
-            img.setAttribute('data-scroll-bound', 'true');
-            if (img.complete) onMediaLoaded();
-            else img.addEventListener('load', onMediaLoaded);
-        }
-    });
-}
-
-function appendMessageWithScroll(html) {
-    $("#messages").append(html);
-    limitMessages();
-    if (autoScroll) forceScrollToBottom(false);
-    setTimeout(() => { bindMediaLoadEvents(); if (autoScroll) forceScrollToBottom(false); }, 30);
-}
-
-// ===================== 輔助函數 =====================
+// ===================== 工具函數 =====================
 function getParameterByName(name, url) {
     name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
     let regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
     let results = regex.exec(url);
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
-
 function getTagValue(tags, key) { 
     const regex = new RegExp(`(?:^|;)${key}=([^;\\s]+)`); 
     const match = tags.match(regex); 
     return match ? match[1] : null; 
 }
-
-function checkScrollPosition() {
-    const chat = document.getElementById('chat-container');
-    const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
-    autoScroll = isAtBottom;
-    scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
-}
-
-function setupScrollListener() {
-    const chat = document.getElementById('chat-container');
-    chat.addEventListener('scroll', () => {
-        if (scrollTimeout) clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(checkScrollPosition, 150);
-    });
-}
-
 function limitMessages() {
     const $msgs = $("#messages");
     const children = $msgs.children();
     if(children.length > MAX_MESSAGES) children.slice(0, children.length - MAX_MESSAGES).remove();
 }
-
 function getUserDisplayName(userId, fallbackName) {
     if(userCache[userId]) return userCache[userId];
     const keys = Object.keys(msgCache);
@@ -583,7 +517,6 @@ function getUserDisplayName(userId, fallbackName) {
     }
     return fallbackName || userId;
 }
-
 function renderBadges(badgeStr) {
     if(!badgeStr) return "";
     let html = "";
@@ -594,8 +527,66 @@ function renderBadges(badgeStr) {
     });
     return html;
 }
-
 function getMyBadges() { return myBadges || ""; }
+
+// ===================== 滾動相關 =====================
+function forceScrollToBottom(force = false) {
+    if (!force && !autoScroll) return;
+    const chat = document.getElementById('chat-container');
+    if (!chat) return;
+    chat.scrollTop = chat.scrollHeight;
+    requestAnimationFrame(() => { if (chat) chat.scrollTop = chat.scrollHeight; });
+    setTimeout(() => { if (chat && (force || autoScroll)) chat.scrollTop = chat.scrollHeight; }, 80);
+    setTimeout(() => { if (chat && (force || autoScroll)) chat.scrollTop = chat.scrollHeight; }, 200);
+}
+function onMediaLoaded() { if (autoScroll) forceScrollToBottom(false); }
+function appendMessageWithScroll(html) {
+    $("#messages").append(html);
+    limitMessages();
+    if (autoScroll) forceScrollToBottom(false);
+    setTimeout(() => { if (autoScroll) forceScrollToBottom(false); }, 30);
+}
+function checkScrollPosition() {
+    const chat = document.getElementById('chat-container');
+    const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
+    autoScroll = isAtBottom;
+    if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
+}
+function setupScrollListener() {
+    const chat = document.getElementById('chat-container');
+    chat.addEventListener('scroll', () => {
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(checkScrollPosition, 150);
+    });
+}
+function scrollToMsg(msgId) {
+    let $msg = $(`.id-${msgId}`);
+    if($msg.length){
+        let container = $("#chat-container")[0];
+        let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
+        container.scrollTo({ top: top, behavior: 'smooth' });
+    }
+}
+
+// ===================== 重連機制（指數退避） =====================
+function scheduleReconnect() {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    let delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+    reconnectAttempts++;
+    console.log(`[重連] ${delay}ms 後嘗試 (第 ${reconnectAttempts} 次)`);
+    reconnectTimer = setTimeout(() => {
+        if (!isConnecting && (!socket || socket.readyState !== WebSocket.OPEN)) {
+            startChat();
+        }
+    }, delay);
+}
+function clearReconnectTimer() {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+    reconnectAttempts = 0;
+}
 
 // ===================== 核心解析函數 =====================
 function parseContent(str) {
@@ -704,7 +695,6 @@ function parseContent(str) {
         return str;
     }
 }
-
 function processRTag(str, depth = 0) {
     if (!str) return str;
     if (depth > MAX_RTAG_DEPTH) return '[遞迴引用達最大深度]';
@@ -721,14 +711,26 @@ function processRTag(str, depth = 0) {
     });
 }
 
-// ===================== 登入與資源載入 =====================
+// ===================== 資源載入與表情面板 =====================
 async function fetchBadges() {
     try {
         const res = await fetch('https://chicktv.github.io/tv/badges.txt');
         customBadges = await res.json();
     } catch(e) { console.error(e); customBadges = {}; }
 }
-
+async function loadAudioData() {
+    try {
+        const remote = await fetch('https://chicktv.github.io/tv/audio.txt').then(r => r.json());
+        const local = JSON.parse(localStorage.getItem('myAudios') || '[]');
+        audioLists["音訊"] = { audios: mergeAudioLists(remote, local), image: "🔊" };
+    } catch(e) { audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "🔊" }; }
+}
+function mergeAudioLists(remote, local) {
+    const merged = [...remote];
+    const set = new Set(remote.map(a => a.url));
+    local.forEach(l => { if(!set.has(l.url)) { merged.push(l); set.add(l.url); } });
+    return merged;
+}
 async function loadResources() {
     try {
         const sk = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
@@ -752,23 +754,6 @@ async function loadResources() {
         }
     } catch(e) { console.error(e); }
 }
-
-async function loadAudioData() {
-    try {
-        const remote = await fetch('https://chicktv.github.io/tv/audio.txt').then(r => r.json());
-        const local = JSON.parse(localStorage.getItem('myAudios') || '[]');
-        audioLists["音訊"] = { audios: mergeAudioLists(remote, local), image: "🔊" };
-    } catch(e) { audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "🔊" }; }
-}
-
-function mergeAudioLists(remote, local) {
-    const merged = [...remote];
-    const set = new Set(remote.map(a => a.url));
-    local.forEach(l => { if(!set.has(l.url)) { merged.push(l); set.add(l.url); } });
-    return merged;
-}
-
-// ===================== 表情面板 =====================
 function renderEmojiPanel() {
     const tabs = $("#emojiTabs").empty();
     Object.keys(emojiLists).forEach((name, i) => {
@@ -784,7 +769,6 @@ function renderEmojiPanel() {
     tabs.append(audioTab);
     renderTabContent(Object.keys(emojiLists)[0]);
 }
-
 function renderTabContent(name) {
     const content = $("#emojiContent").empty();
     if (name === "BTTV") {
@@ -810,7 +794,6 @@ function renderTabContent(name) {
         });
     }
 }
-
 function insertTextAtCursor(text) {
     const el = document.getElementById('msginput');
     if (!el) return;
@@ -827,9 +810,7 @@ function insertTextAtCursor(text) {
         } else el.textContent += text;
     }
 }
-
 function insertTagOnly(s) { insertTextAtCursor(s); }
-
 window.addBTTV = () => {
     const url = $("#bttvUrl").val().trim();
     if(!url) return;
@@ -1078,8 +1059,23 @@ function sendMessage() {
     cancelReply();
     input.textContent = "";
 }
+function replyNative(userLogin, msgId, displayName){
+    pendingReply = { id: msgId, user: userLogin, displayName: displayName || userLogin };
+    $("#replying-to-user").text(displayName || userLogin);
+    $("#reply-indicator").show();
+    document.getElementById('msginput').focus();
+}
+function cancelReply(){
+    pendingReply = { id: null, user: null, displayName: null };
+    $("#reply-indicator").hide();
+}
+window.insertRecursiveQuote = function(login, ts) {
+    if (!login || !ts) return;
+    const tag = `[r]${login},${ts}[m]`;
+    insertTextAtCursor(tag);
+};
 
-// ===================== 歷史訊息擷取 =====================
+// ===================== 歷史訊息 =====================
 async function fetchRecentMessages() {
     try {
         const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=15`);
@@ -1122,32 +1118,11 @@ async function fetchRecentMessages() {
                 }
             });
             if (combinedHtml) appendMessageWithScroll(combinedHtml);
-			forceScrollToBottom(true);
         }
     } catch (err) { console.error('獲取歷史訊息失敗:', err); }
 }
 
-// ===================== 聊天連線 =====================
-function scheduleReconnect() {
-    if (reconnectTimer) clearTimeout(reconnectTimer);
-    let delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
-    reconnectAttempts++;
-    console.log(`[重連] ${delay}ms 後嘗試 (第 ${reconnectAttempts} 次)`);
-    reconnectTimer = setTimeout(() => {
-        if (!isConnecting && (!socket || socket.readyState !== WebSocket.OPEN)) {
-            startChat();
-        }
-    }, delay);
-}
-function clearReconnectTimer() {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
-    reconnectAttempts = 0;
-}
-
-// ===================== 聊天連線（穩定版） =====================
+// ===================== 連線邏輯（穩定版） =====================
 function startChat() {
     if (isConnecting) {
         console.log("[Chat] 已在連線中，跳過");
@@ -1158,7 +1133,6 @@ function startChat() {
         return;
     }
     if (socket) {
-        // 移除 onclose 避免觸發舊的重連
         socket.onclose = null;
         try { socket.close(); } catch(e) {}
         socket = null;
@@ -1170,8 +1144,7 @@ function startChat() {
     socket.onopen = () => {
         console.log('[Chat] 已開啟');
         isConnecting = false;
-        clearReconnectTimer();  // 連線成功，重置重連計數
-        // 1. 先要求 tags 能力
+        clearReconnectTimer();
         socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
         let pass, nick;
         if (ACCESS_TOKEN) {
@@ -1198,8 +1171,7 @@ function startChat() {
         console.log(`[Chat] 關閉 code=${event.code} reason=${event.reason}`);
         isConnecting = false;
         if (socket) socket = null;
-        // 避免无限快速重连
-        if (event.code !== 1000) {  // 非正常關閉才重連
+        if (event.code !== 1000) {
             scheduleReconnect();
         }
         document.getElementById('status').textContent = `已斷線 (${event.code})，重連中...`;
@@ -1290,74 +1262,7 @@ function startChat() {
     };
 }
 
-// ===================== 輔助 UI 函數 =====================
-function scrollToMsg(msgId) {
-    let $msg = $(`.id-${msgId}`);
-    if($msg.length){
-        let container = $("#chat-container")[0];
-        let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
-        container.scrollTo({ top: top, behavior: 'smooth' });
-    }
-}
-function replyNative(userLogin, msgId, displayName){
-    pendingReply = { id: msgId, user: userLogin, displayName: displayName || userLogin };
-    $("#replying-to-user").text(displayName || userLogin);
-    $("#reply-indicator").show();
-    document.getElementById('msginput').focus();
-}
-function cancelReply(){
-    pendingReply = { id: null, user: null, displayName: null };
-    $("#reply-indicator").hide();
-}
-window.insertRecursiveQuote = function(login, ts) {
-    if (!login || !ts) return;
-    const tag = `[r]${login},${ts}[m]`;
-    insertTextAtCursor(tag);
-};
-function setupAutoTag() {
-    const input = document.getElementById('msginput');
-    input.addEventListener('paste', (e) => {
-        e.preventDefault();
-        let text = (e.clipboardData || window.clipboardData).getData('text/plain');
-        if(!text) return;
-        let sel = window.getSelection();
-        if(!sel.rangeCount) return;
-        let range = sel.getRangeAt(0);
-        let before = input.textContent.substring(0, range.startOffset);
-        let final = text;
-        if(before.endsWith('[s] ')) final = text + ' [e]';
-        else if(before.endsWith('[y] ')) final = text + ' [t]';
-        else if(before.endsWith('[a] ')) final = text + ' [o]';
-        document.execCommand('insertText', false, final);
-        input.dispatchEvent(new Event('input', {bubbles:true}));
-    });
-}
-function setupEmojiPanelDrag() {
-    const panel = document.getElementById('emojiPanel');
-    const header = panel.querySelector('.emoji-header');
-    const closeBtn = document.getElementById('emojiCloseBtn');
-    header.addEventListener('mousedown', (e) => {
-        if (e.target === closeBtn || e.target.closest('#emojiCloseBtn')) return;
-        dragging = true;
-        offsetX = e.clientX - panel.offsetLeft;
-        offsetY = e.clientY - panel.offsetTop;
-        panel.classList.add('dragging');
-        e.preventDefault();
-    });
-    document.addEventListener('mousemove', (e) => {
-        if (!dragging) return;
-        panel.style.left = (e.clientX - offsetX) + 'px';
-        panel.style.top = (e.clientY - offsetY) + 'px';
-        panel.style.transform = 'none';
-    });
-    document.addEventListener('mouseup', () => {
-        dragging = false;
-        panel.classList.remove('dragging');
-    });
-    closeBtn.addEventListener('click', () => panel.style.display = 'none');
-}
-
-// ===================== 登入流程 =====================
+// ===================== 登入與初始化 =====================
 function checkLogin() {
     const saved = localStorage.getItem('twitch_token');
     if (saved) {
@@ -1400,7 +1305,7 @@ function loginSuccess() {
     document.getElementById('msginput').disabled = false;
     document.getElementById('sendbtn').disabled = false;
     document.getElementById('loginBtn').style.display = 'none';
-    document.getElementById('userInfo').style.display = 'none';
+    document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('userAvatar').src = myAvatar;
     document.getElementById('userName').textContent = myDisplayName;
     if (socket) socket.close();
@@ -1410,8 +1315,48 @@ function logout() {
     localStorage.removeItem('twitch_token');
     location.reload();
 }
-
-// ===================== 初始化 =====================
+function setupAutoTag() {
+    const input = document.getElementById('msginput');
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        let text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        if(!text) return;
+        let sel = window.getSelection();
+        if(!sel.rangeCount) return;
+        let range = sel.getRangeAt(0);
+        let before = input.textContent.substring(0, range.startOffset);
+        let final = text;
+        if(before.endsWith('[s] ')) final = text + ' [e]';
+        else if(before.endsWith('[y] ')) final = text + ' [t]';
+        else if(before.endsWith('[a] ')) final = text + ' [o]';
+        document.execCommand('insertText', false, final);
+        input.dispatchEvent(new Event('input', {bubbles:true}));
+    });
+}
+function setupEmojiPanelDrag() {
+    const panel = document.getElementById('emojiPanel');
+    const header = panel.querySelector('.emoji-header');
+    const closeBtn = document.getElementById('emojiCloseBtn');
+    header.addEventListener('mousedown', (e) => {
+        if (e.target === closeBtn || e.target.closest('#emojiCloseBtn')) return;
+        dragging = true;
+        offsetX = e.clientX - panel.offsetLeft;
+        offsetY = e.clientY - panel.offsetTop;
+        panel.classList.add('dragging');
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        panel.style.left = (e.clientX - offsetX) + 'px';
+        panel.style.top = (e.clientY - offsetY) + 'px';
+        panel.style.transform = 'none';
+    });
+    document.addEventListener('mouseup', () => {
+        dragging = false;
+        panel.classList.remove('dragging');
+    });
+    closeBtn.addEventListener('click', () => panel.style.display = 'none');
+}
 async function initApp() {
     if (location.hash.includes('access_token=')) {
         const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
@@ -1449,7 +1394,7 @@ async function initApp() {
     setupEmojiPanelDrag();
     if (!ACCESS_TOKEN) startChat();
     fetchRecentMessages();
-    scrollToBottomBtn.addEventListener('click', () => forceScrollToBottom(true));
+    if(scrollToBottomBtn) scrollToBottomBtn.addEventListener('click', () => forceScrollToBottom(true));
     const messagesContainer = document.getElementById('messages');
     if (messagesContainer) {
         const resizeObserver = new ResizeObserver(() => {
@@ -1469,15 +1414,13 @@ async function initApp() {
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
         if (isAtBottom) {
             autoScroll = true;
-            scrollToBottomBtn.style.display = 'none';
+            if(scrollToBottomBtn) scrollToBottomBtn.style.display = 'none';
         } else {
             autoScroll = false;
-            scrollToBottomBtn.style.display = 'block';
+            if(scrollToBottomBtn) scrollToBottomBtn.style.display = 'block';
         }
     });
 }
-
-// 啟動
 initApp();
 </script>
 </body>
