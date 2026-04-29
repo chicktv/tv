@@ -1120,24 +1120,61 @@ async function fetchRecentMessages() {
                 }
             });
             if (combinedHtml) appendMessageWithScroll(combinedHtml);
+			forceScrollToBottom(true);
         }
     } catch (err) { console.error('獲取歷史訊息失敗:', err); }
 }
 
 // ===================== 聊天連線 =====================
+function scheduleReconnect() {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    let delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+    reconnectAttempts++;
+    console.log(`[重連] ${delay}ms 後嘗試 (第 ${reconnectAttempts} 次)`);
+    reconnectTimer = setTimeout(() => {
+        if (!isConnecting && (!socket || socket.readyState !== WebSocket.OPEN)) {
+            startChat();
+        }
+    }, delay);
+}
+function clearReconnectTimer() {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+    reconnectAttempts = 0;
+}
+
+// ===================== 聊天連線（穩定版） =====================
 function startChat() {
-    if(isConnecting) return;
-    if(socket && socket.readyState === WebSocket.OPEN) socket.close();
+    if (isConnecting) {
+        console.log("[Chat] 已在連線中，跳過");
+        return;
+    }
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        console.log("[Chat] 已存在開啟的連線，跳過");
+        return;
+    }
+    if (socket) {
+        // 移除 onclose 避免觸發舊的重連
+        socket.onclose = null;
+        try { socket.close(); } catch(e) {}
+        socket = null;
+    }
     isConnecting = true;
+    clearReconnectTimer();
+
     socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
     socket.onopen = () => {
         console.log('[Chat] 已開啟');
         isConnecting = false;
+        clearReconnectTimer();  // 連線成功，重置重連計數
+        // 1. 先要求 tags 能力
         socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
         let pass, nick;
-        if(ACCESS_TOKEN){
+        if (ACCESS_TOKEN) {
             pass = `oauth:${ACCESS_TOKEN}`;
-            nick = myLoginId || 'user';
+            nick = myLoginId || 'justinfan' + Math.floor(Math.random()*900000+100000);
         } else {
             let rand = Math.floor(Math.random()*900000)+100000;
             pass = `justinfan${rand}`;
@@ -1151,67 +1188,80 @@ function startChat() {
         document.getElementById('msginput').disabled = !ACCESS_TOKEN;
         document.getElementById('sendbtn').disabled = !ACCESS_TOKEN;
     };
-    socket.onerror = (err) => { console.error(err); document.getElementById('status').textContent = '連線錯誤，重試中...'; };
+    socket.onerror = (err) => {
+        console.error('[Chat] 錯誤', err);
+        document.getElementById('status').textContent = '連線錯誤，即將重連...';
+    };
     socket.onclose = (event) => {
-        console.log(`[Chat] 關閉 ${event.code}`);
+        console.log(`[Chat] 關閉 code=${event.code} reason=${event.reason}`);
         isConnecting = false;
-        if(reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(() => { if(!isConnecting) startChat(); }, 5000);
+        if (socket) socket = null;
+        // 避免无限快速重连
+        if (event.code !== 1000) {  // 非正常關閉才重連
+            scheduleReconnect();
+        }
+        document.getElementById('status').textContent = `已斷線 (${event.code})，重連中...`;
     };
     socket.onmessage = (e) => {
         try {
-            if(e.data.startsWith('PING')){ socket.send('PONG :tmi.twitch.tv'); return; }
-            if(e.data.includes('CAP')) return;
-            if(e.data.includes('NOTICE') && (e.data.includes('Login unsuccessful') || e.data.includes('Invalid NICK'))){
-                console.warn('認證失敗，重新連線');
+            let data = e.data;
+            if (data.startsWith('PING')) {
+                socket.send('PONG :tmi.twitch.tv');
+                return;
+            }
+            if (data.includes('CAP')) return;
+            if (data.includes('NOTICE') && (data.includes('Login unsuccessful') || data.includes('Invalid NICK'))) {
+                console.warn('認證失敗，重新以匿名連線');
+                ACCESS_TOKEN = "";
+                localStorage.removeItem('twitch_token');
                 socket.close();
                 return;
             }
-            if(e.data.includes('USERSTATE')){
-                let badgeTag = getTagValue(e.data,"badges");
-                if(badgeTag){ myBadges = badgeTag; localStorage.setItem('twitch_my_badges',badgeTag); }
-                let colorTag = getTagValue(e.data,"color");
-                if(colorTag) myColor = colorTag;
+            if (data.includes('USERSTATE')) {
+                let badgeTag = getTagValue(data, "badges");
+                if (badgeTag) { myBadges = badgeTag; localStorage.setItem('twitch_my_badges', badgeTag); }
+                let colorTag = getTagValue(data, "color");
+                if (colorTag) myColor = colorTag;
                 return;
             }
-            if(!e.data.includes('PRIVMSG')) return;
-            let privmsgIdx = e.data.indexOf(` PRIVMSG #${CHANNEL} :`);
-            if(privmsgIdx === -1) return;
-            let leftPart = e.data.substring(0, privmsgIdx);
-            let rawMsg = e.data.substring(privmsgIdx + ` PRIVMSG #${CHANNEL} :`.length).trim();
+            if (!data.includes('PRIVMSG')) return;
+            let privmsgIdx = data.indexOf(` PRIVMSG #${CHANNEL} :`);
+            if (privmsgIdx === -1) return;
+            let leftPart = data.substring(0, privmsgIdx);
+            let rawMsg = data.substring(privmsgIdx + ` PRIVMSG #${CHANNEL} :`.length).trim();
             let tags = leftPart;
             let source = "";
-            if(leftPart.includes(' :')){
+            if (leftPart.includes(' :')) {
                 let spaceIdx = leftPart.lastIndexOf(' :');
-                if(spaceIdx !== -1){
+                if (spaceIdx !== -1) {
                     tags = leftPart.substring(0, spaceIdx);
                     source = leftPart.substring(spaceIdx+2);
                 }
             }
             let nickFromSource = "";
-            if(source){
+            if (source) {
                 let excl = source.indexOf('!');
-                if(excl !== -1) nickFromSource = source.substring(0, excl);
+                if (excl !== -1) nickFromSource = source.substring(0, excl);
             }
-            let msgId = getTagValue(tags,"id");
-            let ts = getTagValue(tags,"tmi-sent-ts") || Date.now().toString();
-            let user = getTagValue(tags,"display-name") || "User";
-            let color = getTagValue(tags,"color") || "#9147ff";
-            let badgeStr = getTagValue(tags,"badges");
-            let userLogin = nickFromSource || getTagValue(tags,"login") || user.toLowerCase();
+            let msgId = getTagValue(tags, "id");
+            let ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
+            let user = getTagValue(tags, "display-name") || "User";
+            let color = getTagValue(tags, "color") || "#9147ff";
+            let badgeStr = getTagValue(tags, "badges");
+            let userLogin = nickFromSource || getTagValue(tags, "login") || user.toLowerCase();
             userCache[userLogin] = user;
             let msgRecord = {
                 content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user,
                 badges: badgeStr, avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png',
                 timestamp: parseInt(ts)
             };
-            if(msgId) msgCache[msgId] = msgRecord;
+            if (msgId) msgCache[msgId] = msgRecord;
             msgCache[ts] = msgRecord;
             let replyHtml = "", displayMsg = rawMsg;
-            let pUser = getTagValue(tags,"reply-parent-display-name");
-            let pId = getTagValue(tags,"reply-parent-msg-id");
-            let pBodyRaw = getTagValue(tags,"reply-parent-msg-body");
-            if(pUser && pId){
+            let pUser = getTagValue(tags, "reply-parent-display-name");
+            let pId = getTagValue(tags, "reply-parent-msg-id");
+            let pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+            if (pUser && pId) {
                 let isMe = (pUser === myDisplayName || pUser === myLoginId);
                 let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
                 let processed = processRTag(originalText, 0);
@@ -1219,7 +1269,7 @@ function startChat() {
                 let userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
                 replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
                 let mention = `@${pUser} `;
-                if(displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
+                if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
             displayMsg = processRTag(displayMsg, 0);
             let contentHtml = parseContent(displayMsg);
