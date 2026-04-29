@@ -1123,17 +1123,19 @@ function scrollToBottom(isManual = false) {
         });
     }
 
-    function onMediaLoaded() {
+   function onMediaLoaded() {
+    // 只有在處於自動滾動模式時才補位
     if (autoScroll) {
-        // 第一個 rAF：等待下一幀
         requestAnimationFrame(() => {
-            // 第二個 rAF：確保佈局計算已完成
-            requestAnimationFrame(() => {
-                const chat = document.getElementById('chat-container');
-                if (chat) {
-                    chat.scrollTop = chat.scrollHeight;
-                }
-            });
+            const chat = document.getElementById('chat-container');
+            if (!chat) return;
+
+            // 根本解決方案：滾動到 scrollHeight
+            // 這是容器內容的真實總高度
+            chat.scrollTop = chat.scrollHeight;
+             forceScrollToBottom();
+            // 如果您覺得某些瀏覽器渲染仍有 1 像素偏差，
+            // 頂多做到 chat.scrollTop = chat.scrollHeight + 1;
         });
     }
 }
@@ -1371,6 +1373,7 @@ async function fetchRecentMessages() {
                 if(autoScroll) {
                     const chat = document.getElementById('chat-container');
                     chat.scrollTop = chat.scrollHeight;
+					forceScrollToBottom();
                 }
             });
         }
