@@ -1198,14 +1198,14 @@
             window.open("https://chicktv01.42web.io", "_blank", "width=800,height=600");
         }
 		// Toggle Switch 控制隱藏 .not-live 元素
-(function initHideNotLiveToggle() {
-    fetchAllStatuses();
+(function initHideNotLiveToggle() {   
     const toggleCheckbox = document.getElementById('toggleNotLive');
     if (!toggleCheckbox) return;
 
     // 動態添加/移除全局樣式
     let styleElement = null;
     function applyHideNotLive(shouldHide) {
+		fetchAllStatuses();
         if (!styleElement) {
             styleElement = document.createElement('style');
             styleElement.id = 'dynamic-hide-notlive';
