@@ -439,7 +439,7 @@ let myLoginId = "";
 let myDisplayName = "";
 let myAvatar = "";
 let myBadges = "";
-let socket;
+let socket = null;
 let altMap = {};
 let emojiLists = {};
 let audioLists = {};
@@ -451,6 +451,8 @@ let isDeleteMode = false;
 let isAudioDeleteMode = false;
 let myColor = "#9147ff";
 let reconnectTimer = null;
+let reconnectAttempts = 0;
+let maxReconnectDelay = 30000; // 最长30秒
 let isConnecting = false;
 let dragging = false;
 let offsetX = 0, offsetY = 0;
