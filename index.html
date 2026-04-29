@@ -1197,26 +1197,32 @@
         function showPopup() {
             window.open("https://chicktv01.42web.io", "_blank", "width=800,height=600");
         }
-		// Toggle Switch 控制隱藏 .not-live 元素
-(function initHideNotLiveToggle() {   
+// Toggle Switch 控制隱藏 .not-live 元素
+(function initHideNotLiveToggle() {    
     const toggleCheckbox = document.getElementById('toggleNotLive');
     if (!toggleCheckbox) return;
 
     // 動態添加/移除全局樣式
     let styleElement = null;
     function applyHideNotLive(shouldHide) {
-		fetchAllStatuses();
-        if (!styleElement) {
-            styleElement = document.createElement('style');
-            styleElement.id = 'dynamic-hide-notlive';
-            document.head.appendChild(styleElement);
-        }
-        if (shouldHide) {
-            styleElement.textContent = '.not-live { display: none !important; }';
-        } else {
-            styleElement.textContent = '';
-        }
+	fetchAllStatuses();
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = 'dynamic-hide-notlive';
+        document.head.appendChild(styleElement);
     }
+    if (shouldHide) {
+        // 隱藏按鈕本身及其父容器 wrapper，避免佔位間距
+        styleElement.textContent = `
+            .not-live { display: none !important; }
+            .button-wrapper:has(.not-live) { display: none !important; }
+        `;
+    } else {
+        styleElement.textContent = '';
+    }
+}
+	    
+  
 
     // 讀取儲存的偏好（可選）
     const savedState = localStorage.getItem('hideNotLiveToggle');
