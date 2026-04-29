@@ -513,9 +513,24 @@ const RE_IS_STEAM = /steampowered|steamcommunity/i;
         scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
     }
 
-   function scrollToBottom() {
+   // 修改後的滾動函數
+function scrollToBottom(isManual = false) {
     const chat = document.getElementById('chat-container');
-    if (!chat || !autoScroll) return;
+    if (!chat) return;
+
+    // 如果不是手動點擊，且目前關閉了自動滾動，則不執行
+    if (!isManual && !autoScroll) return;
+
+    requestAnimationFrame(() => {
+        chat.scrollTop = chat.scrollHeight;
+        
+        // 點擊按鈕後，重新開啟自動跟隨滾動，並隱藏按鈕
+        autoScroll = true;
+        if (scrollToBottomBtn) {
+            scrollToBottomBtn.style.display = 'none';
+        }
+    });
+
 
     requestAnimationFrame(() => {
         chat.scrollTop = chat.scrollHeight;
@@ -670,7 +685,9 @@ const RE_IS_STEAM = /steampowered|steamcommunity/i;
                 document.getElementById('status').textContent = `已切換至 #${CHANNEL}，重新連線中...`;
             }
         });
-        scrollToBottomBtn.addEventListener('click', scrollToBottom);
+       scrollToBottomBtn.addEventListener('click', () => {
+    scrollToBottom(true); // 傳入 true 代表手動強制執行
+});
         setupScrollListener();
         await fetchBadges();
         await loadResources();
@@ -1106,9 +1123,9 @@ const RE_IS_STEAM = /steampowered|steamcommunity/i;
     }
 
     function onMediaLoaded() {
-    // 只有在使用者本來就在最底部（autoScroll 為 true）時才自動修正
+    // 媒體載入後，如果處於自動滾動模式，則「補一槍」滾動
     if (autoScroll) {
-        // 使用 requestAnimationFrame 確保高度計算已由瀏覽器更新完成
+        // 這裡不需要檢查次數，直接用一次 rAF 即可
         requestAnimationFrame(() => {
             const chat = document.getElementById('chat-container');
             chat.scrollTop = chat.scrollHeight;
@@ -1522,6 +1539,23 @@ async function fetchRecentMessages() {
             sendMessage();
         }
     });
+	const chatContainer = document.getElementById('chat-container');
+
+chatContainer.addEventListener('scroll', () => {
+    const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+    
+    // 判斷是否距離底部超過 100px
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+    if (isAtBottom) {
+        autoScroll = true;
+        scrollToBottomBtn.style.display = 'none';
+    } else {
+        // 如果用戶主動往上滑動
+        autoScroll = false;
+        scrollToBottomBtn.style.display = 'block';
+    }
+});
 </script>
 </body>
 </html>
