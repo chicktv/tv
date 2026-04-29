@@ -434,7 +434,7 @@ const savedChannel = localStorage.getItem('twitch_channel');
 if (savedChannel) CHANNEL = savedChannel;
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
-const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
+const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read`;
 
 // ===================== 全域變數 =====================
 let ACCESS_TOKEN = "";
