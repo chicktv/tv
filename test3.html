@@ -42,6 +42,7 @@
         #chat-container iframe[src*="threads.com"],
         #chat-container iframe[src*="store.steampowered.com"] {
             min-height: 400px !important;
+			max-height: 400px !important;
         }
 
         #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
@@ -1127,6 +1128,7 @@ function scrollToBottom(isManual = false) {
     if (autoScroll) {
         // 這裡不需要檢查次數，直接用一次 rAF 即可
         requestAnimationFrame(() => {
+		forceScrollToBottom();
             const chat = document.getElementById('chat-container');
             chat.scrollTop = chat.scrollHeight;
         });
