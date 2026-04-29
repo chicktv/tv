@@ -1132,8 +1132,8 @@ function scrollToBottom(isManual = false) {
 
             // 根本解決方案：滾動到 scrollHeight
             // 這是容器內容的真實總高度
-            chat.scrollTop = chat.scrollHeight;
-             forceScrollToBottom();
+            chat.scrollTop = chat.scrollHeight + 20;
+             
             // 如果您覺得某些瀏覽器渲染仍有 1 像素偏差，
             // 頂多做到 chat.scrollTop = chat.scrollHeight + 1;
         });
