@@ -515,28 +515,18 @@ const RE_IS_STEAM = /steampowered|steamcommunity/i;
     }
 
    // 修改後的滾動函數
-function scrollToBottom(isManual = false) {
+function scrollToBottom(force = false) {
     const chat = document.getElementById('chat-container');
     if (!chat) return;
-
-    // 如果不是手動點擊，且目前關閉了自動滾動，則不執行
-    if (!isManual && !autoScroll) return;
-
-    requestAnimationFrame(() => {
-        chat.scrollTop = chat.scrollHeight;
-        
-        // 點擊按鈕後，重新開啟自動跟隨滾動，並隱藏按鈕
-        autoScroll = true;
-        if (scrollToBottomBtn) {
-            scrollToBottomBtn.style.display = 'none';
-        }
-    });
-
-
-    requestAnimationFrame(() => {
-        chat.scrollTop = chat.scrollHeight;
-        scrollToBottomBtn.style.display = 'none';
-    });
+    if (force || autoScroll) {
+        requestAnimationFrame(() => {
+            chat.scrollTop = chat.scrollHeight;
+            if (force) {
+                autoScroll = true;
+                scrollToBottomBtn.style.display = 'none';
+            }
+        });
+    }
 }
 
     function setupScrollListener() {
@@ -550,16 +540,10 @@ function scrollToBottom(isManual = false) {
    function forceScrollToBottom() {
     if (!autoScroll) return;
     const chat = document.getElementById('chat-container');
-    
     let attempts = 0;
-    const maxAttempts = 3; // 縮減嘗試次數
-
     const performScroll = () => {
         chat.scrollTop = chat.scrollHeight;
-        attempts++;
-        if (attempts < maxAttempts) {
-            requestAnimationFrame(performScroll);
-        }
+        if (++attempts < 3) requestAnimationFrame(performScroll); // 減少嘗試次數[cite: 1]
     };
     requestAnimationFrame(performScroll);
 }
@@ -686,9 +670,7 @@ function scrollToBottom(isManual = false) {
                 document.getElementById('status').textContent = `已切換至 #${CHANNEL}，重新連線中...`;
             }
         });
-       scrollToBottomBtn.addEventListener('click', () => {
-    scrollToBottom(true); // 傳入 true 代表手動強制執行
-});
+   
         setupScrollListener();
         await fetchBadges();
         await loadResources();
@@ -697,7 +679,25 @@ function scrollToBottom(isManual = false) {
         setupEmojiPanelDrag();
         if (!ACCESS_TOKEN) startChat();
 		fetchRecentMessages();
+		scrollToBottomBtn.addEventListener('click', () => scrollToBottom(true));
+		// ===================== 監聽容器高度變化 =====================
+    const messagesContainer = document.getElementById('messages');
+    if (messagesContainer) {
+        const resizeObserver = new ResizeObserver(() => {
+            if (autoScroll) {
+                // 使用雙重 rAF 確保瀏覽器完成佈局重繪
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        const chat = document.getElementById('chat-container');
+                        if (chat) chat.scrollTop = chat.scrollHeight;
+                    });
+                });
+            }
+        });
+        resizeObserver.observe(messagesContainer);
     }
+}
+    
 
     // ===================== @提及功能完整實作 =====================
     function setupMentionEvents() {
