@@ -434,7 +434,7 @@ const savedChannel = localStorage.getItem('twitch_channel');
 if (savedChannel) CHANNEL = savedChannel;
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
-const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read`;
+const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
 
 // ===================== 全域變數 =====================
 let ACCESS_TOKEN = "";
@@ -1310,7 +1310,7 @@ function loginSuccess() {
     document.getElementById('msginput').disabled = false;
     document.getElementById('sendbtn').disabled = false;
     document.getElementById('loginBtn').style.display = 'none';
-    document.getElementById('userInfo').style.display = 'flex';
+    document.getElementById('userInfo').style.display = 'none';
     document.getElementById('userAvatar').src = myAvatar;
     document.getElementById('userName').textContent = myDisplayName;
     if (socket) socket.close();
