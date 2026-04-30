@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat7 - 完整功能版（雙）- CPU 優化版</title>
+    <title>Chickchat7 - 完整功能版</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -522,13 +522,18 @@ function getMyBadges() { return myBadges || ""; }
 // ===================== 捲動相關 =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
-    if (scrollRequestActive) return;
+    // 修正：當 force 為 true 時忽略鎖定，確保能強制滾動
+    if (!force && scrollRequestActive) return;
 
     scrollRequestActive = true;
     requestAnimationFrame(() => {
         const chat = document.getElementById('chat-container');
         if (chat) {
             chat.scrollTop = chat.scrollHeight;
+            // 雙重保險：針對某些瀏覽器渲染異步的問題，在強制模式下多執行一次延遲置底
+            if (force) {
+                setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 30);
+            }
         }
         scrollRequestActive = false;
     });
@@ -553,15 +558,24 @@ function appendMessageWithScroll(html) {
     if (autoScroll) forceScrollToBottom(false);
 }
 
-// 監聽頁面可見性變化
+// 監聽頁面可見性變化 - 解決返回分頁不置底的問題[cite: 1]
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && messageBuffer.length > 0) {
-        // 返回網頁時，一次性批次渲染緩存訊息
-        const $msgs = $("#messages");
-        $msgs.append(messageBuffer.join(''));
-        messageBuffer = [];
-        limitMessages();
-        forceScrollToBottom(true);
+    if (!document.hidden) {
+        // 返回網頁時，如果有緩存訊息則渲染
+        if (messageBuffer.length > 0) {
+            const $msgs = $("#messages");
+            $msgs.append(messageBuffer.join(''));
+            messageBuffer = [];
+            limitMessages();
+        }
+        
+        // 修正重點：返回網頁時，如果原本是自動捲動狀態，延遲執行一次強制置底
+        // 使用 setTimeout 確保在瀏覽器重新計算完佈局後執行
+        if (autoScroll) {
+            setTimeout(() => {
+                forceScrollToBottom(true);
+            }, 100);
+        }
     }
 });
 
