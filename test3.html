@@ -617,7 +617,7 @@ function parseContent(str) {
                 e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0" allowfullscreen onload="onMediaLoaded()"></iframe>`;
             } else if (RE_IS_TWITTER_X.test(b)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
+                e = `<div class="twitter-tweet-container" style="max-height:400px; height:400px; overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
             } else if (RE_IS_THREADS.test(b)) {
                 let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
                 e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%" onload="onMediaLoaded()"></iframe>` : b;
@@ -650,7 +650,7 @@ function parseContent(str) {
                 e = `<video controls class="media-preview" autoplay loop muted playsinline src="${b}" onloadeddata="onMediaLoaded()"></video>`;
             } else if (RE_IS_TWITTER_X.test(b)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
+                e = `<div class="twitter-tweet-container" style="max-height:400px; height:400px; overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
             } else {
                 e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
             }
@@ -669,7 +669,7 @@ function parseContent(str) {
                 e = `<video class="media-preview" autoplay loop muted playsinline src="${b}" onloadeddata="onMediaLoaded()"></video>`;
             } else if (RE_IS_TWITTER_X.test(b)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
-                e = `<div class="twitter-tweet-container"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
+                e = `<div class="twitter-tweet-container" style="max-height:400px; height:400px; overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
             } else {
                 e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
             }
