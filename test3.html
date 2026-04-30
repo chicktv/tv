@@ -461,9 +461,11 @@ let dragging = false;
 let offsetX = 0, offsetY = 0;
 let autoScroll = true;
 let scrollTimeout = null;
+let scrollRequestActive = false; // 優化：防止重複請求捲動
 const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
-const MAX_MESSAGES = 40;
+const MAX_MESSAGES = 70;
 let recentUsers = [];
+let seenUsersSet = new Set(); // 優化：快速查找用戶是否已在清單中
 let mentionListVisible = false;
 let mentionSelectedIndex = 0;
 let mentionSearchTerm = "";
@@ -532,26 +534,38 @@ function renderBadges(badgeStr) {
 }
 function getMyBadges() { return myBadges || ""; }
 
-// ===================== 滾動相關 =====================
+// ===================== 捲動相關 (優化：使用 requestAnimationFrame 降低 CPU) =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
-    const chat = document.getElementById('chat-container');
-    if (!chat) return;
-    chat.scrollTop = chat.scrollHeight;
-    requestAnimationFrame(() => { if (chat) chat.scrollTop = chat.scrollHeight; });
-    setTimeout(() => { if (chat && (force || autoScroll)) chat.scrollTop = chat.scrollHeight; }, 80);
-    setTimeout(() => { if (chat && (force || autoScroll)) chat.scrollTop = chat.scrollHeight; }, 200);
+    if (scrollRequestActive) return;
+
+    scrollRequestActive = true;
+    requestAnimationFrame(() => {
+        const chat = document.getElementById('chat-container');
+        if (chat) {
+            chat.scrollTop = chat.scrollHeight;
+        }
+        scrollRequestActive = false;
+    });
 }
-function onMediaLoaded() { if (autoScroll) forceScrollToBottom(false); }
+
+// 優化：加入防抖避免大量媒體載入時卡頓
+let mediaScrollTimer = null;
+function onMediaLoaded() { 
+    if (!autoScroll) return;
+    if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
+    mediaScrollTimer = setTimeout(() => forceScrollToBottom(false), 50);
+}
+
 function appendMessageWithScroll(html) {
     $("#messages").append(html);
     limitMessages();
     if (autoScroll) forceScrollToBottom(false);
-    setTimeout(() => { if (autoScroll) forceScrollToBottom(false); }, 30);
 }
+
 function checkScrollPosition() {
     const chat = document.getElementById('chat-container');
-    const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 50;
+    const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 60;
     autoScroll = isAtBottom;
     if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
 }
@@ -559,8 +573,8 @@ function setupScrollListener() {
     const chat = document.getElementById('chat-container');
     chat.addEventListener('scroll', () => {
         if (scrollTimeout) clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(checkScrollPosition, 150);
-    });
+        scrollTimeout = setTimeout(checkScrollPosition, 100);
+    }, { passive: true });
 }
 function scrollToMsg(msgId) {
     let $msg = $(`.id-${msgId}`);
@@ -598,14 +612,14 @@ function parseContent(str) {
         if (!str.includes('[') && !str.includes('http')) {
             return str.split(' ').map(w => {
                 let src = altMap[w.toLowerCase()];
-                return src ? `<img src="${src}" class="alt-emoji">` : w;
+                return src ? `<img src="${src}" class="alt-emoji" loading="lazy">` : w;
             }).join(' ');
         }
         let a = str, placeholders = [];
         a = a.replace(RE_S_TAG, (m, b) => {
             b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
+            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy"/></a>`);
             return id;
         });
         a = a.replace(RE_s_TAG, (m, content) => {
@@ -614,20 +628,20 @@ function parseContent(str) {
             if (RE_IS_YOUTUBE.test(b) && !RE_IS_IMG_EXT.test(b)) {
                 let vid = b.includes('watch?') ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
                 let t = getParameterByName('t', b);
-                e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0" allowfullscreen onload="onMediaLoaded()"></iframe>`;
+                e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}?start=${t}" frameborder="0" allowfullscreen onload="onMediaLoaded()" loading="lazy"></iframe>`;
             } else if (RE_IS_TWITTER_X.test(b)) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
                 e = `<div class="twitter-tweet-container" style="max-height:400px; height:400px; overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
             } else if (RE_IS_THREADS.test(b)) {
                 let threadUrl = b.match(/@[\w.]+\/post\/[\w]+/);
-                e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%" onload="onMediaLoaded()"></iframe>` : b;
+                e = threadUrl ? `<iframe src="https://www.threads.com/${threadUrl[0]}/embed" allowtransparency="true" allowfullscreen frameborder="0" height="300" style="background:#FFF;border-radius:12px;width:100%" onload="onMediaLoaded()" loading="lazy"></iframe>` : b;
             } else if (RE_IS_VIDEO_EXT.test(b)) {
                 e = `<video controls class="media-preview" autoplay loop muted playsinline src="${b}" onloadeddata="onMediaLoaded()"></video>`;
             } else if (RE_IS_STEAM.test(b)) {
                 let appId = b.match("app/([0-9]+)");
-                e = appId ? `<iframe class="media-preview" src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0" onload="onMediaLoaded()"></iframe>` : b;
+                e = appId ? `<iframe class="media-preview" src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0" onload="onMediaLoaded()" loading="lazy"></iframe>` : b;
             } else {
-                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`;
+                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy"/></a>`;
             }
             placeholders.push(e);
             return id;
@@ -635,17 +649,17 @@ function parseContent(str) {
         a = a.replace(RE_s_URL, (m, url) => {
             if (url.includes('__PH_')) return m;
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a href="${url}" target="_blank"><img src="${url}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()"/></a>`);
+            placeholders.push(`<a href="${url}" target="_blank"><img src="${url}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy"/></a>`);
             return id;
         });
         a = a.replace(RE_y_TAG, (m, content) => {
             let b = content.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[y]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`, e = "";
             if (b.includes('facebook')) {
-                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen onload="onMediaLoaded()"></iframe>`;
+                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen onload="onMediaLoaded()" loading="lazy"></iframe>`;
             } else if (RE_IS_YOUTUBE.test(b)) {
                 let vid = b.includes('watch?') ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen onload="onMediaLoaded()"></iframe>`;
+                e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen onload="onMediaLoaded()" loading="lazy"></iframe>`;
             } else if (RE_IS_VIDEO_EXT.test(b)) {
                 e = `<video controls class="media-preview" autoplay loop muted playsinline src="${b}" onloadeddata="onMediaLoaded()"></video>`;
             } else if (RE_IS_TWITTER_X.test(b)) {
@@ -661,10 +675,10 @@ function parseContent(str) {
             if (b.includes('__PH_')) return m;
             let id = `__PH_${placeholders.length}__`, e = "";
             if (b.includes('facebook')) {
-                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen onload="onMediaLoaded()"></iframe>`;
+                e = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(b)}&show_text=0&width=300" width="300" height="200" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen onload="onMediaLoaded()" loading="lazy"></iframe>`;
             } else if (RE_IS_YOUTUBE.test(b)) {
                 let vid = b.includes('watch?') ? getParameterByName('v', b) : b.replace('https://www.', '').replace('https://', '').replace('youtu.be/', '').replace('youtube.com/embed/', '').replace('youtube.com/shorts/', '').replace('youtube.com/live/', '').replace('&feature=share', '');
-                e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen onload="onMediaLoaded()"></iframe>`;
+                e = `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen onload="onMediaLoaded()" loading="lazy"></iframe>`;
             } else if (b.includes('.webm') || b.includes('.mp4')) {
                 e = `<video class="media-preview" autoplay loop muted playsinline src="${b}" onloadeddata="onMediaLoaded()"></video>`;
             } else if (RE_IS_TWITTER_X.test(b)) {
@@ -689,7 +703,7 @@ function parseContent(str) {
         a = words.map(w => {
             if (w.includes('__PH_')) return w;
             let src = altMap[w.toLowerCase()];
-            return src ? `<img src="${src}" class="alt-emoji">` : w;
+            return src ? `<img src="${src}" class="alt-emoji" loading="lazy">` : w;
         }).join(' ');
         placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
         return a;
@@ -777,7 +791,7 @@ function renderTabContent(name) {
     if (name === "BTTV") {
         content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
         emojiLists[name].emojis.forEach(e => {
-            const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
+            const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;" loading="lazy"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
             item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` [s] ${e.src} [e] `); $("#emojiPanel").hide(); } });
             content.append(item);
         });
@@ -791,7 +805,7 @@ function renderTabContent(name) {
     } else {
         emojiLists[name].emojis.forEach(e => {
             $('<div class="emoji-item"></div>')
-                .append($('<img style="max-width:40px;">').attr('src', e.src))
+                .append($('<img style="max-width:40px;" loading="lazy">').attr('src', e.src))
                 .on('click', () => { insertTextAtCursor(` ${e.alt} `); $('#emojiPanel').hide(); })
                 .appendTo(content);
         });
@@ -929,7 +943,7 @@ function insertVoiceTag(url) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-// ===================== @提及功能 =====================
+// ===================== @提及功能 (優化：增量更新 recentUsers 以降低輸入負擔) =====================
 function setupMentionEvents() {
     const input = document.getElementById('msginput');
     input.addEventListener('input', handleMentionInput);
@@ -947,11 +961,32 @@ function handleMentionInput(e) {
     const atPos = before.lastIndexOf('@');
     if (atPos === -1 || before.substring(atPos).includes(' ')) { hideMentionList(); return; }
     mentionSearchTerm = before.substring(atPos+1, range.startOffset).toLowerCase();
-    updateRecentUsersList();
+    
+    // 優化：不再在此處重新排序全緩存，直接使用已準備好的 recentUsers 清單
     const filtered = recentUsers.filter(u => u.displayName.toLowerCase().includes(mentionSearchTerm) || u.login.toLowerCase().includes(mentionSearchTerm));
     if (filtered.length && mentionSearchTerm.length) showMentionList(filtered, atPos);
     else hideMentionList();
 }
+
+// 優化：增量式更新最近用戶清單 (O(1) 替代 O(N log N))
+function addRecentUser(u) {
+    if (seenUsersSet.has(u.login)) {
+        // 如果已存在，將其移到最前面
+        const idx = recentUsers.findIndex(item => item.login === u.login);
+        if (idx > 0) {
+            recentUsers.splice(idx, 1);
+            recentUsers.unshift(u);
+        }
+    } else {
+        seenUsersSet.add(u.login);
+        recentUsers.unshift(u);
+        if (recentUsers.length > 50) {
+            const removed = recentUsers.pop();
+            seenUsersSet.delete(removed.login);
+        }
+    }
+}
+
 function handleMentionKeydown(e) {
     if (!mentionListVisible) return;
     const items = document.querySelectorAll('.mention-item');
@@ -963,22 +998,7 @@ function handleMentionKeydown(e) {
         case 'Escape': hideMentionList(); break;
     }
 }
-function updateRecentUsersList() {
-    recentUsers = [];
-    const seen = new Set();
-    Object.values(msgCache).sort((a,b)=>b.timestamp-a.timestamp).forEach(msg => {
-        if (msg.user && msg.displayName && !seen.has(msg.user.login)) {
-            seen.add(msg.user.login);
-            recentUsers.push({
-                login: msg.user.login,
-                displayName: msg.displayName,
-                badges: msg.badges,
-                avatar: msg.avatar || 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
-            });
-        }
-    });
-    recentUsers = recentUsers.slice(0,50);
-}
+
 function showMentionList(users, atPos) {
     const list = document.getElementById('mention-list');
     list.innerHTML = '';
@@ -987,7 +1007,7 @@ function showMentionList(users, atPos) {
     users.forEach((u, idx) => {
         const item = document.createElement('div'); item.className = 'mention-item'; if(idx===0) item.classList.add('selected');
         let badgeHtml = u.badges ? renderBadges(u.badges) : '';
-        item.innerHTML = `<img class="user-avatar" src="${u.avatar}">${badgeHtml}<span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
+        item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy">${badgeHtml}<span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
         item.dataset.login = u.login; item.dataset.displayName = u.displayName;
         item.addEventListener('click', () => selectMentionUser(item));
         list.appendChild(item);
@@ -1052,7 +1072,11 @@ function sendMessage() {
         finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
     }
     socket.send(finalCmd);
-    msgCache[selfTs] = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: Date.now() };
+    
+    const selfMsgRecord = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: Date.now() };
+    msgCache[selfTs] = selfMsgRecord;
+    addRecentUser({ login: myLoginId, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar });
+
     let line = `<div class="chat-line ts-${selfTs} id-${selfTs}" data-user-login="${myLoginId}" data-msg-ts="${selfTs}">
         <div class="reply-btn-group">
             <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
@@ -1103,12 +1127,16 @@ async function fetchRecentMessages() {
                         });
                         if (tags['color']) userColor = tags['color'];
                     }
-                    msgCache[ts] = {
+                    const userRecord = {
                         content: messageContent,
                         user: { login: userLogin, displayName: userLogin },
                         displayName: userLogin,
-                        timestamp: Date.now()
+                        timestamp: Date.now(),
+                        avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
                     };
+                    msgCache[ts] = userRecord;
+                    addRecentUser({ login: userLogin, displayName: userLogin, badges: "", avatar: userRecord.avatar });
+
                     const rTagProcessed = processRTag(messageContent, 0); 
                     const contentHtml = parseContent(rTagProcessed);
                     combinedHtml += `
@@ -1129,14 +1157,8 @@ async function fetchRecentMessages() {
 
 // ===================== 連線邏輯（穩定版） =====================
 function startChat() {
-    if (isConnecting) {
-        console.log("[Chat] 已在連線中，跳過");
-        return;
-    }
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        console.log("[Chat] 已存在開啟的連線，跳過");
-        return;
-    }
+    if (isConnecting) return;
+    if (socket && socket.readyState === WebSocket.OPEN) return;
     if (socket) {
         socket.onclose = null;
         try { socket.close(); } catch(e) {}
@@ -1147,7 +1169,6 @@ function startChat() {
 
     socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
     socket.onopen = () => {
-        console.log('[Chat] 已開啟');
         isConnecting = false;
         clearReconnectTimer();
         socket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
@@ -1169,16 +1190,12 @@ function startChat() {
         document.getElementById('sendbtn').disabled = !ACCESS_TOKEN;
     };
     socket.onerror = (err) => {
-        console.error('[Chat] 錯誤', err);
         document.getElementById('status').textContent = '連線錯誤，即將重連...';
     };
     socket.onclose = (event) => {
-        console.log(`[Chat] 關閉 code=${event.code} reason=${event.reason}`);
         isConnecting = false;
         if (socket) socket = null;
-        if (event.code !== 1000) {
-            scheduleReconnect();
-        }
+        if (event.code !== 1000) scheduleReconnect();
         document.getElementById('status').textContent = `已斷線 (${event.code})，重連中...`;
     };
     socket.onmessage = (e) => {
@@ -1188,19 +1205,19 @@ function startChat() {
                 socket.send('PONG :tmi.twitch.tv');
                 return;
             }
-            if (data.includes('CAP')) return;
-            if (data.includes('NOTICE') && (data.includes('Login unsuccessful') || data.includes('Invalid NICK'))) {
-                console.warn('認證失敗，重新以匿名連線');
+            if (data.includes('CAP') || data.includes('USERSTATE')) {
+                if (data.includes('USERSTATE')) {
+                    let badgeTag = getTagValue(data, "badges");
+                    if (badgeTag) { myBadges = badgeTag; localStorage.setItem('twitch_my_badges', badgeTag); }
+                    let colorTag = getTagValue(data, "color");
+                    if (colorTag) myColor = colorTag;
+                }
+                return;
+            }
+            if (data.includes('NOTICE') && (data.includes('Login unsuccessful'))) {
                 ACCESS_TOKEN = "";
                 localStorage.removeItem('twitch_token');
                 socket.close();
-                return;
-            }
-            if (data.includes('USERSTATE')) {
-                let badgeTag = getTagValue(data, "badges");
-                if (badgeTag) { myBadges = badgeTag; localStorage.setItem('twitch_my_badges', badgeTag); }
-                let colorTag = getTagValue(data, "color");
-                if (colorTag) myColor = colorTag;
                 return;
             }
             if (!data.includes('PRIVMSG')) return;
@@ -1229,6 +1246,7 @@ function startChat() {
             let badgeStr = getTagValue(tags, "badges");
             let userLogin = nickFromSource || getTagValue(tags, "login") || user.toLowerCase();
             userCache[userLogin] = user;
+            
             let msgRecord = {
                 content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user,
                 badges: badgeStr, avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png',
@@ -1236,6 +1254,8 @@ function startChat() {
             };
             if (msgId) msgCache[msgId] = msgRecord;
             msgCache[ts] = msgRecord;
+            addRecentUser({ login: userLogin, displayName: user, badges: badgeStr, avatar: msgRecord.avatar });
+
             let replyHtml = "", displayMsg = rawMsg;
             let pUser = getTagValue(tags, "reply-parent-display-name");
             let pId = getTagValue(tags, "reply-parent-msg-id");
@@ -1326,17 +1346,14 @@ function setupAutoTag() {
     const input = document.getElementById('msginput');
     
     input.addEventListener('paste', function(e) {
-        // 獲取剪貼簿中的純文本
         const clipboardData = e.clipboardData || window.clipboardData;
         const pastedText = clipboardData.getData('text/plain');
         if (!pastedText) return;
         
-        // 獲取當前游標位置與選取範圍
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
         const range = selection.getRangeAt(0);
         
-        // 獲取目前輸入框純文字內容以供判斷
         const currentText = input.textContent;
         const pos = range.startOffset;
         const textBefore = currentText.substring(0, pos);
@@ -1344,7 +1361,6 @@ function setupAutoTag() {
         let finalText = "";
         let isSpecialTag = false;
 
-        // 判斷游標前是否剛點過按鈕（結尾有空格的 [s] , [y] , [a] ）
         if (textBefore.endsWith('[s] ')) {
             finalText = pastedText + ' [e]';
             isSpecialTag = true;
@@ -1356,11 +1372,9 @@ function setupAutoTag() {
             isSpecialTag = true;
         }
 
-        // 如果符合特殊標籤格式，攔截預設貼上，改用 insertText 確保不重複
         if (isSpecialTag) {
             e.preventDefault();
             document.execCommand('insertText', false, finalText);
-            // 手動觸發 input 事件以更新 UI
             input.dispatchEvent(new Event('input', { bubbles: true }));
         }
     });
@@ -1383,7 +1397,7 @@ function setupEmojiPanelDrag() {
         panel.style.left = (e.clientX - offsetX) + 'px';
         panel.style.top = (e.clientY - offsetY) + 'px';
         panel.style.transform = 'none';
-    });
+    }, { passive: true });
     document.addEventListener('mouseup', () => {
         dragging = false;
         panel.classList.remove('dragging');
@@ -1393,7 +1407,6 @@ function setupEmojiPanelDrag() {
 
 // ===================== 初始化應用 =====================
 async function initApp() {
-    // 处理OAuth回调
     if (location.hash.includes('access_token=')) {
         const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
         if (token) {
@@ -1408,22 +1421,19 @@ async function initApp() {
     } else checkLogin();
      document.getElementById('loginBtn').onclick = loginWithPopup;
      document.getElementById('logoutBtn').onclick = logout;
-    // 频道切换按鈕
+     
     const settingBtn = document.querySelector('.setting-btn');
     if (settingBtn) {
         settingBtn.addEventListener('click', function() {
-            let newChannel = prompt("請輸入要連線的頻道名稱 (例如 whitewing940920)", CHANNEL);
+            let newChannel = prompt("請輸入要連線的頻道名稱", CHANNEL);
             if (newChannel && newChannel.trim() !== "") {
                 CHANNEL = newChannel.trim().toLowerCase();
                 localStorage.setItem('twitch_channel', CHANNEL);
-                if (reconnectTimer) clearTimeout(reconnectTimer);
                 if (socket) {
                     socket.onclose = null;
                     try { socket.close(); } catch(e) {}
                     socket = null;
                 }
-                isConnecting = false;
-                clearReconnectTimer();
                 startChat();
                 document.getElementById('status').textContent = `已切換至 #${CHANNEL}，重新連線中...`;
             }
@@ -1456,7 +1466,6 @@ async function initApp() {
     });
 }
 
-// 启动
 initApp();
 </script>
 </body>
