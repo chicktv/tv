@@ -2,4 +2,3 @@
 木,muse_tw2,twitch,$2y$10$WBgcuqVHPC1hsry/PgRPwufSovzzUQmIlcCL2zAVjfxklEDReeE/.,ADMIN
 wc,no52no52,kick,$2y$10$n/OzvV4Ll4.LmKIj9swXseRoHjrm367KjwYf9oeiBRDah1w8WSj/e,218.250.218.39
 隨便,justin_yu_1,twitch,$2y$10$NsPOlEhhAAn6YPShcTZuA.Hhja7ehpZRcHvYDkpyQIa3X9gDQiKOS,42.98.116.37
-K,krichure,at,$2y$10$04Gs1jQ9CsV/3osZ3XMiU.QKWm352Muc44HIAYXzdT58kIVKSiYHu,ADMIN
