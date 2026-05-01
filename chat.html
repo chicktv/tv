@@ -522,26 +522,61 @@ function getMyBadges() { return myBadges || ""; }
 // ===================== 捲動相關 (已修復返回分頁捲動問題) =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
-    
+
     const chat = document.getElementById('chat-container');
     if (!chat) return;
 
-    // 封裝捲動邏輯：直接將 scrollTop 設為最大值
-    const scrollAction = () => {
+    let attempts = 0;
+    const maxAttempts = 20;      // 最多嘗試 20 次
+    const baseDelay = 16;        // 約一幀時間
+
+    function scrollNow() {
         chat.scrollTop = chat.scrollHeight + 9999;
-    };
+        // 回報當前滾動位置（可選）
+        // console.log(`scrollNow: scrollTop=${chat.scrollTop}, scrollHeight=${chat.scrollHeight}, clientHeight=${chat.clientHeight}`);
+    }
 
-    // 1. 立即執行第一次捲動
-    scrollAction();
+    function tryScroll() {
+        scrollNow();
+        const isAtBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 5;
+        if (!isAtBottom && attempts < maxAttempts) {
+            attempts++;
+            // 使用指數退避延遲，讓媒體加載有更多時間完成
+            const delay = baseDelay * Math.min(Math.pow(1.2, attempts), 8);
+            setTimeout(tryScroll, delay);
+        } else if (!isAtBottom && attempts >= maxAttempts) {
+            // 最終強制再滾一次
+            scrollNow();
+        }
+    }
 
-    // 2. 透過 requestAnimationFrame 確保 DOM 渲染後再次捲動
-    requestAnimationFrame(() => {
-        scrollAction();
-        // 3. 增加微小延遲補償，應對 content-visibility: auto 導致的高度計算延遲
-        setTimeout(scrollAction, 30);
-        // 4. 針對大體積圖片或嵌入媒體，增加較長延遲的終極補償
-        setTimeout(scrollAction, 150);
-    });
+    // 立即執行第一次
+    scrollNow();
+    // 啟動遞迴檢查
+    tryScroll();
+
+    // 額外處理：監聽容器內所有媒體加載完成事件，再次滾動
+    if (force) {
+        const mediaElements = chat.querySelectorAll('img, iframe, video');
+        let pending = mediaElements.length;
+        if (pending === 0) return;
+        const onLoad = () => {
+            pending--;
+            if (pending === 0) {
+                scrollNow();
+                // 短暫延遲後再試一次，確保高度完全收斂
+                setTimeout(scrollNow, 50);
+            }
+        };
+        mediaElements.forEach(el => {
+            if (el.complete || el.readyState >= 2) {
+                onLoad();
+            } else {
+                el.addEventListener('load', onLoad, { once: true });
+                el.addEventListener('error', onLoad, { once: true });
+            }
+        });
+    }
 }
 
 let mediaScrollTimer = null;
