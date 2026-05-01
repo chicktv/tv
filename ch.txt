@@ -3,3 +3,4 @@
 wc,no52no52,kick,$2y$10$n/OzvV4Ll4.LmKIj9swXseRoHjrm367KjwYf9oeiBRDah1w8WSj/e,218.250.218.39
 隨便,justin_yu_1,twitch,$2y$10$Tb2/zZ6xcSShH6eNBL2WU.NTWlhltsNeagwZSaO6YSAjNzGgKxVhK,42.98.116.37
 朗子,arlongjaijai2025,twitch,$2y$10$p9jwaQNERKU1afyhMhYYhuUge9xZW61Qc48ZUSrh71cfp4gD1ZLz2,42.3.73.119
+wc,no25no2501,kick,$2y$10$cTWmzgyj1K/2aJCY7oh37uqos.u.KeaWi6SxNbwYIuFsdXdZmCPJm,104.28.163.54
