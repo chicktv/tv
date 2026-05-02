@@ -1,4 +1,4 @@
-{"emoticon":[    {
+{"twitch":[    {
         "id": "679247a5621f71863d06198f",
         "code": "LUL",
         "width": 15,
