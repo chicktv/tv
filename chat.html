@@ -800,7 +800,7 @@ async function loadResources() {
     try {
         const sk = await $.getJSON("https://live.sk-knower.com/lib/iconjsonp.php?channel=whitewing940920");
         if (Array.isArray(sk)) {
-            emojiLists["本台"] = { emojis: sk, image: sk[0].src };
+            emojiLists["本台"] = { emojis: sk, image: sk[0].src , image: "https://chicktv.github.io/tv/chick.png" };
             sk.forEach(i => { if(i.alt) altMap[i.alt.toLowerCase()] = i.src; });
         }
         const bttv = JSON.parse(localStorage.getItem('myBTTV') || '[]');
