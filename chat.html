@@ -798,25 +798,34 @@ local.forEach(l => { if(!set.has(l.url)) { merged.push(l); set.add(l.url); } });
 }
 async function loadResources() {
     try {
-        const sk = await $.getJSON("https://chicktv.github.io/tv/skuser_icon.txt");
+        const sk = await $.getJSON("https://live.sk-knower.com/lib/iconjsonp.php?channel=whitewing940920");
         if (Array.isArray(sk)) {
-            emojiLists["常用"] = { emojis: sk, image: sk[0].src };
+            emojiLists["本台"] = { emojis: sk, image: sk[0].src };
             sk.forEach(i => { if(i.alt) altMap[i.alt.toLowerCase()] = i.src; });
         }
         const bttv = JSON.parse(localStorage.getItem('myBTTV') || '[]');
         emojiLists["BTTV"] = { emojis: bttv.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url })), image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3" };
         await loadAudioData();
-        const shows = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
-        for (let item of shows.set) {
-            let n = typeof item === 'object' ? item.name : item;
-            let img = typeof item === 'object' ? item.image : "";
-            if (!n || n === "skuser_icon") continue;
-            $.getJSON(`https://chicktv.github.io/tv/${n}.txt`, d => {
-                let list = d[n] || [];
-                emojiLists[n] = { emojis: list, image: img };
-                list.forEach(e => { if(e.alt) altMap[e.alt.toLowerCase()] = e.src; });
-            });
-        }
+          const shows = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
+for (let item of shows.set) {
+    let n = typeof item === 'object' ? item.name : item;
+    let img = typeof item === 'object' ? item.image : "";
+    
+    if (!n || n === "skuser_icon") continue;
+
+    // 判斷請求路徑：如果是 emoticon 則使用 GitHub，否則使用 sk-knower API
+    let url = (n === "emoticon") 
+        ? `https://chicktv.github.io/tv/${n}.txt` 
+        : `https://sk-knower.com/sklive_api/read/skchat_icon.php?set=${n}`;
+
+    $.getJSON(url, d => {
+        let list = d[n] || [];
+        emojiLists[n] = { emojis: list, image: img };
+        list.forEach(e => { 
+            if(e.alt) altMap[e.alt.toLowerCase()] = e.src; 
+        });
+    });
+}
     } catch(e) { console.error(e); }
 }
 function renderEmojiPanel() {
