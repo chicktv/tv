@@ -814,7 +814,7 @@ for (let item of shows.set) {
     if (!n || n === "skuser_icon") continue;
 
     // 判斷請求路徑：如果是 emoticon 則使用 GitHub，否則使用 sk-knower API
-    let url = (n === "emoticon") 
+    let url = (n === "twitch") 
         ? `https://chicktv.github.io/tv/${n}.txt` 
         : `https://sk-knower.com/sklive_api/read/skchat_icon.php?set=${n}`;
 
