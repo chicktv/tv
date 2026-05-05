@@ -671,7 +671,7 @@
 
         function getStreamUrl(channel) {
             if (!channel) return "";
-            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=false&autoplay=true`;
+            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=true&autoplay=true`;
             if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}`;
             if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
             if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}`;
