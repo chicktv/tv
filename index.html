@@ -504,7 +504,7 @@
                 gap: 0.625em;
 				#multi-stream-container-wrapper {
     flex: 1;
-    min-height: 0; /* 确保flex子项可以收缩 */
+    min-height: 0; /* 確保flex子項可以收縮 */
 }
 #multi-stream-container-wrapper .video-wrapper,
 #multi-stream-container-wrapper .chat {
@@ -669,17 +669,18 @@
             }
         }
 
-        function getStreamUrl(channel) {
+        // 修改 getStreamUrl 以支援靜音參數[cite: 1]
+        function getStreamUrl(channel, muted = false) {
             if (!channel) return "";
-            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=true&autoplay=true`;
-            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}`;
-            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1`;
-            if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}`;
-            if (channel.platform === "bs") return channel.id;  // 直接使用儲存的完整 embed 網址
+            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=${muted}&autoplay=true`;
+            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}&muted=${muted}`;
+            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1${muted ? '&muted=1' : ''}`;
+            if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}${muted ? '&muted=true' : ''}`;
+            if (channel.platform === "bs") return channel.id; 
             return "";
         }
 
-        // 單一頻道顯示
+        // 單一頻道顯示 - 預設不靜音[cite: 1]
         function displaySingleChannel(channel) {
             const container = document.getElementById("multi-stream-container");
             if (!container) return;
@@ -697,7 +698,7 @@
                 videoElem.className = "hls-video-element";
                 videoElem.controls = true;
                 videoElem.autoplay = true;
-                videoElem.muted = false;
+                videoElem.muted = false; // 單人看預設有聲[cite: 1]
                 videoElem.playsInline = true;
                 videoElem.style.width = "100%";
                 videoElem.style.height = "100%";
@@ -728,7 +729,7 @@
             } else {
                 const iframe = document.createElement("iframe");
                 iframe.className = "full-screen-video";
-                iframe.src = getStreamUrl(channel);
+                iframe.src = getStreamUrl(channel, false); // 單人看預設不靜音[cite: 1]
                 iframe.allowFullscreen = true;
                 iframe.allow = "autoplay; fullscreen; encrypted-media";
                 iframe.frameBorder = "0";
@@ -736,7 +737,7 @@
             }
         }
 
-        // 看更台多視窗
+        // 看更台多視窗 - 修正：選多於 1 個台時預設 muted=true[cite: 1]
         function watchSelectedChannels() {
             const selectionDiv = document.getElementById("channel-selection");
             if (selectionDiv) selectionDiv.style.display = "none";
@@ -751,7 +752,11 @@
                 container.innerHTML = `<div style="color:#aaa; text-align:center; padding:2rem;">未選擇任何頻道</div>`;
                 return;
             }
+            
+            // 判斷是否需要預設靜音：選多過 1 個台時為 true[cite: 1]
+            const isMuted = fullSelected.length > 1;
             const isOnlyOne = fullSelected.length === 1;
+
             fullSelected.forEach(ch => {
                 const platform = ch.platform, idOrUrl = ch.id;
                 const wrapperClass = isOnlyOne ? "full-screen-video" : "video";
@@ -760,7 +765,7 @@
                     videoElem.className = `hls-video-element ${wrapperClass}`;
                     videoElem.controls = true;
                     videoElem.autoplay = true;
-                    videoElem.muted = false;
+                    videoElem.muted = isMuted; // 應用靜音規則[cite: 1]
                     if (!isOnlyOne) { videoElem.style.width = "48%"; videoElem.style.height = "48%"; }
                     else { videoElem.style.width = "100%"; videoElem.style.height = "100%"; }
                     container.appendChild(videoElem);
@@ -773,9 +778,10 @@
                 } else if (platform === "youtube") {
                     const iframe = document.createElement("iframe");
                     iframe.className = wrapperClass;
+                    const muteVal = isMuted ? "1" : "0"; // 應用靜音規則[cite: 1]
                     let embedSrc = (idOrUrl.startsWith("UC") || idOrUrl.includes("channel")) 
-                        ? `https://www.youtube.com/embed/live_stream?channel=${idOrUrl}&autoplay=1`
-                        : `https://www.youtube.com/embed/${idOrUrl}?autoplay=1`;
+                        ? `https://www.youtube.com/embed/live_stream?channel=${idOrUrl}&autoplay=1&mute=${muteVal}`
+                        : `https://www.youtube.com/embed/${idOrUrl}?autoplay=1&mute=${muteVal}`;
                     iframe.src = embedSrc;
                     iframe.allowFullscreen = true;
                     if (!isOnlyOne) { iframe.style.width = "48%"; iframe.style.height = "48%"; }
@@ -783,7 +789,7 @@
                 } else {
                     const iframe = document.createElement("iframe");
                     iframe.className = wrapperClass;
-                    iframe.src = getStreamUrl(ch);
+                    iframe.src = getStreamUrl(ch, isMuted); // 應用靜音規則[cite: 1]
                     iframe.allowFullscreen = true;
                     iframe.allow = "autoplay; fullscreen; encrypted-media";
                     if (!isOnlyOne) { iframe.style.width = "48%"; iframe.style.height = "48%"; }
@@ -925,104 +931,78 @@
         }
         function updateUIForChannel(channelId){ updateButtonStatus(channelId); updateMenuButtonStatus(channelId); updateChannelOptionLabel(channelId); }
 
-        // ******* 直播狀態查詢 (新增 BeamStream BS 支援) *******
+        // ******* 直播狀態查詢 *******
         async function fetchStatus(channel) {
-		
-		// 在 fetchStatus 函数中，替换原有的 AngelThump (at) 分支
-if(channel.platform === "at") {
-    try {
-        // 1. 调用 AngelThump API
-        const resp = await fetch(`https://api.angelthump.com/v2/streams/${channel.id}`);
-        
-        // 2. 检查请求是否成功（HTTP 状态码为 200）
-        if (resp.ok) {
-            const data = await resp.json();
-            // 3. 根据 type 字段是否为 'live' 来判断
-            if (data.type === 'live') {
-                channelStatuses[channel.id] = 'live';
-            } else {
-                channelStatuses[channel.id] = 'not-live';
+            if(channel.platform === "at") {
+                try {
+                    const resp = await fetch(`https://api.angelthump.com/v2/streams/${channel.id}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.type === 'live') channelStatuses[channel.id] = 'live';
+                        else channelStatuses[channel.id] = 'not-live';
+                    } else channelStatuses[channel.id] = 'not-live';
+                } catch(e) {
+                    channelStatuses[channel.id] = 'not-live';
+                }
+                updateUIForChannel(channel.id);
+                return;
             }
-        } else {
-            // 如果请求不成功（例如 404），说明频道不存在或不在线
-            channelStatuses[channel.id] = 'not-live';
-        }
-    } catch(e) {
-        console.error(`Error fetching AngelThump status for ${channel.name}:`, e);
-        // 网络错误或其他异常时，状态依然设为离线，但保留闪烁效果
-        channelStatuses[channel.id] = 'not-live';
-    }
-    // 更新界面按钮的样式
-    updateUIForChannel(channel.id);
-    return; // 结束 at 平台的处理
-}
-    if(!channel||!channel.id) return;
-    // AngelThump 與 YouTube 直接視為未知動畫
-    if(channel.platform === "youtube"){
-        channelStatuses[channel.id] = 'unknown2';
-        updateUIForChannel(channel.id);
-        return;
-    }
-    if(channel.platform === "m3u8"){
-        channelStatuses[channel.id] = 'live';
-        updateUIForChannel(channel.id);
-        return;
-    }
-    
-    // ---------- 新增 bs (BeamStream) 平台處理 ----------
-    if (channel.platform === "bs") {
-        try {
-            // 使用 r.jina.ai 服務獲取動態渲染後的文字內容
-            const proxyUrl = `https://r.jina.ai/${channel.id}`;
-            const resp = await fetch(proxyUrl);
-            const text = await resp.text();
+            if(!channel||!channel.id) return;
+            if(channel.platform === "youtube"){
+                channelStatuses[channel.id] = 'unknown2';
+                updateUIForChannel(channel.id);
+                return;
+            }
+            if(channel.platform === "m3u8"){
+                channelStatuses[channel.id] = 'live';
+                updateUIForChannel(channel.id);
+                return;
+            }
             
-            // 根據純文字內容判斷直播狀態
-            if (text.includes("Channel is offline")) {
-                channelStatuses[channel.id] = 'not-live';
-            } else if (text.includes("Live")) {
-                channelStatuses[channel.id] = 'live';
-            } else {
-                channelStatuses[channel.id] = 'unknown';
+            if (channel.platform === "bs") {
+                try {
+                    const proxyUrl = `https://r.jina.ai/${channel.id}`;
+                    const resp = await fetch(proxyUrl);
+                    const text = await resp.text();
+                    if (text.includes("Channel is offline")) channelStatuses[channel.id] = 'not-live';
+                    else if (text.includes("Live")) channelStatuses[channel.id] = 'live';
+                    else channelStatuses[channel.id] = 'unknown';
+                } catch(e) {
+                    channelStatuses[channel.id] = 'unknown';
+                }
+                updateUIForChannel(channel.id);
+                return;
             }
-        } catch(e) {
-            console.error("BS status error:", e);
-            channelStatuses[channel.id] = 'unknown';
-        }
-        updateUIForChannel(channel.id);
-        return;  // 結束，不再往下執行
-    }
-    // ------------------------------------------------
 
-    let url = "";
-    if(channel.platform === "kick") url = `https://kick.com/api/v2/channels/${channel.id}`;
-    if(channel.platform === "twitch") url = `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
-    if(channel.platform === "ok") url = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
-    
-    if(!url) return;
+            let url = "";
+            if(channel.platform === "kick") url = `https://kick.com/api/v2/channels/${channel.id}`;
+            if(channel.platform === "twitch") url = `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
+            if(channel.platform === "ok") url = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+            
+            if(!url) return;
 
-    try {
-        if(channel.platform === "ok") {
-            const resp = await fetch(url);
-            const html = await resp.text();
-            const isLive = html.includes('status:"online"') || html.includes('"status":"online"');
-            channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
-        } 
-        else {
-            const headers = channel.platform === "twitch" ? { "Authorization": `Bearer ${TWITCH_TOKEN}`, "Client-Id": TWITCH_CLIENT_ID } : {};
-            const resp = await fetch(url, { headers });
-            const data = await resp.json();
-            let isLive = false;
-            if(channel.platform === "kick") isLive = data.livestream?.is_live === true;
-            if(channel.platform === "twitch") isLive = data.data?.length > 0;
-            channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
+            try {
+                if(channel.platform === "ok") {
+                    const resp = await fetch(url);
+                    const html = await resp.text();
+                    const isLive = html.includes('status:"online"') || html.includes('"status":"online"');
+                    channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
+                } 
+                else {
+                    const headers = channel.platform === "twitch" ? { "Authorization": `Bearer ${TWITCH_TOKEN}`, "Client-Id": TWITCH_CLIENT_ID } : {};
+                    const resp = await fetch(url, { headers });
+                    const data = await resp.json();
+                    let isLive = false;
+                    if(channel.platform === "kick") isLive = data.livestream?.is_live === true;
+                    if(channel.platform === "twitch") isLive = data.data?.length > 0;
+                    channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
+                }
+                updateUIForChannel(channel.id);
+            } catch(e) {
+                channelStatuses[channel.id] = 'unknown';
+                updateUIForChannel(channel.id);
+            }
         }
-        updateUIForChannel(channel.id);
-    } catch(e) {
-        channelStatuses[channel.id] = 'unknown';
-        updateUIForChannel(channel.id);
-    }
-}
 
         function fetchAllStatuses(){ if(TWITCH_TOKEN && TWITCH_CLIENT_ID) channels.forEach(ch=>fetchStatus(ch)); }
 
