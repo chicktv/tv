@@ -803,8 +803,11 @@ async function loadResources() {
             emojiLists["本台"] = { emojis: sk, image: sk[0].src , image: "https://chicktv.github.io/tv/chick.png" };
             sk.forEach(i => { if(i.alt) altMap[i.alt.toLowerCase()] = i.src; });
         }
-        const bttv = JSON.parse(localStorage.getItem('myBTTV') || '[]');
-        emojiLists["收藏"] = { emojis: bttv.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url })), image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3" };
+        const savedBTTV = JSON.parse(localStorage.getItem('myBTTV') || '[]');
+            emojiLists["BTTV"] = {
+                emojis: savedBTTV.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url, dis: url })),
+                image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3"
+            };
         await loadAudioData();
           const shows = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
 for (let item of shows.set) {
@@ -845,13 +848,25 @@ function renderEmojiPanel() {
 }
 function renderTabContent(name) {
     const content = $("#emojiContent").empty();
-    if (name === "BTTV") {
-        content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
-        emojiLists[name].emojis.forEach(e => {
-            const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;" loading="lazy"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
-            item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` [s] ${e.src} [e] `); $("#emojiPanel").hide(); } });
-            content.append(item);
-        });
+     if (name === "BTTV") {
+            content.append(`
+                <div class="bttv-input-area">
+                    <input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1">
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="addBTTV()" style="background:var(--t-purp); color:white; border:none; border-radius:4px; cursor:pointer; padding:5px 15px;">儲存</button>
+                        <button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'}; color:white; border:none; border-radius:4px; padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button>
+                    </div>
+                </div>`);
+            emojiLists[name].emojis.forEach(e => {
+                const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
+                item.on('click', () => { 
+                    if(!isDeleteMode) { 
+                        insertTextAtCursor(` [s] ${e.src} [e] `); 
+                        $("#emojiPanel").hide(); 
+                    } 
+                });
+                content.append(item);
+            });
     } else if (name === "音訊") {
         content.append(`<div class="audio-input-form" style="flex-wrap:wrap"><input type="text" id="audioName" class="custom-input" placeholder="音訊名稱" style="flex:1;min-width:120px;"><input type="text" id="audioUrl" class="custom-input" placeholder="音訊網址" style="flex:2;min-width:180px;"><div style="display:flex;gap:5px;"><button onclick="addAudio()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存音訊</button><button onclick="isAudioDeleteMode=!isAudioDeleteMode;renderTabContent('音訊')" style="background:${isAudioDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isAudioDeleteMode?'取消':'刪除'}</button></div></div>`);
         audioLists[name].audios.forEach((a, idx) => {
