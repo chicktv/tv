@@ -2,19 +2,17 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat7 - 純伺服器回顯聊天</title>
+    <title>Chickchat1 - 伺服器回顯優先（備援顯示）</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
         body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* --- Webkit Scrollbar 樣式 --- */
         #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
-        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
         #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
-        /* 統一控制媒體嵌入大小 */
         #chat-container .media-preview,
         #chat-container iframe.media-preview,
         #chat-container iframe[src*="youtube.com"],
@@ -451,6 +449,47 @@ const RE_IS_THREADS = /www\.threads\.com/i;
 const RE_IS_VIDEO_EXT = /\.(webm|mp4|m3u8|flv)/i;
 const RE_IS_STEAM = /steampowered|steamcommunity/i;
 
+// ===================== 備援機制：未收到伺服器回顯時自動補插 =====================
+let pendingSelfMessages = []; // 存放 { localId, content, timestamp, login, displayName, color, badgeStr, replyHtml, pendingReplyData }
+
+function addPendingSelfMessage(localId, content, login, displayName, color, badgeStr, replyHtml, pendingReplyCopy) {
+    const item = { localId, content, login, displayName, color, badgeStr, replyHtml, pendingReply: pendingReplyCopy, sentAt: Date.now() };
+    pendingSelfMessages.push(item);
+    // 2秒後若尚未被伺服器回傳則補插
+    setTimeout(() => {
+        const idx = pendingSelfMessages.findIndex(p => p.localId === localId);
+        if (idx !== -1) {
+            const p = pendingSelfMessages[idx];
+            // 產生備份訊息 HTML
+            const backupHtml = buildSelfMessageHtml(p.content, p.login, p.displayName, p.color, p.badgeStr, p.replyHtml, p.localId);
+            appendMessageWithScroll(backupHtml);
+            pendingSelfMessages.splice(idx, 1);
+            console.warn(`[備援] 伺服器未回傳訊息 (${localId})，已手動顯示`);
+        }
+    }, 2500);
+}
+
+function buildSelfMessageHtml(content, userLogin, displayName, color, badgeStr, replyHtml, msgId) {
+    let finalContent = processRTag(content, 0);
+    let contentHtml = parseContent(finalContent);
+    let badgeHtml = renderBadges(badgeStr);
+    let ts = Date.now().toString();
+    return `<div class="chat-line ts-${ts} id-${msgId}" data-user-login="${userLogin}" data-msg-ts="${ts}">
+        <div class="reply-btn-group">
+            <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId}','${displayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
+            <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${msgId}')">🔗</div>
+        </div>
+        ${replyHtml}
+        ${badgeHtml}<b style="color:${color}">${displayName}:</b> <span>${contentHtml}</span>
+    </div>`;
+}
+
+// 當伺服器回傳訊息時，嘗試清除對應的 pending 記錄
+function markSelfMessageReceived(localId) {
+    const idx = pendingSelfMessages.findIndex(p => p.localId === localId);
+    if (idx !== -1) pendingSelfMessages.splice(idx, 1);
+}
+
 // ===================== 工具函數 =====================
 function getParameterByName(name, url) {
     name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -487,10 +526,10 @@ document.addEventListener('visibilitychange', () => {
 function checkScrollPosition() { const chat = document.getElementById('chat-container'); const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 60; autoScroll = isAtBottom; if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex'; }
 function setupScrollListener() { document.getElementById('chat-container').addEventListener('scroll', () => { if(scrollTimeout) clearTimeout(scrollTimeout); scrollTimeout = setTimeout(checkScrollPosition, 100); }, { passive: true }); }
 function scrollToMsg(msgId) { let $msg = $(`.id-${msgId}`); if($msg.length){ let container = $("#chat-container")[0]; let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50; container.scrollTo({ top: top, behavior: 'smooth' }); } }
-function scheduleReconnect() { /* 簡略但保留功能，原本完整重連機制 */ if(reconnectTimer) clearTimeout(reconnectTimer); let delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay); reconnectAttempts++; reconnectTimer = setTimeout(() => { if(!isConnecting && (!socket || socket.readyState !== WebSocket.OPEN)) startChat(); }, delay); }
+function scheduleReconnect() { if(reconnectTimer) clearTimeout(reconnectTimer); let delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay); reconnectAttempts++; reconnectTimer = setTimeout(() => { if(!isConnecting && (!socket || socket.readyState !== WebSocket.OPEN)) startChat(); }, delay); }
 function clearReconnectTimer() { if(reconnectTimer) clearTimeout(reconnectTimer); reconnectAttempts = 0; }
 
-// ===================== 核心解析 =====================
+// ===================== 核心解析 (完整保留) =====================
 function parseContent(str) {
     if (!str) return str;
     if (!str.includes('[') && !str.includes('http')) return str.split(' ').map(w => altMap[w.toLowerCase()] ? `<img src="${altMap[w.toLowerCase()]}" class="alt-emoji" loading="lazy">` : w).join(' ');
@@ -520,7 +559,7 @@ function processRTag(str, depth = 0) {
     });
 }
 
-// ===================== 資源載入 (完整) =====================
+// ===================== 資源載入 (保留完整功能) =====================
 async function fetchBadges() { try { const res = await fetch('https://chicktv.github.io/tv/badges.txt'); customBadges = await res.json(); } catch(e) { customBadges = {}; } }
 async function loadAudioData() {
     try { const remote = await fetch('https://chicktv.github.io/tv/audio.txt').then(r => r.json()); const local = JSON.parse(localStorage.getItem('myAudios') || '[]'); audioLists["音訊"] = { audios: [...remote, ...local.filter(l => !remote.some(r=>r.url===l.url))], image: "🔊" }; } catch(e) { audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "🔊" }; }
@@ -571,10 +610,10 @@ function resetAudioState(btn){ btn.dataset.isPlaying = "false"; btn.classList.re
 
 // ===================== 語音錄製 =====================
 let mediaRecorder, audioChunks = [], isRecording = false;
-async function toggleRecording() { /* 完整實作略但保留功能 */ try { if(!isRecording){ const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.ondataavailable = e => audioChunks.push(e.data); mediaRecorder.onstop = async () => { const blob = new Blob(audioChunks, { type: 'audio/mpeg' }); await uploadAudioAndInsertTag(blob); document.getElementById('voice-btn').textContent = "🗣📢"; document.getElementById('recording-status').style.display = 'none'; }; mediaRecorder.start(); isRecording = true; document.getElementById('voice-btn').textContent = "🟥"; document.getElementById('recording-status').style.display = 'inline'; } else { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t=>t.stop()); isRecording = false; } } catch(e){ alert("麥克風錯誤"); } }
+async function toggleRecording() { try { if(!isRecording){ const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.ondataavailable = e => audioChunks.push(e.data); mediaRecorder.onstop = async () => { const blob = new Blob(audioChunks, { type: 'audio/mpeg' }); await uploadAudioAndInsertTag(blob); document.getElementById('voice-btn').textContent = "🗣📢"; document.getElementById('recording-status').style.display = 'none'; }; mediaRecorder.start(); isRecording = true; document.getElementById('voice-btn').textContent = "🟥"; document.getElementById('recording-status').style.display = 'inline'; } else { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t=>t.stop()); isRecording = false; } } catch(e){ alert("麥克風錯誤"); } }
 async function uploadAudioAndInsertTag(blob) { const fd = new FormData(); fd.append('file', blob, `voice_${Date.now()}.mp3`); const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd }); const data = await res.json(); if(data.data?.url) insertTextAtCursor(`[a] ${data.data.url.replace(/^https?:\/\/tmpfiles\.org\//, 'https://tmpfiles.org/dl/')} [o]`); else alert("上傳失敗"); }
 
-// ===================== 提及功能 =====================
+// ===================== 提及功能 (完整保留) =====================
 function addRecentUser(u) { if(seenUsersSet.has(u.login)){ const idx = recentUsers.findIndex(i=>i.login===u.login); if(idx>0){ recentUsers.splice(idx,1); recentUsers.unshift(u); } } else { seenUsersSet.add(u.login); recentUsers.unshift(u); if(recentUsers.length>50){ const removed = recentUsers.pop(); seenUsersSet.delete(removed.login); } } }
 function setupMentionEvents() { const input = document.getElementById('msginput'); input.addEventListener('input', (e) => { const sel = window.getSelection(); if(!sel.rangeCount) return; const before = input.textContent.substring(0, sel.getRangeAt(0).startOffset); const atPos = before.lastIndexOf('@'); if(atPos !== -1 && !before.substring(atPos).includes(' ')){ mentionSearchTerm = before.substring(atPos+1); const filtered = recentUsers.filter(u=>u.displayName.toLowerCase().includes(mentionSearchTerm)||u.login.toLowerCase().includes(mentionSearchTerm)); if(filtered.length) showMentionList(filtered, atPos); else hideMentionList(); } else hideMentionList(); }); input.addEventListener('keydown', (e) => { if(!mentionListVisible) return; const items = document.querySelectorAll('.mention-item'); if(e.key === 'ArrowUp') { e.preventDefault(); mentionSelectedIndex = (mentionSelectedIndex-1+items.length)%items.length; updateMentionSelection(); } else if(e.key === 'ArrowDown') { e.preventDefault(); mentionSelectedIndex = (mentionSelectedIndex+1)%items.length; updateMentionSelection(); } else if(e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); if(items[mentionSelectedIndex]) selectMentionUser(items[mentionSelectedIndex]); } else if(e.key === 'Escape') hideMentionList(); }); document.addEventListener('click',(e)=>{ if(!e.target.closest('#mention-list') && !e.target.closest('#msginput')) hideMentionList(); }); }
 function showMentionList(users, atPos) { const list = document.getElementById('mention-list'); list.innerHTML = `<div class="mention-header">選擇用戶 (${users.length})</div>`; users.forEach((u,idx)=>{ const item = document.createElement('div'); item.className = `mention-item ${idx===0?'selected':''}`; item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy">${renderBadges(u.badges)}<span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`; item.dataset.login = u.login; item.dataset.displayName = u.displayName; item.addEventListener('click',()=>selectMentionUser(item)); list.appendChild(item); }); list.style.display = 'block'; mentionListVisible = true; mentionSelectedIndex = 0; const input = document.getElementById('msginput'); const span = document.createElement('span'); span.style.cssText = getComputedStyle(input).font+';visibility:hidden;position:absolute;white-space:pre-wrap'; span.textContent = input.textContent.substring(0, atPos); document.body.appendChild(span); list.style.left = span.offsetWidth + 'px'; list.style.bottom = (document.querySelector('.footer').offsetHeight+10)+'px'; document.body.removeChild(span); }
@@ -582,17 +621,38 @@ function updateMentionSelection() { document.querySelectorAll('.mention-item').f
 function selectMentionUser(item) { insertTextAtCursor('@'+item.dataset.displayName+' '); hideMentionList(); document.getElementById('msginput').focus(); }
 function hideMentionList() { document.getElementById('mention-list').style.display = 'none'; mentionListVisible = false; }
 
-// ===================== 發送訊息 (無本地預顯示) =====================
+// ===================== 發送訊息 (無本地預顯示，但增加備援) =====================
 function sendMessage() {
     const input = document.getElementById('msginput');
     let val = input.textContent.trim();
     if(!val || !socket || socket.readyState !== 1) return;
     if(val.length > 500){ alert('訊息超過500字元'); return; }
-    let finalCmd = pendingReply.id ? `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}` : `PRIVMSG #${CHANNEL} :${val}`;
+    
+    const localId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6);
+    let finalCmd = "";
+    let replyHtml = "";
+    let pendingReplyCopy = null;
+    
+    if(pendingReply.id){
+        finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
+        let repliedMsg = msgCache[pendingReply.id];
+        let rawQuote = repliedMsg ? (typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg) : "...";
+        let parsedQuote = parseContent(rawQuote);
+        replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${pendingReply.displayName || pendingReply.user}:</span>${parsedQuote}</div>`;
+        pendingReplyCopy = { ...pendingReply };
+    } else {
+        finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
+    }
     socket.send(finalCmd);
+    
+    // 加入待確認佇列，2秒後若無回傳則補插
+    addPendingSelfMessage(localId, val, myLoginId, myDisplayName || myLoginId, myColor, getMyBadges(), replyHtml, pendingReplyCopy);
+    
+    // 保留最近用戶記錄以便 @
     if(myLoginId) addRecentUser({ login: myLoginId, displayName: myDisplayName || myLoginId, badges: getMyBadges(), avatar: myAvatar });
     cancelReply();
     input.textContent = "";
+    input.focus();
 }
 
 function replyNative(userLogin, msgId, displayName){
@@ -604,7 +664,7 @@ function replyNative(userLogin, msgId, displayName){
 function cancelReply(){ pendingReply = { id: null, user: null, displayName: null }; $("#reply-indicator").hide(); }
 window.insertRecursiveQuote = function(login, ts) { if(login && ts) insertTextAtCursor(`[r]${login},${ts}[m]`); };
 
-// ===================== 歷史訊息 (僅輔助) =====================
+// ===================== 歷史訊息 =====================
 async function fetchRecentMessages() { try { const res = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=15`); const data = await res.json(); if(data.messages) data.messages.forEach(raw => { const match = raw.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/); if(match){ const tagStr = match[1]||"", userLogin = match[2], msg = match[3], ts = "hist_"+Date.now()+"_"+Math.random().toString(36).substr(2,5); let color = "#9147ff"; if(tagStr){ const tags = {}; tagStr.split(';').forEach(t=>{ let p=t.split('='); if(p.length===2) tags[p[0]]=p[1]; }); if(tags.color) color=tags.color; } const userRecord = { content: msg, user: { login: userLogin, displayName: userLogin }, displayName: userLogin, timestamp: Date.now(), avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png' }; msgCache[ts] = userRecord; addRecentUser({ login: userLogin, displayName: userLogin, badges: "", avatar: userRecord.avatar }); const contentHtml = parseContent(processRTag(msg,0)); appendMessageWithScroll(`<div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}"><div class="reply-btn-group"><div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div><div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')">🔗</div></div><b style="color:${color}">${userLogin}:</b> <span>${contentHtml}</span></div>`); } }); } catch(e) { console.error(e); } }
 
 // ===================== WebSocket連線 =====================
@@ -650,6 +710,19 @@ function startChat() {
         if(msgId) msgCache[msgId] = msgRecord;
         msgCache[ts] = msgRecord;
         addRecentUser({ login: userLogin, displayName: user, badges: badgeStr, avatar: msgRecord.avatar });
+        
+        // 若這條訊息是自己的，則嘗試從 pending 中移除 (因為伺服器已回傳)
+        if(userLogin === myLoginId) {
+            // 模糊匹配：找出內容相同且時間相近的 pending 訊息
+            for(let i=0; i<pendingSelfMessages.length; i++) {
+                let p = pendingSelfMessages[i];
+                if(p.content === rawMsg && Math.abs(Date.now() - p.sentAt) < 5000) {
+                    markSelfMessageReceived(p.localId);
+                    break;
+                }
+            }
+        }
+        
         let replyHtml = "", displayMsg = rawMsg;
         let pUser = getTagValue(tags, "reply-parent-display-name");
         let pId = getTagValue(tags, "reply-parent-msg-id");
