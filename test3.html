@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat9</title>
+    <title>Chickchat7</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -1190,7 +1190,7 @@ async function fetchRecentMessages() {
                         displayName: displayName,
                         badges: badges,
                         timestamp: parseInt(tsStr),
-                        avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
+                        avatar: (userLogin === myLoginId && myAvatar) ? myAvatar : 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
                     };
                     msgCache[msgId] = userRecord;
                     msgCache[tsStr] = userRecord;
@@ -1308,12 +1308,15 @@ function startChat() {
 
             // 去重複邏輯與替換機制：若收到伺服器回傳自己發送的訊息
             if (userLogin === myLoginId) {
+                if (myAvatar) msgRecord.avatar = myAvatar; // 確保頭像是自己的真實頭像
                 let $pendingList = $('.chat-line.self-pending');
                 let matched = false;
                 $pendingList.each(function() {
                     if ($(this).attr('data-raw-content') === rawMsg && !matched) {
                         matched = true;
                         let $this = $(this);
+                        let oldTs = $this.attr('data-msg-ts'); // 取得本地當初產生的舊 timestamp
+                        
                         $this.removeClass('self-pending');
                         
                         // 移除本地舊有時間與ID className
@@ -1328,6 +1331,11 @@ function startChat() {
                         // 確保回覆按鈕也使用新的伺服器 ID 
                         $this.find('.reply-btn').attr('onclick', `replyNative('${myLoginId}','${msgId||ts}','${user}')`);
                         $this.find('.reply-btn2').attr('onclick', `insertRecursiveQuote('${myLoginId}','${ts}')`);
+
+                        // 【重點修正】清除舊的本機端快取，避免重複殘留與 timestamp 不一致
+                        if (oldTs && msgCache[oldTs]) {
+                            delete msgCache[oldTs];
+                        }
                     }
                 });
                 
