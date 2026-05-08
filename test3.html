@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat7</title>
+    <title>Chickchat8.8</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -518,6 +518,9 @@ function renderBadges(badgeStr) {
     return html;
 }
 function getMyBadges() { return myBadges || ""; }
+function escapeHtml(unsafe) {
+    return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 
 // ===================== 捲動相關 =====================
 function forceScrollToBottom(force = false) {
@@ -1099,31 +1102,38 @@ function sendMessage() {
     if(!val || !socket || socket.readyState !== 1) return;
     if(val.length > 500){ alert('訊息超過500字元'); return; }
     
-    // 使用暫存 ts 紀錄本機發送，若伺服器回傳將被替換為真實 timestamp 與 UUID
+    // 使用 Twitch 官方支援的 client-nonce 來精確追蹤我們發出的訊息
     let selfTs = Date.now().toString();
+    let localNonce = Math.random().toString(36).substring(2, 10) + selfTs; // 產生絕對唯一的隨機碼
+    
     let finalCmd = "", replyDisplay = "";
     let myBadgeStr = getMyBadges();
     let badgeHtml = renderBadges(myBadgeStr);
     
+    // 組合 Twitch Tags
+    let tagsToSend = [`client-nonce=${localNonce}`];
+    
     if(pendingReply.id){
-        finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
+        tagsToSend.push(`reply-parent-msg-id=${pendingReply.id}`);
         let repliedMsg = msgCache[pendingReply.id];
         let rawQuote = repliedMsg ? (typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg) : "...";
         let parsedQuote = parseContent(rawQuote);
         let displayNameToShow = pendingReply.displayName || pendingReply.user;
         replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
-    } else {
-        finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
     }
+    
+    finalCmd = `@${tagsToSend.join(';')} PRIVMSG #${CHANNEL} :${val}`;
     socket.send(finalCmd);
     
-    const selfMsgRecord = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: Date.now() };
+    // 以 nonce 和暫存 ts 存入本地快取，確保時間戳記精確一致
+    const selfMsgRecord = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: parseInt(selfTs) };
+    msgCache[localNonce] = selfMsgRecord;
     msgCache[selfTs] = selfMsgRecord;
     addRecentUser({ login: myLoginId, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar });
 
-    // 加上 self-pending 標籤，等待伺服器回傳時去重與更新
-    let valEscaped = val.replace(/"/g, '&quot;');
-    let line = `<div class="chat-line self-pending ts-${selfTs} id-${selfTs}" data-user-login="${myLoginId}" data-msg-ts="${selfTs}" data-raw-content="${valEscaped}">
+    // 將 nonce 也藏在元素裡，等待伺服器回傳
+    let valEscaped = escapeHtml(val);
+    let line = `<div class="chat-line self-pending ts-${selfTs} id-${localNonce}" data-nonce="${localNonce}" data-user-login="${myLoginId}" data-msg-ts="${selfTs}" data-raw-content="${valEscaped}">
         <div class="reply-btn-group">
             <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
             <div class="reply-btn2" onclick="insertRecursiveQuote('${myLoginId}','${selfTs}')" title="sk回覆格式">🔗</div>
@@ -1292,6 +1302,7 @@ function startChat() {
                 let excl = source.indexOf('!');
                 if (excl !== -1) nickFromSource = source.substring(0, excl);
             }
+            let clientNonce = getTagValue(tags, "client-nonce");
             let msgId = getTagValue(tags, "id");
             let ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
             let user = getTagValue(tags, "display-name") || "User";
@@ -1312,10 +1323,16 @@ function startChat() {
                 let $pendingList = $('.chat-line.self-pending');
                 let matched = false;
                 $pendingList.each(function() {
-                    if ($(this).attr('data-raw-content') === rawMsg && !matched) {
+                    let $this = $(this);
+                    let domNonce = $this.attr('data-nonce');
+                    let rawContent = $this.attr('data-raw-content');
+                    // 將 HTML escape 過的字串還原，作為備用比對方案
+                    let unescapedContent = $('<textarea/>').html(rawContent).text();
+                    
+                    // 利用官方 nonce 100% 精準比對，或退一步用還原文字比對
+                    if (!matched && ((clientNonce && domNonce === clientNonce) || unescapedContent === rawMsg)) {
                         matched = true;
-                        let $this = $(this);
-                        let oldTs = $this.attr('data-msg-ts'); // 取得本地當初產生的舊 timestamp
+                        let oldTs = $this.attr('data-msg-ts'); 
                         
                         $this.removeClass('self-pending');
                         
@@ -1327,19 +1344,19 @@ function startChat() {
                         $this.addClass(`ts-${ts}`);
                         $this.addClass(`id-${msgId||ts}`);
                         $this.attr('data-msg-ts', ts);
+                        $this.removeAttr('data-nonce'); // 處理完即可拔除
                         
                         // 確保回覆按鈕也使用新的伺服器 ID 
                         $this.find('.reply-btn').attr('onclick', `replyNative('${myLoginId}','${msgId||ts}','${user}')`);
                         $this.find('.reply-btn2').attr('onclick', `insertRecursiveQuote('${myLoginId}','${ts}')`);
 
-                        // 【重點修正】清除舊的本機端快取，避免重複殘留與 timestamp 不一致
-                        if (oldTs && msgCache[oldTs]) {
-                            delete msgCache[oldTs];
-                        }
+                        // 【重點修正】徹底清除舊的本機端快取，避免殘留
+                        if (domNonce && msgCache[domNonce]) delete msgCache[domNonce];
+                        if (oldTs && msgCache[oldTs]) delete msgCache[oldTs];
                     }
                 });
                 
-                // 如果成功配對到本地發送的消息，則更新緩存並略過新增元素
+                // 成功配對並更新快取後，略過重複新增元素
                 if (matched) {
                     if (msgId) msgCache[msgId] = msgRecord;
                     msgCache[ts] = msgRecord;
