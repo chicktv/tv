@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat9</title>
+    <title>Chickchat1</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
@@ -1281,27 +1281,39 @@ function startChat() {
                 let excl = source.indexOf('!');
                 if (excl !== -1) nickFromSource = source.substring(0, excl);
             }
+            
+            // 解析標籤
             let msgId = getTagValue(tags, "id");
             let ts = getTagValue(tags, "tmi-sent-ts") || Date.now().toString();
             let user = getTagValue(tags, "display-name") || "User";
             let color = getTagValue(tags, "color") || "#9147ff";
             let badgeStr = getTagValue(tags, "badges");
             let userLogin = nickFromSource || getTagValue(tags, "login") || user.toLowerCase();
+            
             userCache[userLogin] = user;
             
             let msgRecord = {
-                content: rawMsg, user: { login: userLogin, displayName: user }, displayName: user,
-                badges: badgeStr, avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png',
+                content: rawMsg, 
+                user: { login: userLogin, displayName: user }, 
+                displayName: user,
+                badges: badgeStr, 
+                avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png',
                 timestamp: parseInt(ts)
             };
-            if (msgId) msgCache[msgId] = msgRecord;
-            msgCache[ts] = msgRecord;
+
+            // 【重要修改】：統一使用 cacheKey，不再重複存入兩個 Key
+            let cacheKey = msgId || ts;
+            if (cacheKey) {
+                msgCache[cacheKey] = msgRecord;
+            }
+            
             addRecentUser({ login: userLogin, displayName: user, badges: badgeStr, avatar: msgRecord.avatar });
 
             let replyHtml = "", displayMsg = rawMsg;
             let pUser = getTagValue(tags, "reply-parent-display-name");
             let pId = getTagValue(tags, "reply-parent-msg-id");
             let pBodyRaw = getTagValue(tags, "reply-parent-msg-body");
+            
             if (pUser && pId) {
                 let isMe = (pUser === myDisplayName || pUser === myLoginId);
                 let originalText = pBodyRaw ? pBodyRaw.replace(/\\s/g, " ") : "...";
@@ -1312,20 +1324,27 @@ function startChat() {
                 let mention = `@${pUser} `;
                 if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
+            
             displayMsg = processRTag(displayMsg, 0);
             let contentHtml = parseContent(displayMsg);
             let badgeHtml = renderBadges(badgeStr);
-            let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-user-login="${userLogin}" data-msg-ts="${ts}">
+            
+            // 【重要修改】：確保 class 使用一致的 cacheKey
+            let line = `<div class="chat-line ts-${ts} id-${cacheKey}" data-user-login="${userLogin}" data-msg-ts="${ts}">
                 <div class="reply-btn-group">
-                    <div class="reply-btn" onclick="replyNative('${userLogin}','${msgId||ts}','${user}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
+                    <div class="reply-btn" onclick="replyNative('${userLogin}','${cacheKey}','${user}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
                     <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="插入引用代碼 [r]">🔗</div>
                 </div>
                 ${replyHtml}
                 ${badgeHtml}
                 <b style="color:${color}">${user}:</b> <span>${contentHtml}</span>
             </div>`;
+            
             appendMessageWithScroll(line);
-        } catch(err) { console.error('處理訊息錯誤:', err, e.data); }
+            
+        } catch(err) { 
+            console.error('處理訊息錯誤:', err, e.data); 
+        }
     };
 }
 
