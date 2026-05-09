@@ -1153,7 +1153,7 @@
         let isSK = true;
         document.getElementById('chatToggleBtn')?.addEventListener('click', function() {
             const iframe = document.getElementById('chat_embed');
-            if(isSK) iframe.src = 'https://chicktv.github.io/tv/chat.html';
+            if(isSK) iframe.src = 'https://chicktv.github.io/tv/test3.html';
             else iframe.src = `https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=${encodeURIComponent(parent)}`;
             this.textContent = isSK ? '💬 TCHAT' : '💬 CCHAT';
             isSK = !isSK;
