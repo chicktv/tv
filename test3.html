@@ -1444,39 +1444,49 @@ function logout() {
     location.reload();
 }
 
-function setupAutoTag() { 
+function setupAutoTag() {
     const input = document.getElementById('msginput');
-    
-    input.addEventListener('paste', function(e) {
-        const clipboardData = e.clipboardData || window.clipboardData;
-        const pastedText = clipboardData.getData('text/plain');
+    if (!input) return;
+
+    input.addEventListener('paste', (e) => {
+        // 取得貼上的純文字
+        let pastedText = (e.clipboardData || window.clipboardData).getData('text');
         if (!pastedText) return;
         
+        // 檢查是否為網址 (簡單檢查 http)
+        const trimmedPaste = pastedText.trim();
+        if (!trimmedPaste.startsWith('http')) return;
+
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
+        
         const range = selection.getRangeAt(0);
+        // 建立一個從輸入框開頭到游標位置的範圍
+        const preRange = range.cloneRange();
+        preRange.selectNodeContents(input);
+        preRange.setEnd(range.startContainer, range.startOffset);
         
-        const currentText = input.textContent;
-        const pos = range.startOffset;
-        const textBefore = currentText.substring(0, pos);
+        // 取得游標前的所有文字
+        const textBefore = preRange.toString();
         
-        let finalText = "";
-        let isSpecialTag = false;
-
-        if (textBefore.endsWith('[s] ')) {
-            finalText = pastedText + ' [e]';
-            isSpecialTag = true;
-        } else if (textBefore.endsWith('[y] ')) {
-            finalText = pastedText + ' [t]';
-            isSpecialTag = true;
-        } else if (textBefore.endsWith('[a] ')) {
-            finalText = pastedText + ' [o]';
-            isSpecialTag = true;
+        let suffix = "";
+        // 使用正則偵測游標前最後一個非空白字串是否為標籤 (不分大小寫)
+        if (/\[s\]\s*$/i.test(textBefore)) {
+            suffix = " [e]";
+        } else if (/\[y\]\s*$/i.test(textBefore)) {
+            suffix = " [t]";
+        } else if (/\[a\]\s*$/i.test(textBefore)) {
+            suffix = " [o]";
         }
 
-        if (isSpecialTag) {
+        // 如果偵測到標籤，則攔截貼上行為並手動插入「網址 + 結尾標籤」
+        if (suffix) {
             e.preventDefault();
-            document.execCommand('insertText', false, finalText);
+            // 插入網址與結尾，並在最後多補一個空格方便繼續打字
+            const finalInsert = trimmedPaste + suffix + " ";
+            document.execCommand('insertText', false, finalInsert);
+            
+            // 觸發 input 事件確保 UI 更新
             input.dispatchEvent(new Event('input', { bubbles: true }));
         }
     });
