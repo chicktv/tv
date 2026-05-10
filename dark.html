@@ -2,125 +2,191 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Chickchat8</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chickchat8 - Pro Dark Edition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
-        body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        /* =====================
+           Design System & Variables
+           ===================== */
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-surface-hover: #1f1f23;
+            --bg-surface-active: #26262c;
+            /* GPU 優化: 移除半透明，改用純色避免合成開銷 */
+            --bg-panel: #18181b; 
+            
+            --t-purp: #9147ff;
+            --t-purp-hover: #a970ff;
+            --t-purp-muted: rgba(145, 71, 255, 0.15);
+            --t-purp-border: rgba(145, 71, 255, 0.3);
+            
+            --text-main: #efeff1;
+            --text-muted: #adadb8;
+            --text-inverse: #09090b;
+            
+            --danger: #e91916;
+            --danger-hover: #c51614;
+            --success: #2ea043;
+            
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+            
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-round: 50%;
+            
+            /* GPU 優化: 降低陰影複雜度 */
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+            
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+        }
+
+        /* =====================
+           Global Resets
+           ===================== */
+        * { box-sizing: border-box; }
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-main); 
+            font-family: var(--font-sans); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
         
-        /* --- Webkit Scrollbar 樣式 --- */
-        #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
-        #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-        #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-        #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
+        /* --- Webkit Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-surface-active); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
-        /* 統一控制媒體嵌入大小 */
-        #chat-container .media-preview,
-        #chat-container iframe.media-preview,
-        #chat-container iframe[src*="youtube.com"],
-        #chat-container iframe[src*="youtube-nocookie.com"],
-        #chat-container iframe[src*="youtu.be"],
-        #chat-container iframe[src*="facebook.com"],
-        #chat-container blockquote.twitter-tweet,
-        #chat-container .twitter-tweet-container,
-        #chat-container iframe[src*="store.steampowered.com"],
-        #chat-container iframe[src*="threads.com"] {
-            width: auto !important;
-            height: auto !important;
-            max-width: 250px !important;
-            max-height: 450px !important;
-            border-radius: 8px !important;
-            border: 0px solid #444 !important;
-            margin: 5px 0 !important;
-            object-fit: fill !important;
+        /* =====================
+           Header & Authentication
+           ===================== */
+        .header-bar { 
+            /* GPU 優化: 移除 backdrop-filter: blur(8px); */
+            background: #121214; 
+            padding: 12px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border-color); 
+            flex-shrink: 0; 
+            z-index: 100;
         }
-
-        #chat-container iframe[src*="youtube.com"],
-        #chat-container iframe[src*="youtube-nocookie.com"],
-        #chat-container blockquote.twitter-tweet,
-        #chat-container iframe[src*="threads.com"],
-        #chat-container iframe[src*="store.steampowered.com"] {
-            min-height: 400px !important;
-			max-height: 400px !important;
-        }
-
-        #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
-
-        #chat-container img.media-preview {
-            height: auto !important;
-            max-height: 250px !important;
-            min-height: auto !important;
-            object-fit: fill !important;
-        }
-        #chat-container video.media-preview {
-            height: auto !important;
-            max-height: 250px !important;
-            min-height: auto !important;
-        }
-
-        .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
-        
-        /* CPU 優化：使用 content-visibility 讓瀏覽器跳過非可見區域的渲染計算 */
-        .chat-line { 
-            position: relative; 
-            border-radius: 4px; 
-            line-height: 1.6; 
-            word-wrap: break-word; 
-            color: var(--t-text); 
-            transition: background 0.3s, border 0.3s; 
-            padding: 1px; 
-            margin-bottom: 5px; 
-            border: 1px solid transparent;
-            content-visibility: auto;
-            contain-intrinsic-size: 0 40px; 
-        }
-
-        .chat-line:hover { background: rgba(255,255,255,0.08); }
-        .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
-        .self-name { font-weight: bold; }
-        .media-preview { max-width: 250px !important; max-height: 250px !important; border-radius: 6px; margin-top: 10px; vertical-align: top; display: block; border: 1px solid #444; }
-       .quote-user { color: #adadb8; margin-right: 5px; }
-       .mention-self-tag { background-color: #9147ff; color: #ffffff !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 2px; }
-        .audio-player { margin-top: 10px; display: block; max-width: 300px; }
-        .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
-        .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
-       
-
-@keyframes blink {
-    50% { opacity: 0.7; }
-}
-
-.control-btn {
-    transition: all 0.3s ease;
-}
-        .reply-btn-group {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            display: flex;
-            gap: 8px;
-            z-index: 10;
-        }
-        .reply-btn, .reply-btn2 {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
+        #status { 
+            font-weight: 600; 
+            color: var(--t-purp); 
+            font-size: 13px; 
             display: flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #fff;
-            font-size: 14px;
-            background: rgba(0,0,0,0.7);
-            border: 1px solid #555;
-            transition: all 0.15s;
+            gap: 8px;
         }
-        .reply-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .reply-btn:hover, .reply-btn2:hover { background-color: #9147ff; border-color: #fff; transform: scale(1.05);}
-        .chat-line:hover .reply-btn-group { display: flex; }
-        .reply-btn-group { display: none; }
+        #status::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--t-purp);
+            border-radius: 50%;
+            /* GPU 優化: 移除 box-shadow 動畫，改為單純的 opacity 動畫 */
+            animation: pulse-status 2s infinite;
+            will-change: opacity;
+        }
+        @keyframes pulse-status {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        #auth-area { display: flex; align-items: center; gap: 12px; }
+        #userInfo { display: none; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+        #userInfo img { width: 32px; height: 32px; border-radius: var(--radius-round); border: 2px solid var(--bg-surface-active); }
         
+        .btn-primary {
+            background: var(--t-purp); color: white; border: none; border-radius: var(--radius-sm);
+            padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
+            transition: background var(--transition-fast), transform var(--transition-fast);
+        }
+        .btn-primary:hover { background: var(--t-purp-hover); transform: translateY(-1px); }
+        
+        .btn-danger {
+            background: transparent; color: var(--danger); border: 1px solid var(--danger);
+            border-radius: var(--radius-sm); padding: 6px 12px; cursor: pointer; 
+            font-size: 12px; font-weight: 600; transition: all var(--transition-fast);
+        }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        /* =====================
+           Chat Container & Messages
+           ===================== */
+        #chat-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            background: #0e0e10; 
+            scroll-behavior: smooth; 
+            position: relative; 
+            word-wrap: break-word; 
+            overflow-wrap: break-word; 
+            /* GPU 優化: 限制佈局計算範圍 */
+            contain: strict; 
+        }
+        
+        #messages {
+            /* 建立獨立的堆疊上下文，減少重繪影響範圍 */
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-line { 
+            position: relative; 
+            line-height: 1.5; 
+            color: var(--text-main); 
+            transition: background var(--transition-fast); 
+            padding: 6px 2px; 
+            /* GPU 優化: 移除 content-visibility: auto; 避免 Edge 高速捲動時產生 Layout Thrashing */
+            contain: layout style; 
+            display: flex;
+            flex-direction: rows;
+            gap: 2px;
+        }
+        .chat-line:hover { background: rgba(255, 255, 255, 0.03); }
+        .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
+        
+        
+
+        .self-name, .display-name { font-weight: 700; font-size: 16px; }
+        .badge { width: 18px; height: 18px; border-radius: 2px; }
+        
+        /* --- Media Previews --- */
+        #chat-container .media-preview,
+        #chat-container iframe[src*="youtube"],
+        #chat-container blockquote.twitter-tweet,
+        #chat-container iframe[src*="threads"],
+        #chat-container iframe[src*="steampowered"] {
+            width: auto !important; height: auto !important;
+            max-width: 320px !important; max-height: 400px !important;
+            border-radius: var(--radius-md) !important;
+            border: 1px solid var(--border-color) !important;
+            margin: 6px 0 !important; object-fit: cover !important;
+            box-shadow: var(--shadow-md);
+            /* GPU 優化: 強制開啟硬體加速層，避免影片/GIF渲染影響主線程 */
+            transform: translateZ(0); 
+        }
+        #chat-container img.media-preview { max-height: 250px !important; }
+        
+        /* --- Quotes & Mentions --- */
         .quote-box { 
             color: #adadb8; 
             padding: 6px 8px; 
@@ -136,279 +202,314 @@
             word-break: break-word;
         }
         .quote-box:hover { 
-            background: rgba(145, 71, 255, 0.15);
-            border-color: rgba(145, 71, 255, 0.4);
+            background: var(--bg-surface-hover);
+            border-left-color: var(--t-purp);
         }
+        .quote-user { font-weight: 600; color: var(--text-main); margin-right: 4px; }
         
-        .quote-box .quote-box {
-            margin-left: 12px;
-            border-left: 3px solid #9147ff;
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-            background: rgba(20, 20, 30, 0.4);
-        }
-        
-        #scrollToBottomBtn {
-            position: absolute;
-            bottom: 80px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            background: rgba(145, 71, 255, 0.8);
-            color: white;
+        /* User Requirement: Inverse Phase Highlight for @Mentions */
+        .mention-self-tag { 
+            background-color: var(--text-main); 
+            color: var(--text-inverse) !important; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-weight: 700; 
+            display: inline-block; 
+            margin-bottom: 2px; 
             border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
-            font-size: 20px;
+            box-shadow: none; /* explicitly removing glow */
         }
         
-        #scrollToBottomBtn:hover {
-            background: rgba(145, 71, 255, 1);
-            transform: scale(1.1);
+        /* --- Audio & Emoji --- */
+        .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: text-bottom; margin: 0 2px; }
+        .audio-icon-btn { 
+            cursor: pointer; font-size: 18px; vertical-align: middle; 
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; background: var(--bg-surface-active); 
+            border-radius: var(--radius-round); transition: all var(--transition-fast); user-select: none; 
+        }
+        .audio-icon-btn:hover { transform: scale(1.1); background: var(--t-purp-muted); }
+        .audio-icon-btn.playing { 
+            background: var(--t-purp); 
+            color: white; 
+            animation: pulse-audio 1.5s infinite; 
+            will-change: transform; /* GPU 優化 */
         }
         
-        .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-        .show-del .delete-btn { display: block; }
-        .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
-        .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
-        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
-        
+        /* GPU 優化: 避免使用 box-shadow 進行動畫，改用 transform: scale */
         @keyframes pulse-audio {
-            0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- Quick Actions (Reply/Quote) --- */
+        .reply-btn-group {
+            position: absolute; right: 20px; top: -10px;
+            display: flex; gap: 6px; z-index: 10;
+            opacity: 0; transform: translateY(5px);
+            transition: all var(--transition-fast);
+            background: var(--bg-surface);
+            padding: 4px; border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+        .chat-line:hover .reply-btn-group { opacity: 1; transform: translateY(0); }
+        .reply-btn, .reply-btn2 {
+            width: 26px; height: 26px; border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-muted); font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+        .reply-btn img { width: 16px; height: 16px; object-fit: contain; filter: invert(1); opacity: 0.7; }
+        .reply-btn:hover, .reply-btn2:hover { background-color: var(--bg-surface-hover); color: var(--text-main); }
+        .reply-btn:hover img { opacity: 1; }
+
+        /* =====================
+           Footer & Input Area
+           ===================== */
+        .footer { 
+            /* GPU 優化: 移除 backdrop-filter: blur(10px); */
+            background: #121214; 
+            padding: 12px 20px; 
+            border-top: 1px solid var(--border-color); 
+            position: relative; 
+            z-index: 100;
         }
         
-        #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
-        #userInfo img { width: 30px; height: 30px; border-radius: 50%; }
-        #logoutBtn { background: #e91916; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s; margin-left: 8px; }
-        #logoutBtn:hover { background: #c51614; }
-        #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
-        #loginBtn:hover { background: #772ce8; }
-        #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
-        
-        #mention-list {
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            width: 300px;
-            max-height: 350px;
-            background: var(--t-alt);
-            border: 1px solid #333;
-            border-radius: 6px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            z-index: 9999;
-            display: none;
-            overflow-y: auto;
-            padding: 4px 0;
-        }
-        .mention-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
-            color: var(--t-text);
-            font-size: 14px;
-        }
-        .mention-item:hover, .mention-item.selected {
-            background: rgba(145, 71, 255, 0.2);
-        }
-        .mention-item .user-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .mention-item .display-name {
-            font-weight: 600;
-            color: var(--t-purp);
-        }
-        .mention-item .login-name {
-            color: #adadb8;
-            font-size: 12px;
-            margin-left: 4px;
-        }
-        .mention-header {
-            padding: 8px 12px;
-            font-size: 12px;
-            color: #adadb8;
-            border-bottom: 1px solid #333;
-            margin-bottom: 4px;
-            background: rgba(0,0,0,0.2);
-        }
-
-        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
-        #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
-        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
-        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
-        .tool-link:hover { color: #fff; }
-        .tool-link svg { margin-left: 1px; }
-        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
-        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
-        #msginput { 
-            flex: 1; 
-            background: transparent; 
-            border: none; 
-            color: #efeff1; 
-            font-size: 14px; 
-            outline: none; 
-            padding: 10px 0; 
-            font-family: inherit; 
-            box-sizing: border-box; 
-            overflow-wrap: break-word; 
-            max-height: calc(5lh + 20px); 
-            overflow: hidden auto;
-            white-space: pre-wrap;
-            min-height: 20px;
-        }
-        #msginput:empty:before {
-            content: attr(placeholder);
-            color: #777;
-        }
-        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
-        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
-        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
-        #sendbtn:hover { background: #a970ff; }
-        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
-        .setting-btn { cursor: pointer; color: #efeff1; opacity: 0.8; display: flex; align-items: center; }
-        .setting-btn:hover { opacity: 1; color: #9147ff; }
-
-        #voice-btn {
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-
-        #voice-btn:hover {
-            transform: scale(1.1);
-        }
-
-        #voice-btn.recording {
-            color: #e91916;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0.5; }
-        }
-        #emojiPanel { 
-            position: fixed; 
+        #reply-indicator { 
             display: none; 
-            width: 350px; 
-            height: 400px; 
-            background: #1f182e; 
-            border: 2px solid #443a5a; 
-            border-radius: 12px; 
-            z-index: 5000; 
-            left: 50%; 
-            top: 50%; 
-            transform: translate(-50%, -50%); 
-            flex-direction: column; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            cursor: default;
+            align-items: center; justify-content: space-between;
+            color: var(--text-muted); font-size: 13px; 
+            padding: 8px 12px; background: var(--bg-surface); 
+            border-radius: var(--radius-md) var(--radius-md) 0 0; 
+            border: 1px solid var(--border-color); border-bottom: none;
+            margin-bottom: -1px;
+        }
+        #reply-indicator span.user { color: var(--t-purp); font-weight: 600; }
+        .cancel-reply { cursor: pointer; color: var(--text-muted); font-weight: bold; transition: color var(--transition-fast); }
+        .cancel-reply:hover { color: var(--danger); }
+
+        .input-section { display: flex; flex-direction: column; gap: 8px; position: relative; }
+        
+        .tool-bar { display: flex; gap: 12px; align-items: center; padding-left: 4px; }
+        .tool-link { 
+            background: none; border: none; color: var(--text-muted); 
+            cursor: pointer; font-size: 13px; padding: 4px; font-weight: 500; 
+            transition: all var(--transition-fast); display: flex; align-items: center; gap: 4px;
+            border-radius: var(--radius-sm);
+        }
+        .tool-link:hover { color: var(--text-main); background: var(--bg-surface-active); }
+        .tool-link svg { fill: currentColor; width: 16px; height: 16px; }
+
+        .input-box-wrapper { 
+            display: flex; align-items: flex-end; 
+            background: var(--bg-surface); border: 1px solid var(--border-strong); 
+            border-radius: var(--radius-md); padding: 8px 12px; 
+            transition: all var(--transition-fast);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: var(--bg-base); box-shadow: 0 0 0 2px var(--t-purp-muted); }
+        
+        #msginput { 
+            flex: 1; background: transparent; border: none; color: var(--text-main); 
+            font-size: 15px; outline: none; padding: 4px 0; font-family: inherit; 
+            overflow-wrap: break-word; max-height: 150px; overflow: hidden auto;
+            white-space: pre-wrap; min-height: 24px; line-height: 1.5;
+        }
+        #msginput:empty:before { content: attr(placeholder); color: var(--text-muted); pointer-events: none; }
+        #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
+        
+        .action-bar { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+        
+        #voice-btn {
+            background: transparent; border: none; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: var(--radius-round);
+            transition: all var(--transition-fast); color: var(--text-muted);
+        }
+        #voice-btn:hover { background: var(--bg-surface-active); color: var(--text-main); }
+        #voice-btn.recording { color: var(--danger); background: rgba(233, 25, 22, 0.1); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
+
+        #sendbtn { 
+            background: var(--t-purp); border: none; color: white; cursor: pointer; 
+            padding: 8px 20px; border-radius: var(--radius-md); font-weight: 600; font-size: 14px; 
+            transition: all var(--transition-fast);
+        }
+        #sendbtn:hover:not(:disabled) { background: var(--t-purp-hover); transform: translateY(-1px); }
+        #sendbtn:disabled { background: var(--bg-surface-active); color: var(--text-muted); cursor: not-allowed; }
+
+        .setting-btn { 
+            cursor: pointer; color: var(--text-muted); padding: 8px; 
+            border-radius: var(--radius-sm); display: flex; align-items: center;
+            transition: all var(--transition-fast);
+        }
+        .setting-btn:hover { color: var(--t-purp); background: var(--bg-surface-active); }
+
+        #scrollToBottomBtn {
+            position: absolute; top: -60px; right: 20px;
+            width: 44px; height: 44px; 
+            /* GPU 優化: 移除 backdrop-filter */
+            background: #18181b;
+            color: var(--text-main); border: 1px solid var(--border-strong);
+            border-radius: var(--radius-round); cursor: pointer; display: none;
+            align-items: center; justify-content: center; z-index: 100;
+            box-shadow: var(--shadow-md); transition: all var(--transition-fast);
+        }
+        #scrollToBottomBtn:hover { background: var(--t-purp); color: white; border-color: var(--t-purp); transform: translateY(-2px); }
+
+        /* =====================
+           Floating Panels (Emoji & Mentions)
+           ===================== */
+        #emojiPanel { 
+            position: fixed; display: none; width: 380px; height: 450px; 
+            /* GPU 優化: 移除 backdrop-filter: blur(20px); */
+            background: var(--bg-panel); 
+            border: 1px solid var(--border-strong); border-radius: var(--radius-lg); 
+            z-index: 5000; left: 50%; top: 50%; transform: translate(-50%, -50%); 
+            flex-direction: column; box-shadow: var(--shadow-lg); overflow: hidden;
+            /* GPU 優化: 移動時啟用硬體加速 */
+            will-change: left, top;
         }
         #emojiPanel.dragging { cursor: grabbing; }
         .emoji-header { 
-            padding: 12px; 
-            display: flex; 
-            justify-content: space-between; 
-            background: #26262c; 
-            border-radius: 12px 12px 0 0; 
-            align-items: center;
-            cursor: grab;
-            user-select: none;
+            padding: 14px 16px; display: flex; justify-content: space-between; 
+            background: #202024; align-items: center;
+            cursor: grab; border-bottom: 1px solid var(--border-color);
         }
         .emoji-header:active { cursor: grabbing; }
-        #emojiTabs {display: flex;flex-wrap: wrap;background: #1f1f23;padding: 8px;gap: 5px;overflow-x auto;border-bottom: 1px solid #26262c;}
-        #emojiContent { flex: 1;overflow-y: auto;padding: 10px;background: #18181b;display: flex;flex-wrap: wrap;gap: 5px;align-content: flex-start; }
-        .emoji-tab { width: 36px;height: 36px;background: #3a3a3d;border-radius: 4px;cursor: pointer;background-size: cover;background-position: center;flex-shrink: 0; }
-        .emoji-item { position: relative;width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-        .emoji-item img {width: 40px;height: 40px;border-radius: 4px;cursor: pointer;}
-        .bttv-input-area, .audio-input-form { width: 100%;display: flex;gap: 6px;margin-bottom: 10px; }
-        .custom-input { background: #000; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; }
+        .emoji-header b { font-size: 15px; color: var(--text-main); }
+        
+        #emojiTabs { display: flex; flex-wrap: wrap; background: rgba(0,0,0,0.1); padding: 10px; gap: 8px; border-bottom: 1px solid var(--border-color); }
+        .emoji-tab { 
+            width: 32px; height: 32px; background: var(--bg-surface-active); border-radius: var(--radius-sm); 
+            cursor: pointer; background-size: cover; background-position: center; 
+            transition: transform var(--transition-fast), opacity var(--transition-fast);
+        }
+        .emoji-tab:hover { transform: scale(1.1); }
+        
+        #emojiContent { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+        .emoji-item { position: relative; width: 44px; height: 44px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--transition-fast); }
+        .emoji-item:hover { background: var(--bg-surface-hover); }
+        .emoji-item img { max-width: 40px; max-height: 40px; border-radius: 4px; }
+        
+        .bttv-input-area, .audio-input-form { width: 100%; display: flex; gap: 8px; margin-bottom: 12px; }
+        .custom-input { background: var(--bg-base); border: 1px solid var(--border-strong); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-sm); font-family: inherit; }
+        .custom-input:focus { outline: none; border-color: var(--t-purp); }
+        
+        .delete-btn { 
+            position: absolute; top: -6px; right: -6px; background: var(--danger); color: white; 
+            width: 20px; height: 20px; border-radius: var(--radius-round); font-size: 12px; 
+            display: none; align-items: center; justify-content: center; cursor: pointer; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: bold;
+        }
+        .show-del .delete-btn { display: flex; }
+        .audio-item { 
+            cursor: pointer; background: var(--bg-surface); border: 1px solid var(--border-color); 
+            border-radius: var(--radius-md); padding: 10px; text-align: center; font-size: 12px; 
+            position: relative; color: var(--text-main); width: calc(33.33% - 6px);
+            transition: all var(--transition-fast);
+        }
+        .audio-item:hover { border-color: var(--t-purp); background: var(--bg-surface-hover); }
+
+        #mention-list {
+            position: absolute; bottom: calc(100% + 10px); left: 0; width: 320px; max-height: 350px;
+            /* GPU 優化: 移除 backdrop-filter: blur(20px); */
+            background: var(--bg-panel); 
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 9999;
+            display: none; overflow-y: auto; padding: 6px 0;
+            will-change: transform, opacity;
+        }
+        .mention-header { padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .mention-item {
+            padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px;
+            transition: background var(--transition-fast); color: var(--text-main);
+        }
+        .mention-item:hover, .mention-item.selected { background: var(--bg-surface-active); }
+        .mention-item .user-avatar { width: 28px; height: 28px; border-radius: var(--radius-round); object-fit: cover; }
+        .mention-item .display-name { font-weight: 600; color: var(--text-main); }
+        .mention-item .login-name { color: var(--text-muted); font-size: 13px; }
     </style>
 </head>
-<body onload="initApp()">
+<body>
 
-<div class="header-bar">
+<header class="header-bar">
     <div id="status">載入中...</div>
     <div id="auth-area">
-        <div id="userInfo" style="display:none;">
+        <div id="userInfo">
             <img id="userAvatar" src="" alt="頭像">
-            <span id="userName" style="display:none;"></span>
-            <button id="logoutBtn">登出</button>
+            <span id="userName"></span>
+            <button id="logoutBtn" class="btn-danger">登出</button>
         </div>
-        <button id="loginBtn">以TWITCH登入</button>
+        <button id="loginBtn" class="btn-primary">連線 Twitch</button>
     </div>
-</div>
+</header>
 
-<div id="chat-container">
+<main id="chat-container">
     <div id="messages"></div>
-</div>
+</main>
 
 <div id="mention-list"></div>
 
 <div id="emojiPanel">
     <div class="emoji-header">
-        <b style="font-size:14px;">資源庫 (表情/音訊)</b>
-        <button id="emojiCloseBtn" style="background:none; border:none; color:white; cursor:pointer; font-size:18px;">✕</button>
+        <b>資源庫 (表情/音訊)</b>
+        <button id="emojiCloseBtn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px; transition: color 0.2s;">✕</button>
     </div>
     <div id="emojiTabs"></div>
     <div id="emojiContent"></div>
 </div>
 
-<div class="footer">
+<footer class="footer">
     <div id="reply-indicator">
-        正在回覆 <span id="replying-to-user" style="color:#9147ff; font-weight:bold;"></span> 
-        <span onclick="cancelReply()" style="float:right; cursor:pointer; color:#efeff1;">✕ 取消回覆</span>
+        <div>正在回覆 <span id="replying-to-user" class="user"></span></div>
+        <div class="cancel-reply" onclick="cancelReply()">✕</div>
     </div>
     
     <div class="input-section">
         <div class="tool-bar">
-            <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
-            <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
-            <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
-            <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
-        </div>
-        
-        <div class="input-box-wrapper">
-            <div id="msginput" contenteditable="true" placeholder="傳送訊息..." autocomplete="off" disabled></div>
-            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-                <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
-                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                </svg>
+            <button class="tool-link" onclick="insertTagOnly('[s] ')" title="插入圖片">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> 圖片
             </button>
-			
-        </div>
-
-        <div class="action-bar">
-		<div class="setting-btn" title="點擊切換聊天頻道">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <button class="tool-link" onclick="insertTagOnly('[y] ')" title="插入影片">
+                <svg viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg> 影片
+            </button>
+            <button class="tool-link" onclick="insertTagOnly('[a] ')" title="插入音訊">
+                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg> 音訊
+            </button>
+            <div class="setting-btn" title="切換聊天頻道">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
                 </svg>
             </div>
-			<button class="tool-link" id="voice-btn" onclick="toggleRecording()" title="錄製語音">🗣📢</button>
-<span id="recording-status" style="color: #e91916; font-size: 10px; display: none; margin-left: 10px;"></span>
-            <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
-			
+            <span id="recording-status" style="color: var(--danger); font-size: 11px; display: none; font-weight: 600;">上傳中...</span>
         </div>
-		
+        
+        <div class="input-box-wrapper">
+            <button id="scrollToBottomBtn" title="滾動到最新訊息">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+            </button>
+            <div id="msginput" contenteditable="plaintext-only" placeholder="傳送訊息到聊天室..." autocomplete="off" disabled></div>
+            
+            <div class="action-bar">
+                <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')" title="表情/資源庫">
+                    <svg width="24" height="24" viewBox="0 0 20 20" fill="var(--t-purp)"><path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/></svg>
+                </button>
+                <button id="voice-btn" onclick="toggleRecording()" title="錄製語音">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                </button>
+                <button id="sendbtn" onclick="sendMessage()" disabled>傳送</button>
+            </div>
+        </div>
     </div>
-</div>
+</footer>
 
 <script>
-// ===================== 重要設定 =====================
+// =====================
+// Global Configuration & Variables
+// =====================
 const CLIENT_ID = '0uhjgjpko804ba35q1nj1h6x2eriq9';
 let CHANNEL = "whitewing940920"; 
 const savedChannel = localStorage.getItem('twitch_channel');
@@ -417,11 +518,8 @@ if (savedChannel) CHANNEL = savedChannel;
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
 const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
 
-// ===================== CPU 優化全局變數 =====================
-let messageBuffer = []; // 頁面隱藏時的訊息暫存
+let messageBuffer = []; 
 const MAX_BUFFER_SIZE = 50;
-
-// ===================== 原有全局變數 =====================
 let ACCESS_TOKEN = "";
 let myLoginId = "";
 let myDisplayName = "";
@@ -446,9 +544,8 @@ let dragging = false;
 let offsetX = 0, offsetY = 0;
 let autoScroll = true;
 let scrollTimeout = null;
-let scrollRequestActive = false; 
 const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
-const MAX_MESSAGES = 70;
+const MAX_MESSAGES = 40;
 let recentUsers = [];
 let seenUsersSet = new Set(); 
 let mentionListVisible = false;
@@ -456,7 +553,9 @@ let mentionSelectedIndex = 0;
 let mentionSearchTerm = "";
 const MAX_RTAG_DEPTH = 5;
 
-// 预编译正则
+// =====================
+// Regular Expressions (Preserved)
+// =====================
 const RE_S_TAG = /\[S\](.*?)E\]/g;
 const RE_s_TAG = /\[s\](.*?)e\]/g;
 const RE_s_URL = /\[s\]\s*([^\s\[]+)/gi;
@@ -471,23 +570,30 @@ const RE_IS_THREADS = /www\.threads\.com/i;
 const RE_IS_VIDEO_EXT = /\.(webm|mp4|m3u8|flv)/i;
 const RE_IS_STEAM = /steampowered|steamcommunity/i;
 
-// ===================== 工具函數 =====================
+// =====================
+// Utilities
+// =====================
 function getParameterByName(name, url) {
     name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
     let regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
     let results = regex.exec(url);
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
+
 function getTagValue(tags, key) { 
     const regex = new RegExp(`(?:^|;)${key}=([^;\\s]+)`); 
     const match = tags.match(regex); 
     return match ? match[1] : null; 
 }
+
 function limitMessages() {
-    const $msgs = $("#messages");
-    const children = $msgs.children();
-    if(children.length > MAX_MESSAGES) children.slice(0, children.length - MAX_MESSAGES).remove();
+    const msgs = document.getElementById('messages');
+    // CPU 最佳化：使用原生的 firstElementChild 移除多餘節點，避免重新建構 DOM 陣列
+    while (msgs.childElementCount > MAX_MESSAGES) {
+        msgs.removeChild(msgs.firstElementChild);
+    }
 }
+
 function getUserDisplayName(userId, fallbackName) {
     if(userCache[userId]) return userCache[userId];
     const keys = Object.keys(msgCache);
@@ -507,6 +613,7 @@ function getUserDisplayName(userId, fallbackName) {
     }
     return fallbackName || userId;
 }
+
 function renderBadges(badgeStr) {
     if(!badgeStr) return "";
     let html = "";
@@ -519,43 +626,19 @@ function renderBadges(badgeStr) {
 }
 function getMyBadges() { return myBadges || ""; }
 
-// ===================== 捲動相關 (已修復返回分頁捲動問題) =====================
+// =====================
+// Scrolling Mechanics (CPU Optimized)
+// =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
-
     const chat = document.getElementById('chat-container');
     if (!chat) return;
 
-    let attempts = 0;
-    const maxAttempts = 20;      // 最多嘗試 20 次
-    const baseDelay = 16;        // 約一幀時間
-
-    function scrollNow() {
+    // CPU 最佳化：移除 setTimeout 的 Layout Thrashing，改用 requestAnimationFrame 批次執行
+    requestAnimationFrame(() => {
         chat.scrollTop = chat.scrollHeight + 9999;
-        // 回報當前滾動位置（可選）
-        // console.log(`scrollNow: scrollTop=${chat.scrollTop}, scrollHeight=${chat.scrollHeight}, clientHeight=${chat.clientHeight}`);
-    }
+    });
 
-    function tryScroll() {
-        scrollNow();
-        const isAtBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 5;
-        if (!isAtBottom && attempts < maxAttempts) {
-            attempts++;
-            // 使用指數退避延遲，讓媒體加載有更多時間完成
-            const delay = baseDelay * Math.min(Math.pow(1.2, attempts), 8);
-            setTimeout(tryScroll, delay);
-        } else if (!isAtBottom && attempts >= maxAttempts) {
-            // 最終強制再滾一次
-            scrollNow();
-        }
-    }
-
-    // 立即執行第一次
-    scrollNow();
-    // 啟動遞迴檢查
-    tryScroll();
-
-    // 額外處理：監聽容器內所有媒體加載完成事件，再次滾動
     if (force) {
         const mediaElements = chat.querySelectorAll('img, iframe, video');
         let pending = mediaElements.length;
@@ -563,9 +646,9 @@ function forceScrollToBottom(force = false) {
         const onLoad = () => {
             pending--;
             if (pending === 0) {
-                scrollNow();
-                // 短暫延遲後再試一次，確保高度完全收斂
-                setTimeout(scrollNow, 50);
+                requestAnimationFrame(() => {
+                    chat.scrollTop = chat.scrollHeight + 9999;
+                });
             }
         };
         mediaElements.forEach(el => {
@@ -583,30 +666,29 @@ let mediaScrollTimer = null;
 function onMediaLoaded() { 
     if (!autoScroll) return;
     if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
+    // CPU 最佳化：僅需一次滾動即可，避免過度計算
     mediaScrollTimer = setTimeout(() => forceScrollToBottom(false), 50);
 }
 
-// 優化：處理隱藏分頁時的訊息緩衝
 function appendMessageWithScroll(html) {
     if (document.hidden) {
         messageBuffer.push(html);
         if (messageBuffer.length > MAX_BUFFER_SIZE) messageBuffer.shift();
         return;
     }
-    $("#messages").append(html);
+    // CPU 最佳化：使用原生的 insertAdjacentHTML 替代 jQuery 的 append
+    const msgs = document.getElementById('messages');
+    msgs.insertAdjacentHTML('beforeend', html);
     limitMessages();
     if (autoScroll) forceScrollToBottom(false);
 }
 
-// 監聽頁面可見性變化
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden && messageBuffer.length > 0) {
-        // 返回網頁時，一次性批次渲染緩存訊息
-        const $msgs = $("#messages");
-        $msgs.append(messageBuffer.join(''));
+        const msgs = document.getElementById('messages');
+        msgs.insertAdjacentHTML('beforeend', messageBuffer.join(''));
         messageBuffer = [];
         limitMessages();
-        // 渲染後強制捲動到底部
         forceScrollToBottom(true);
     }
 });
@@ -617,6 +699,7 @@ function checkScrollPosition() {
     autoScroll = isAtBottom;
     if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
 }
+
 function setupScrollListener() {
     const chat = document.getElementById('chat-container');
     chat.addEventListener('scroll', () => {
@@ -624,16 +707,22 @@ function setupScrollListener() {
         scrollTimeout = setTimeout(checkScrollPosition, 100);
     }, { passive: true });
 }
+
 function scrollToMsg(msgId) {
     let $msg = $(`.id-${msgId}`);
     if($msg.length){
         let container = $("#chat-container")[0];
         let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
         container.scrollTo({ top: top, behavior: 'smooth' });
+        // Highlight effect
+        $msg.css('background', 'var(--t-purp-muted)');
+        setTimeout(() => $msg.css('background', ''), 1500);
     }
 }
 
-// ===================== 重連機制 =====================
+// =====================
+// Connection Management
+// =====================
 function scheduleReconnect() {
     if (reconnectTimer) clearTimeout(reconnectTimer);
     let delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
@@ -645,6 +734,7 @@ function scheduleReconnect() {
         }
     }, delay);
 }
+
 function clearReconnectTimer() {
     if (reconnectTimer) {
         clearTimeout(reconnectTimer);
@@ -653,7 +743,9 @@ function clearReconnectTimer() {
     reconnectAttempts = 0;
 }
 
-// ===================== 核心解析函數 =====================
+// =====================
+// Content Parsers
+// =====================
 function parseContent(str) {
     try {
         if (!str) return str;
@@ -714,7 +806,7 @@ function parseContent(str) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
                 e = `<div class="twitter-tweet-container" style="max-height:400px; height:400px; overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
             } else {
-                e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
+                e = `<a href="${b}" target="_blank" style="color:var(--t-purp);">${b}</a>`;
             }
             placeholders.push(e);
             return id;
@@ -733,19 +825,19 @@ function parseContent(str) {
                 let twUrl = b.replace('https://x.com', 'https://twitter.com');
                 e = `<div class="twitter-tweet-container" style="max-height:400px; height:400px; overflow:hidden;"><blockquote class="twitter-tweet"><a href="${twUrl}"></a></blockquote></div><script async src="https://platform.twitter.com/widgets.js" onload="onMediaLoaded()"><\/script>`;
             } else {
-                e = `<a href="${b}" target="_blank" style="color:#58a6ff;">${b}</a>`;
+                e = `<a href="${b}" target="_blank" style="color:var(--t-purp);">${b}</a>`;
             }
             placeholders.push(e);
             return id;
         });
         a = a.replace(RE_a_TAG, (m, url) => {
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url.trim()}')" data-is-playing="false" title="點擊播放">🔈</span>`);
+            placeholders.push(`<span class="audio-icon-btn" onclick="handleAudioClick(this, '${url.trim()}')" data-is-playing="false" title="點擊播放"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></span>`);
             return id;
         });
         a = a.replace(RE_HTTP_LINK, (match, space, url) => {
             if (url.includes('__PH_')) return match;
-            return space + `<a href="${url}" target="_blank" style="color:#58a6ff;">${url}</a>`;
+            return space + `<a href="${url}" target="_blank" style="color:var(--t-purp);">${url}</a>`;
         });
         let words = a.split(' ');
         a = words.map(w => {
@@ -760,29 +852,61 @@ function parseContent(str) {
         return str;
     }
 }
+
 function processRTag(str, depth = 0) {
     if (!str) return str;
     if (depth > MAX_RTAG_DEPTH) return '[遞迴引用達最大深度]';
     return str.replace(/\[r\]([^,]+),([0-9]+)\[m\]/gi, (match, login, ts) => {
         const displayName = getUserDisplayName(login, login);
         const isSelf = (myLoginId && login === myLoginId);
-        const mentionHtml = isSelf ? `<span class="mention-self-tag">@${myDisplayName || displayName}</span>` : `@${displayName}`;
-        const quotedMsg = msgCache[ts];
-        if (!quotedMsg || !quotedMsg.content) return mentionHtml;
-        let quotedContent = quotedMsg.content;
+        const mentionHtml = isSelf ? `<span class="mention-self-tag">@${myDisplayName || displayName}</span>` : `<span style="font-weight:600; color:var(--text-main);">@${displayName}</span>`;
+        let quotedMsg = msgCache[ts];
+        let foundContent = null;
+        
+        if ((!quotedMsg || !quotedMsg.content) && login === myLoginId) {
+            let bestMatch = null;
+            let bestDiff = Infinity;
+            const targetTs = parseInt(ts, 10);
+            if (!isNaN(targetTs)) {
+                for (let key in msgCache) {
+                    const m = msgCache[key];
+                    if (m && m.user && (m.user.login === myLoginId || m.user === myLoginId)) {
+                        const mTs = parseInt(m.timestamp, 10);
+                        if (!isNaN(mTs)) {
+                            const diff = Math.abs(mTs - targetTs);
+                            if (diff < bestDiff) {
+                                bestDiff = diff;
+                                bestMatch = m;
+                            }
+                        }
+                    }
+                }
+            }
+            if (bestMatch && bestMatch.content) foundContent = bestMatch.content;
+            if (!foundContent) return mentionHtml; 
+        } else if (quotedMsg && quotedMsg.content) {
+            foundContent = quotedMsg.content;
+        } else {
+            return mentionHtml;
+        }
+        
+        let quotedContent = foundContent;
         if (quotedContent.includes(`[r]${login},${ts}[m]`)) return `${mentionHtml}:${parsedQuote}`;
         const parsedQuote = parseContent(processRTag(quotedContent, depth + 1));
-        return `<div class="quote-box"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor" style="vertical-align: middle;"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 引用${mentionHtml}:${parsedQuote}</div>`;
+        return `<div class="quote-box" onclick="scrollToMsg('${ts}')">回覆 ${mentionHtml}: ${parsedQuote}</div>`;
     });
 }
 
-// ===================== 資源載入與表情面板 =====================
+// =====================
+// Resources & Assets (Emojis/Audio)
+// =====================
 async function fetchBadges() {
     try {
         const res = await fetch('https://chicktv.github.io/tv/badges.txt');
         customBadges = await res.json();
     } catch(e) { console.error(e); customBadges = {}; }
 }
+
 async function loadAudioData() {
     try {
         const remote = await fetch('https://chicktv.github.io/tv/audio.txt').then(r => r.json());
@@ -790,116 +914,128 @@ async function loadAudioData() {
         audioLists["音訊"] = { audios: mergeAudioLists(remote, local), image: "🔊" };
     } catch(e) { audioLists["音訊"] = { audios: JSON.parse(localStorage.getItem('myAudios') || '[]'), image: "🔊" }; }
 }
+
 function mergeAudioLists(remote, local) {
     const merged = [...remote];
     const set = new Set(remote.map(a => a.url));
-local.forEach(l => { if(!set.has(l.url)) { merged.push(l); set.add(l.url); } });
+    local.forEach(l => { if(!set.has(l.url)) { merged.push(l); set.add(l.url); } });
     return merged;
 }
+
 async function loadResources() {
     try {
         const sk = await $.getJSON("https://live.sk-knower.com/lib/iconjsonp.php?channel=whitewing940920");
         if (Array.isArray(sk)) {
-            emojiLists["本台"] = { emojis: sk, image: sk[0].src , image: "https://chicktv.github.io/tv/chick.png" };
+            emojiLists["本台"] = { emojis: sk, image: "https://chicktv.github.io/tv/chick.png" };
             sk.forEach(i => { if(i.alt) altMap[i.alt.toLowerCase()] = i.src; });
         }
-        const savedBTTV = JSON.parse(localStorage.getItem('myBTTV') || '[]');
-            emojiLists["BTTV"] = {
-                emojis: savedBTTV.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url, dis: url })),
-                image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3"
-            };
+        const bttv = JSON.parse(localStorage.getItem('myBTTV') || '[]');
+        emojiLists["BTTV"] = { emojis: bttv.map(url => ({ alt: url.split('/').pop().split('?')[0], src: url })), image: "https://static-cdn.jtvnw.net/badges/v1/ed51a614-2c44-4a60-80b6-62908436b43a/3" };
         await loadAudioData();
-          const shows = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
-for (let item of shows.set) {
-    let n = typeof item === 'object' ? item.name : item;
-    let img = typeof item === 'object' ? item.image : "";
-    
-    if (!n || n === "skuser_icon") continue;
+        const shows = await $.getJSON("https://chicktv.github.io/tv/showset.txt");
+        for (let item of shows.set) {
+            let n = typeof item === 'object' ? item.name : item;
+            let img = typeof item === 'object' ? item.image : "";
+            
+            if (!n || n === "skuser_icon") continue;
 
-    // 判斷請求路徑：如果是 emoticon 則使用 GitHub，否則使用 sk-knower API
-    let url = (n === "twitch") 
-        ? `https://chicktv.github.io/tv/${n}.txt` 
-        : `https://sk-knower.com/sklive_api/read/skchat_icon.php?set=${n}`;
+            let url = (n === "twitch") 
+                ? `https://chicktv.github.io/tv/${n}.txt` 
+                : `https://sk-knower.com/sklive_api/read/skchat_icon.php?set=${n}`;
 
-    $.getJSON(url, d => {
-        let list = d[n] || [];
-        emojiLists[n] = { emojis: list, image: img };
-        list.forEach(e => { 
-            if(e.alt) altMap[e.alt.toLowerCase()] = e.src; 
-        });
-    });
-}
+            $.getJSON(url, d => {
+                let list = d[n] || [];
+                emojiLists[n] = { emojis: list, image: img };
+                list.forEach(e => { 
+                    if(e.alt) altMap[e.alt.toLowerCase()] = e.src; 
+                });
+            });
+        }
     } catch(e) { console.error(e); }
 }
+
 function renderEmojiPanel() {
     const tabs = $("#emojiTabs").empty();
     Object.keys(emojiLists).forEach((name, i) => {
         const tab = $('<div class="emoji-tab"></div>')
             .css("background-image", `url(${emojiLists[name].image})`)
             .attr("title", name)
-            .on('click', function() { $(".emoji-tab").css("opacity", "0.6"); $(this).css("opacity", "1"); renderTabContent(name); });
+            .on('click', function() { $(".emoji-tab").css("opacity", "0.5"); $(this).css("opacity", "1"); renderTabContent(name); });
         if(i===0) tab.css("opacity","1");
+        else tab.css("opacity", "0.5");
         tabs.append(tab);
     });
-    const audioTab = $('<div class="emoji-tab" style="color:white;text-align:center;line-height:32px;">🔊</div>')
-        .on('click', function() { $(".emoji-tab").css("opacity", "0.6"); $(this).css("opacity", "1"); renderTabContent("音訊"); });
+    const audioTab = $('<div class="emoji-tab" style="color:white;text-align:center;line-height:32px;opacity:0.5;font-size:18px;">🔊</div>')
+        .on('click', function() { $(".emoji-tab").css("opacity", "0.5"); $(this).css("opacity", "1"); renderTabContent("音訊"); });
     tabs.append(audioTab);
     renderTabContent(Object.keys(emojiLists)[0]);
 }
+
 function renderTabContent(name) {
     const content = $("#emojiContent").empty();
-     if (name === "BTTV") {
-            content.append(`
-                <div class="bttv-input-area">
-                    <input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1">
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="addBTTV()" style="background:var(--t-purp); color:white; border:none; border-radius:4px; cursor:pointer; padding:5px 15px;">儲存</button>
-                        <button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'}; color:white; border:none; border-radius:4px; padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button>
-                    </div>
-                </div>`);
-            emojiLists[name].emojis.forEach(e => {
-                const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
-                item.on('click', () => { 
-                    if(!isDeleteMode) { 
-                        insertTextAtCursor(` [s] ${e.src} [e] `); 
-                        $("#emojiPanel").hide(); 
-                    } 
-                });
-                content.append(item);
-            });
+    if (name === "BTTV") {
+        content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" class="btn-primary">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" class="btn-danger">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
+        emojiLists[name].emojis.forEach(e => {
+            const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" loading="lazy"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
+            item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` [s] ${e.src} [e] `); $("#emojiPanel").hide(); } });
+            content.append(item);
+        });
     } else if (name === "音訊") {
-        content.append(`<div class="audio-input-form" style="flex-wrap:wrap"><input type="text" id="audioName" class="custom-input" placeholder="音訊名稱" style="flex:1;min-width:120px;"><input type="text" id="audioUrl" class="custom-input" placeholder="音訊網址" style="flex:2;min-width:180px;"><div style="display:flex;gap:5px;"><button onclick="addAudio()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存音訊</button><button onclick="isAudioDeleteMode=!isAudioDeleteMode;renderTabContent('音訊')" style="background:${isAudioDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isAudioDeleteMode?'取消':'刪除'}</button></div></div>`);
+        content.append(`<div class="audio-input-form" style="flex-wrap:wrap"><input type="text" id="audioName" class="custom-input" placeholder="名稱" style="flex:1;min-width:100px;"><input type="text" id="audioUrl" class="custom-input" placeholder="網址" style="flex:2;min-width:150px;"><div style="display:flex;gap:5px;width:100%;"><button onclick="addAudio()" class="btn-primary" style="flex:1">儲存音訊</button><button onclick="isAudioDeleteMode=!isAudioDeleteMode;renderTabContent('音訊')" class="btn-danger">${isAudioDeleteMode?'取消':'管理/刪除'}</button></div></div>`);
         audioLists[name].audios.forEach((a, idx) => {
-            const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">🔊<br>${a.name}<div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${idx})">✕</div></div>`);
+            const item = $(`<div class="audio-item ${isAudioDeleteMode ? 'show-del' : ''}">🔊<br><span style="margin-top:4px;display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">${a.name}</span><div class="delete-btn" onclick="event.stopPropagation();deleteAudio(${idx})">✕</div></div>`);
             item.on('click', () => { if(!isAudioDeleteMode) { insertTextAtCursor(` [a] ${a.url} [o] `); $("#emojiPanel").hide(); } });
             content.append(item);
         });
     } else {
         emojiLists[name].emojis.forEach(e => {
             $('<div class="emoji-item"></div>')
-                .append($('<img style="max-width:40px;" loading="lazy">').attr('src', e.src))
+                .append($('<img loading="lazy">').attr('src', e.src))
                 .on('click', () => { insertTextAtCursor(` ${e.alt} `); $('#emojiPanel').hide(); })
                 .appendTo(content);
         });
     }
 }
+
 function insertTextAtCursor(text) {
     const el = document.getElementById('msginput');
     if (!el) return;
     el.focus();
-    if (document.queryCommandSupported('insertText')) document.execCommand('insertText', false, text);
-    else {
-        const sel = window.getSelection();
-        if (sel.rangeCount) {
-            const range = sel.getRangeAt(0);
-            range.deleteContents();
-            range.insertNode(document.createTextNode(text));
-            range.collapse(false);
-            sel.removeAllRanges(); sel.addRange(range);
-        } else el.textContent += text;
+    
+    const sel = window.getSelection();
+    const isCollapsed = sel.rangeCount > 0 ? sel.getRangeAt(0).collapsed : true;
+    const hasSelection = sel.toString().length > 0;
+    
+    if (!hasSelection && isCollapsed) {
+        const currentText = el.textContent;
+        const newText = currentText + text;
+        el.textContent = newText;
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else {
+        if (document.queryCommandSupported('insertText')) {
+            document.execCommand('insertText', false, text);
+        } else {
+            if (sel.rangeCount) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(text));
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                el.textContent += text;
+            }
+        }
     }
+    el.dispatchEvent(new Event('input', { bubbles: true }));
 }
+
 function insertTagOnly(s) { insertTextAtCursor(s); }
+
 window.addBTTV = () => {
     const url = $("#bttvUrl").val().trim();
     if(!url) return;
@@ -944,7 +1080,6 @@ window.handleAudioClick = (btn, url) => {
         btn.currentAudio = audio;
         btn.dataset.isPlaying = "true";
         btn.classList.add('playing');
-        btn.innerHTML = '🔊';
         btn.title = '播放中...';
         audio.play().catch(()=>resetAudioState(btn));
         audio.onended = ()=>resetAudioState(btn);
@@ -953,15 +1088,17 @@ window.handleAudioClick = (btn, url) => {
 function resetAudioState(btn){
     btn.dataset.isPlaying = "false";
     btn.classList.remove('playing');
-    btn.innerHTML = '🔈';
     btn.title = '點擊播放';
     btn.currentAudio = null;
 }
 
-// ===================== 語音錄製 =====================
+// =====================
+// Voice Recording
+// =====================
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
+
 async function toggleRecording() {
     const btn = document.getElementById('voice-btn');
     const status = document.getElementById('recording-status');
@@ -973,16 +1110,14 @@ async function toggleRecording() {
             mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
-                if (status) { status.style.display = "inline"; status.textContent = ""; }
+                if (status) { status.style.display = "inline-block"; }
                 await uploadAudioAndInsertTag(audioBlob);
                 if (status) status.style.display = 'none';
-                btn.textContent = "🗣📢";
-                btn.style.color = "";
+                btn.classList.remove('recording');
             };
             mediaRecorder.start();
             isRecording = true;
-            btn.textContent = "🟥";
-            btn.style.color = "#e91916";
+            btn.classList.add('recording');
         } catch (err) { alert("無法開啟麥克風: " + err); }
     } else {
         mediaRecorder.stop();
@@ -990,6 +1125,7 @@ async function toggleRecording() {
         isRecording = false;
     }
 }
+
 async function uploadAudioAndInsertTag(blob) {
     const tmpFormData = new FormData();
     tmpFormData.append('file', blob, `voice_${Date.now()}.mp3`);
@@ -1006,16 +1142,19 @@ async function uploadAudioAndInsertTag(blob) {
         } else { alert("上傳失敗"); }
     } catch (error) { console.error("Upload error:", error); alert("上傳出錯"); }
 }
+
 function insertVoiceTag(url) {
     const input = document.getElementById('msginput');
-    if (!input) { console.error("找不到輸入框 #msginput"); return; }
+    if (!input) return;
     input.focus();
-    const finalTag = `[a] ${url} [o]`;
+    const finalTag = `[a] ${url} [o] `;
     document.execCommand('insertText', false, finalTag);
     input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-// ===================== @提及功能 =====================
+// =====================
+// @Mentions Logic
+// =====================
 function setupMentionEvents() {
     const input = document.getElementById('msginput');
     input.addEventListener('input', handleMentionInput);
@@ -1024,6 +1163,7 @@ function setupMentionEvents() {
         if (!e.target.closest('#mention-list') && !e.target.closest('#msginput')) hideMentionList();
     });
 }
+
 function handleMentionInput(e) {
     const input = e.target;
     const sel = window.getSelection();
@@ -1071,17 +1211,27 @@ function handleMentionKeydown(e) {
 function showMentionList(users, atPos) {
     const list = document.getElementById('mention-list');
     list.innerHTML = '';
-    const header = document.createElement('div'); header.className = 'mention-header'; header.textContent = `選擇用戶 (${users.length})`;
+    const header = document.createElement('div'); 
+    header.className = 'mention-header'; 
+    header.textContent = `選擇用戶 (${users.length})`;
     list.appendChild(header);
+    
     users.forEach((u, idx) => {
-        const item = document.createElement('div'); item.className = 'mention-item'; if(idx===0) item.classList.add('selected');
+        const item = document.createElement('div'); 
+        item.className = 'mention-item'; 
+        if(idx===0) item.classList.add('selected');
         let badgeHtml = u.badges ? renderBadges(u.badges) : '';
         item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy">${badgeHtml}<span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
-        item.dataset.login = u.login; item.dataset.displayName = u.displayName;
+        item.dataset.login = u.login; 
+        item.dataset.displayName = u.displayName;
         item.addEventListener('click', () => selectMentionUser(item));
         list.appendChild(item);
     });
-    list.style.display = 'block'; mentionListVisible = true; mentionSelectedIndex = 0;
+    
+    list.style.display = 'block'; 
+    mentionListVisible = true; 
+    mentionSelectedIndex = 0;
+    
     const input = document.getElementById('msginput');
     const footer = document.querySelector('.footer');
     const span = document.createElement('span');
@@ -1090,9 +1240,11 @@ function showMentionList(users, atPos) {
     document.body.appendChild(span);
     const x = span.offsetWidth;
     document.body.removeChild(span);
-    list.style.left = x + 'px';
+    
+    list.style.left = Math.min(x + 20, window.innerWidth - 320) + 'px';
     list.style.bottom = (footer.offsetHeight + 10) + 'px';
 }
+
 function updateMentionSelection() {
     const items = document.querySelectorAll('.mention-item');
     items.forEach((item, i) => {
@@ -1100,6 +1252,7 @@ function updateMentionSelection() {
         else item.classList.remove('selected');
     });
 }
+
 function selectMentionUser(item) {
     const input = document.getElementById('msginput');
     const sel = window.getSelection();
@@ -1113,6 +1266,7 @@ function selectMentionUser(item) {
         input.focus();
     }
 }
+
 function hideMentionList() {
     const list = document.getElementById('mention-list');
     list.style.display = 'none';
@@ -1120,60 +1274,74 @@ function hideMentionList() {
     mentionSelectedIndex = 0;
 }
 
-// ===================== 發送訊息 =====================
+// =====================
+// Sending and Rendering Messages
+// =====================
 function sendMessage() {
     const input = document.getElementById('msginput');
     let val = input.textContent.trim();
     if(!val || !socket || socket.readyState !== 1) return;
     if(val.length > 500){ alert('訊息超過500字元'); return; }
+    
     let selfTs = Date.now().toString();
     let finalCmd = "", replyDisplay = "";
     let myBadgeStr = getMyBadges();
     let badgeHtml = renderBadges(myBadgeStr);
+    let processedContentForDisplay = processRTag(val, 0);
+    
     if(pendingReply.id){
         finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
         let repliedMsg = msgCache[pendingReply.id];
         let rawQuote = repliedMsg ? (typeof repliedMsg === 'object' ? repliedMsg.content : repliedMsg) : "...";
         let parsedQuote = parseContent(rawQuote);
         let displayNameToShow = pendingReply.displayName || pendingReply.user;
-        replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="quote-user">@${displayNameToShow}:</span>${parsedQuote}</div>`;
+        replyDisplay = `<div class="quote-box" onclick="scrollToMsg('${pendingReply.id}')">回覆 <span class="quote-user">@${displayNameToShow}:</span> ${parsedQuote}</div>`;
     } else {
         finalCmd = `PRIVMSG #${CHANNEL} :${val}`;
     }
+    
     socket.send(finalCmd);
     
-    const selfMsgRecord = { content: val, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: Date.now() };
+    const selfMsgRecord = { content: processedContentForDisplay, user: { login: myLoginId, displayName: myDisplayName }, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar, timestamp: Date.now() };
     msgCache[selfTs] = selfMsgRecord;
     addRecentUser({ login: myLoginId, displayName: myDisplayName, badges: myBadgeStr, avatar: myAvatar });
 
+    // Modified self-name logic to use Display Name or Login ID
+    const nameToDisplay = myDisplayName || myLoginId;
     let line = `<div class="chat-line ts-${selfTs} id-${selfTs}" data-user-login="${myLoginId}" data-msg-ts="${selfTs}">
         <div class="reply-btn-group">
             <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
             <div class="reply-btn2" onclick="insertRecursiveQuote('${myLoginId}','${selfTs}')" title="sk回覆格式">🔗</div>
         </div>
-        ${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(val)}</span>
+        ${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${myDisplayName || myLoginId}:</b> <span>${parseContent(processedContentForDisplay)}</span>
     </div>`;
+        
     appendMessageWithScroll(line);
     cancelReply();
     input.textContent = "";
 }
+
 function replyNative(userLogin, msgId, displayName){
     pendingReply = { id: msgId, user: userLogin, displayName: displayName || userLogin };
     $("#replying-to-user").text(displayName || userLogin);
-    $("#reply-indicator").show();
+    $("#reply-indicator").css('display', 'flex');
     document.getElementById('msginput').focus();
 }
+
 function cancelReply(){
     pendingReply = { id: null, user: null, displayName: null };
     $("#reply-indicator").hide();
 }
+
 window.insertRecursiveQuote = function(login, ts) {
     if (!login || !ts) return;
     const tag = `[r]${login},${ts}[m]`;
     insertTextAtCursor(tag);
 };
 
-// ===================== 歷史訊息 =====================
+// =====================
+// Fetch History & Connect Websocket
+// =====================
 async function fetchRecentMessages() {
     try {
         const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=15`);
@@ -1197,10 +1365,8 @@ async function fetchRecentMessages() {
                         if (tags['color']) userColor = tags['color'];
                     }
                     const userRecord = {
-                        content: messageContent,
-                        user: { login: userLogin, displayName: userLogin },
-                        displayName: userLogin,
-                        timestamp: Date.now(),
+                        content: messageContent, user: { login: userLogin, displayName: userLogin },
+                        displayName: userLogin, timestamp: Date.now(),
                         avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
                     };
                     msgCache[ts] = userRecord;
@@ -1211,11 +1377,15 @@ async function fetchRecentMessages() {
                     combinedHtml += `
                         <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
                             <div class="reply-btn-group">
-                                <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
-                                <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="引用">🔗</div>
+                                <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')" title="Twitch 原生回覆">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+                                </div>
+                                <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="插入引用代碼 [r]">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                                </div>
                             </div>
-                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${userLogin}')">${userLogin}</b>: 
-                            <span class="message">${contentHtml}</span>
+                            
+                                <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTagOnly('@${userLogin} ')">${userLogin}</b>:<div class="message">${contentHtml}</div>
                         </div>`;
                 }
             });
@@ -1224,7 +1394,6 @@ async function fetchRecentMessages() {
     } catch (err) { console.error('獲取歷史訊息失敗:', err); }
 }
 
-// ===================== 連線邏輯 =====================
 function startChat() {
     if (isConnecting) return;
     if (socket && socket.readyState === WebSocket.OPEN) return;
@@ -1253,8 +1422,8 @@ function startChat() {
         socket.send(`PASS ${pass}`);
         socket.send(`NICK ${nick}`);
         socket.send(`JOIN #${CHANNEL}`);
-        let statusMsg = ACCESS_TOKEN ? `已登入連線到 ${CHANNEL}` : `匿名連線到 ${CHANNEL} (僅觀看)`;
-        document.getElementById('status').textContent = statusMsg;
+        let statusMsg = ACCESS_TOKEN ? `連線至 #${CHANNEL}` : `匿名觀看 #${CHANNEL}`;
+        document.getElementById('status').innerHTML = statusMsg;
         document.getElementById('msginput').disabled = !ACCESS_TOKEN;
         document.getElementById('sendbtn').disabled = !ACCESS_TOKEN;
     };
@@ -1265,7 +1434,7 @@ function startChat() {
         isConnecting = false;
         if (socket) socket = null;
         if (event.code !== 1000) scheduleReconnect();
-        document.getElementById('status').textContent = `已斷線 (${event.code})，重連中...`;
+        document.getElementById('status').textContent = `已斷線，重連中...`;
     };
     socket.onmessage = (e) => {
         try {
@@ -1329,7 +1498,7 @@ function startChat() {
                 let processed = processRTag(originalText, 0);
                 let pBody = parseContent(processed);
                 let userTagClass = isMe ? 'quote-user mention-self-tag' : 'quote-user';
-                replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')"><svg width="17" height="17" viewBox="0 0 24 20" fill="currentColor"><path d="M9 10h2v2H9v-2Zm6 0h-2v2h2v-2Z"></path><path fill-rule="evenodd" d="m12 22-3-3H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 2 2h-4l-3 3Zm-2.172-5L12 19.172 14.172 17H19V5H5v12h4.828Z" clip-rule="evenodd"></path></svg> 回覆<span class="${userTagClass}">@${pUser}:</span>${pBody}</div>`;
+                replyHtml = `<div class="quote-box" onclick="scrollToMsg('${pId}')">回覆 <span class="${userTagClass}">@${pUser}:</span> ${pBody}</div>`;
                 let mention = `@${pUser} `;
                 if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
@@ -1350,7 +1519,9 @@ function startChat() {
     };
 }
 
-// ===================== 登入與初始化 =====================
+// =====================
+// Auth & Initialization
+// =====================
 function checkLogin() {
     const saved = localStorage.getItem('twitch_token');
     if (saved) {
@@ -1358,8 +1529,9 @@ function checkLogin() {
         fetchUserInfo(ACCESS_TOKEN);
     } else startChat();
 }
+
 function loginWithPopup() {
-    const width = 600, height = 700;
+    const width = 500, height = 700;
     const left = (screen.width - width) / 2;
     const top = (screen.height - height) / 2;
     const popup = window.open(AUTH_URL, 'Twitch Login', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
@@ -1374,6 +1546,7 @@ function loginWithPopup() {
         }
     }, 500);
 }
+
 async function fetchUserInfo(token) {
     try {
         const res = await fetch('https://api.twitch.tv/helix/users', {
@@ -1388,62 +1561,57 @@ async function fetchUserInfo(token) {
         }
     } catch(e) { console.error(e); alert('登入失敗'); logout(); }
 }
+
 function loginSuccess() {
-    document.getElementById('status').textContent = `已登入：${myDisplayName}`;
+    document.getElementById('status').innerHTML = `已登入：${myDisplayName}`;
     document.getElementById('msginput').disabled = false;
     document.getElementById('sendbtn').disabled = false;
     document.getElementById('loginBtn').style.display = 'none';
-    document.getElementById('userInfo').style.display = 'none';
+    document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('userAvatar').src = myAvatar;
     document.getElementById('userName').textContent = myDisplayName;
     if (socket) socket.close();
     startChat();
 }
+
 function logout() {
     localStorage.removeItem('twitch_token');
     location.reload();
 }
 
-function setupAutoTag() { 
+function setupAutoTag() {
     const input = document.getElementById('msginput');
-    
-    // 使用 onpaste 而非 addEventListener，避免 initApp 被呼叫兩次導致事件重複綁定（造成網址貼上兩次）
-    input.onpaste = function(e) {
-        e.preventDefault();
-        
-        const clipboardData = e.clipboardData || window.clipboardData;
-        const pastedText = clipboardData.getData('text/plain');
+    if (!input) return;
+
+    input.addEventListener('paste', (e) => {
+        let pastedText = (e.clipboardData || window.clipboardData).getData('text');
         if (!pastedText) return;
         
+        const trimmedPaste = pastedText.trim();
+        if (!trimmedPaste.startsWith('http')) return;
+
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
+        
         const range = selection.getRangeAt(0);
+        const preRange = range.cloneRange();
+        preRange.selectNodeContents(input);
+        preRange.setEnd(range.startContainer, range.startOffset);
         
-        // 準確抓取游標前方的文字，避免 contenteditable 內的多節點干擾
-        let textBefore = "";
-        if (range.startContainer.nodeType === Node.TEXT_NODE) {
-            textBefore = range.startContainer.nodeValue.substring(0, range.startOffset);
-        } else {
-            textBefore = input.textContent.substring(0, range.startOffset);
-        }
+        const textBefore = preRange.toString();
+        let suffix = "";
         
-        // 瀏覽器 contenteditable 經常把結尾空白轉為不換行空白(\u00A0)，這會導致比對失敗，因此先轉回正常空白
-        textBefore = textBefore.replace(/\u00A0/g, ' ');
-        
-        let finalText = pastedText;
+        if (/\[s\]\s*$/i.test(textBefore)) suffix = " [e]";
+        else if (/\[y\]\s*$/i.test(textBefore)) suffix = " [t]";
+        else if (/\[a\]\s*$/i.test(textBefore)) suffix = " [o]";
 
-        if (textBefore.endsWith('[s] ')) {
-            finalText = pastedText + ' [e]';
-        } else if (textBefore.endsWith('[y] ')) {
-            finalText = pastedText + ' [t]';
-        } else if (textBefore.endsWith('[a] ')) {
-            finalText = pastedText + ' [o]';
+        if (suffix) {
+            e.preventDefault();
+            const finalInsert = trimmedPaste + suffix + " ";
+            document.execCommand('insertText', false, finalInsert);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         }
-
-        // 直接呼叫我們內建的 insertTextAtCursor 函數，最穩定
-        insertTextAtCursor(finalText);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-    };
+    });
 }
 
 function setupEmojiPanelDrag() {
@@ -1471,7 +1639,6 @@ function setupEmojiPanelDrag() {
     closeBtn.addEventListener('click', () => panel.style.display = 'none');
 }
 
-// ===================== 初始化應用 =====================
 async function initApp() {
     if (location.hash.includes('access_token=')) {
         const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
@@ -1485,8 +1652,9 @@ async function initApp() {
             }
         }
     } else checkLogin();
-     document.getElementById('loginBtn').onclick = loginWithPopup;
-     document.getElementById('logoutBtn').onclick = logout;
+    
+    document.getElementById('loginBtn').onclick = loginWithPopup;
+    document.getElementById('logoutBtn').onclick = logout;
      
     const settingBtn = document.querySelector('.setting-btn');
     if (settingBtn) {
@@ -1514,14 +1682,20 @@ async function initApp() {
     setupEmojiPanelDrag();
     if (!ACCESS_TOKEN) startChat();
     fetchRecentMessages();
+    
     if(scrollToBottomBtn) scrollToBottomBtn.addEventListener('click', () => forceScrollToBottom(true));
     
-    const messagesContainer = document.getElementById('messages');
-    if (messagesContainer) {
+    // CPU 最佳化：將 ResizeObserver 的目標改為不會頻繁變動高度的 #chat-container，並加入 requestAnimationFrame 節流
+    const chatContainer = document.getElementById('chat-container');
+    if (chatContainer) {
+        let resizeTimer;
         const resizeObserver = new ResizeObserver(() => {
-            if (autoScroll) forceScrollToBottom(false);
+            cancelAnimationFrame(resizeTimer);
+            resizeTimer = requestAnimationFrame(() => {
+                if (autoScroll) forceScrollToBottom(false);
+            });
         });
-        resizeObserver.observe(messagesContainer);
+        resizeObserver.observe(chatContainer);
     }
     
     document.getElementById('msginput').addEventListener('keydown', (e) => {
