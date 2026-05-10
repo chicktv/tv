@@ -1355,7 +1355,7 @@ function loginWithPopup() {
         const token = localStorage.getItem('twitch_token');
         if (token) {
             ACCESS_TOKEN = token.replace('oauth:', '');
-            fetchUserInfo(token);
+            fetchUserInfo(ACCESS_TOKEN);
         }
     }, 500);
 }
