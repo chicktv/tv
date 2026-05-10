@@ -6,7 +6,41 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root { --t-bg: #0e0e10; --t-alt: #18181b; --t-purp: #9147ff; --t-text: #efeff1; --input-bg: #18181b; }
-        body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        body { background: var(--t-bg); color: var(--t-text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;   --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-surface-hover: #1f1f23;
+            --bg-surface-active: #26262c;
+            /* GPU 優化: 移除半透明，改用純色避免合成開銷 */
+            --bg-panel: #18181b; 
+            
+            --t-purp: #9147ff;
+            --t-purp-hover: #a970ff;
+            --t-purp-muted: rgba(145, 71, 255, 0.15);
+            --t-purp-border: rgba(145, 71, 255, 0.3);
+            
+            --text-main: #efeff1;
+            --text-muted: #adadb8;
+            --text-inverse: #09090b;
+            
+            --danger: #e91916;
+            --danger-hover: #c51614;
+            --success: #2ea043;
+            
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+            
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-round: 50%;
+            
+            /* GPU 優化: 降低陰影複雜度 */
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+            
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease; }
         
         /* --- Webkit Scrollbar 樣式 --- */
         #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -33,6 +67,8 @@
             border: 0px solid #444 !important;
             margin: 5px 0 !important;
             object-fit: fill !important;
+            /* GPU 優化: 強制使用硬體加速層 */
+            transform: translateZ(0); 
         }
 
         #chat-container iframe[src*="youtube.com"],
@@ -58,7 +94,17 @@
             min-height: auto !important;
         }
 
-        .header-bar { background: var(--t-alt); padding: 0px 0px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
+        .header-bar { 
+            /* GPU 優化: 移除 backdrop-filter: blur(8px); */
+            background: #121214; 
+            padding: 12px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border-color); 
+            flex-shrink: 0; 
+            z-index: 100;
+        }
         #chat-container { flex: 1; overflow-y: auto; padding: 15px; background: #0e0e10; scroll-behavior: smooth; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
         
         /* CPU 優化：使用 content-visibility 讓瀏覽器跳過非可見區域的渲染計算 */
@@ -68,7 +114,8 @@
             line-height: 1.6; 
             word-wrap: break-word; 
             color: var(--t-text); 
-            transition: background 0.3s, border 0.3s; 
+            /* GPU 優化: 移除 transition: all */
+            transition: background-color 0.3s, border-color 0.3s; 
             padding: 1px; 
             margin-bottom: 5px; 
             border: 1px solid transparent;
@@ -85,14 +132,20 @@
         .audio-player { margin-top: 10px; display: block; max-width: 300px; }
         .alt-emoji { max-width: 180px !important; max-height: 180px !important; vertical-align: top; margin: 2px; }
         .badge { width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; display: inline-block; }
-       
-
+       .btn-danger:hover { background: var(--danger); color: white; }
+       .btn-primary {
+            background: var(--t-purp); color: white; border: none; border-radius: var(--radius-sm);
+            padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
+            transition: background-color var(--transition-fast), transform var(--transition-fast);
+        }
+        .btn-primary:hover { background: var(--t-purp-hover); transform: translateY(-1px); }
+		
 @keyframes blink {
     50% { opacity: 0.7; }
 }
 
 .control-btn {
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.3s ease;
 }
         .reply-btn-group {
             position: absolute;
@@ -114,7 +167,7 @@
             font-size: 14px;
             background: rgba(0,0,0,0.7);
             border: 1px solid #555;
-            transition: all 0.15s;
+            transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
         }
         .reply-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .reply-btn:hover, .reply-btn2:hover { background-color: #9147ff; border-color: #fff; transform: scale(1.05);}
@@ -132,7 +185,7 @@
             cursor: pointer; 
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(0, 0, 0, 0.2);
-            transition: all 0.1s ease;
+            transition: background-color 0.1s ease, border-color 0.1s ease;
             word-break: break-word;
         }
         .quote-box:hover { 
@@ -164,7 +217,7 @@
             justify-content: center;
             z-index: 100;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease;
             font-size: 20px;
         }
         
@@ -176,13 +229,21 @@
         .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
         .show-del .delete-btn { display: block; }
         .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
-        .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
-        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
         
-        @keyframes pulse-audio {
-            0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
+        /* GPU 優化: 重構音訊按鈕動畫，避免使用 box-shadow 引發 Repaint Storm */
+        .audio-icon-btn { position: relative; cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; user-select: none; z-index: 1; }
+        .audio-icon-btn::after {
+            content: ''; position: absolute; inset: 0; border-radius: inherit;
+            border: 2px solid rgba(145, 71, 255, 0.8);
+            opacity: 0; pointer-events: none; z-index: -1;
+        }
+        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; }
+        .audio-icon-btn.playing::after { animation: pulse-audio-ring 1.5s infinite; }
+        
+        @keyframes pulse-audio-ring {
+            0% { transform: scale(1); opacity: 1; }
+            70% { transform: scale(1.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
         }
         
         #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
@@ -191,7 +252,30 @@
         #logoutBtn:hover { background: #c51614; }
         #loginBtn { background: #9147ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background-color 0.2s; padding: 8px 16px; }
         #loginBtn:hover { background: #772ce8; }
-        #status { margin: 8px 12px; font-weight: 500; color: #bf94ff; font-size: 10px; }
+        #status { 
+            font-weight: 600; 
+            color: var(--t-purp); 
+            font-size: 13px; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #status::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--t-purp);
+            border-radius: 50%;
+            /* GPU 優化: 移除 box-shadow 動畫，改為單純的 opacity 動畫 */
+            animation: pulse-status 2s infinite;
+            will-change: opacity;
+        }
+        @keyframes pulse-status {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
         
         #mention-list {
             position: absolute;
@@ -214,7 +298,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: background 0.2s;
+            transition: background-color 0.2s;
             color: var(--t-text);
             font-size: 14px;
         }
@@ -245,63 +329,72 @@
             background: rgba(0,0,0,0.2);
         }
 
-        .footer { background: #0e0e10; padding: 1px 10px 1px 10px; border-top: 0px solid rgba(255, 255, 255, 0.05); position: relative; }
+        .footer { 
+            /* GPU 優化: 移除 backdrop-filter: blur(10px); */
+            background: #121214; 
+            padding: 12px 5px; 
+            border-top: 1px solid var(--border-color); 
+            position: relative; 
+            z-index: 100;
+        }
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
-        .tool-bar { display: flex; gap: 3px; margin-bottom: -8px; align-items: center; }
-        .tool-link { background: none; border: none; color: #adadb8; cursor: pointer; font-size: 14px; padding: 0; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; }
-        .tool-link:hover { color: #fff; }
-        .tool-link svg { margin-left: 1px; }
-        .input-section { position: relative; display: flex; flex-direction: column; gap: 10px; }
-        .input-box-wrapper { position: relative; display: flex; align-items: center; background: var(--t-input); border: 1px solid #fff; border-radius: 8px; padding: 2px 10px; transition: border 0.2s;}
-        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: #000; }
+       .input-section { display: flex; flex-direction: column; gap: 8px; position: relative; }
+        
+        .tool-bar { display: flex; gap: 12px; align-items: center; padding-left: 4px; height:13px;}
+        .tool-link { 
+            background: none; border: none; color: var(--text-muted); 
+            cursor: pointer; font-size: 13px; padding: 4px; font-weight: 500; 
+            transition: color var(--transition-fast), background-color var(--transition-fast); display: flex; align-items: center; gap: 4px;
+            border-radius: var(--radius-sm);
+        }
+        .tool-link:hover { color: var(--text-main); background: var(--bg-surface-active); }
+        .tool-link svg { fill: currentColor; width: 16px; height: 16px; }
+		
+
+        .input-box-wrapper { 
+            display: flex; align-items: flex-end; 
+            background: var(--bg-surface); border: 1px solid var(--border-strong); 
+            border-radius: var(--radius-md); padding: 8px 12px; 
+            transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-box-wrapper:focus-within { border-color: var(--t-purp); background: var(--bg-base); box-shadow: 0 0 0 2px var(--t-purp-muted); }
+        
         #msginput { 
-            flex: 1; 
-            background: transparent; 
-            border: none; 
-            color: #efeff1; 
-            font-size: 14px; 
-            outline: none; 
-            padding: 10px 0; 
-            font-family: inherit; 
-            box-sizing: border-box; 
-            overflow-wrap: break-word; 
-            max-height: calc(5lh + 20px); 
-            overflow: hidden auto;
-            white-space: pre-wrap;
-            min-height: 20px;
+            flex: 1; background: transparent; border: none; color: var(--text-main); 
+            font-size: 15px; outline: none; padding: 4px 0; font-family: inherit; 
+            overflow-wrap: break-word; max-height: 150px; overflow: hidden auto;
+            white-space: pre-wrap; min-height: 24px; line-height: 1.5;
         }
-        #msginput:empty:before {
-            content: attr(placeholder);
-            color: #777;
-        }
+        #msginput:empty:before { content: attr(placeholder); color: var(--text-muted); pointer-events: none; }
         #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
-        .action-bar { display: flex; justify-content: flex-end; margin-top: 0px; }
-        #sendbtn { background: var(--t-purp); border: none; color: white; cursor: pointer; padding: 6px 16px; border-radius: 18px; font-weight: bold; font-size: 14px; transition: background 0.2s; }
-        #sendbtn:hover { background: #a970ff; }
-        #sendbtn:disabled { background: #3a3a3d; color: #777; cursor: not-allowed; }
-        .setting-btn { cursor: pointer; color: #efeff1; opacity: 0.8; display: flex; align-items: center; }
-        .setting-btn:hover { opacity: 1; color: #9147ff; }
-
+        
+        .action-bar { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+        
         #voice-btn {
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
+            background: transparent; border: none; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: var(--radius-round);
+            transition: color var(--transition-fast), background-color var(--transition-fast); color: var(--text-muted);
         }
+        #voice-btn:hover { background: var(--bg-surface-active); color: var(--text-main); }
+        #voice-btn.recording { color: var(--danger); background: rgba(233, 25, 22, 0.1); animation: blink 1s infinite; }
 
-        #voice-btn:hover {
-            transform: scale(1.1);
+        #sendbtn { 
+            background: var(--t-purp); border: none; color: white; cursor: pointer; 
+            padding: 8px 20px; border-radius: var(--radius-md); font-weight: 600; font-size: 14px; 
+            transition: background-color var(--transition-fast), transform var(--transition-fast);
         }
+        #sendbtn:hover:not(:disabled) { background: var(--t-purp-hover); transform: translateY(-1px); }
+        #sendbtn:disabled { background: var(--bg-surface-active); color: var(--text-muted); cursor: not-allowed; }
 
-        #voice-btn.recording {
-            color: #e91916;
-            animation: blink 1s infinite;
+        .setting-btn { 
+            cursor: pointer; color: var(--text-muted); padding: 8px; 
+            border-radius: var(--radius-sm); display: flex; align-items: center;
+            transition: color var(--transition-fast), background-color var(--transition-fast);
         }
+        .setting-btn:hover { color: var(--t-purp); background: var(--bg-surface-active); }
 
-        @keyframes blink {
-            50% { opacity: 0.5; }
-        }
         #emojiPanel { 
             position: fixed; 
             display: none; 
@@ -341,71 +434,76 @@
 </head>
 <body onload="initApp()">
 
-<div class="header-bar">
+<header class="header-bar">
     <div id="status">載入中...</div>
     <div id="auth-area">
-        <div id="userInfo" style="display:none;">
+        <div id="userInfo">
             <img id="userAvatar" src="" alt="頭像">
-            <span id="userName" style="display:none;"></span>
-            <button id="logoutBtn">登出</button>
+            <span id="userName"></span>
+            <button id="logoutBtn" class="btn-danger">登出</button>
         </div>
-        <button id="loginBtn">以TWITCH登入</button>
+        <button id="loginBtn" class="btn-primary">連線 Twitch</button>
     </div>
-</div>
+</header>
 
-<div id="chat-container">
+<main id="chat-container">
     <div id="messages"></div>
-</div>
+</main>
 
 <div id="mention-list"></div>
 
 <div id="emojiPanel">
     <div class="emoji-header">
-        <b style="font-size:14px;">資源庫 (表情/音訊)</b>
-        <button id="emojiCloseBtn" style="background:none; border:none; color:white; cursor:pointer; font-size:18px;">✕</button>
+        <b>資源庫 (表情/音訊)</b>
+        <button id="emojiCloseBtn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px; transition: color 0.2s;">✕</button>
     </div>
     <div id="emojiTabs"></div>
     <div id="emojiContent"></div>
 </div>
 
-<div class="footer">
+<footer class="footer">
     <div id="reply-indicator">
-        正在回覆 <span id="replying-to-user" style="color:#9147ff; font-weight:bold;"></span> 
-        <span onclick="cancelReply()" style="float:right; cursor:pointer; color:#efeff1;">✕ 取消回覆</span>
+        <div>正在回覆 <span id="replying-to-user" class="user"></span></div>
+        <div class="cancel-reply" onclick="cancelReply()">✕</div>
     </div>
     
     <div class="input-section">
         <div class="tool-bar">
-            <button id="scrollToBottomBtn" title="滾動到最新訊息" style="font-size: 24px; line-height: 1;">⇣</button>
-            <button class="tool-link" onclick="insertTagOnly('[s] ')">圖片</button>
-            <button class="tool-link" onclick="insertTagOnly('[y] ')">影片</button>
-            <button class="tool-link" onclick="insertTagOnly('[a] ')">音訊</button>
-        </div>
-        
-        <div class="input-box-wrapper">
-            <div id="msginput" contenteditable="plaintext-only" placeholder="傳送訊息..." autocomplete="off" disabled></div>
-            <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')">
-                <svg width="30" height="30" viewBox="0 0 20 20" fill="#FFFF00">
-                    <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/>
-                </svg>
+            <button class="tool-link" onclick="insertTagOnly('[s] ')" title="插入圖片">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> 圖片
             </button>
-			
-        </div>
-
-        <div class="action-bar">
-		<div class="setting-btn" title="點擊切換聊天頻道">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <button class="tool-link" onclick="insertTagOnly('[y] ')" title="插入影片">
+                <svg viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg> 影片
+            </button>
+            <button class="tool-link" onclick="insertTagOnly('[a] ')" title="插入音訊">
+                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg> 音訊
+            </button>
+            <div class="setting-btn" title="切換聊天頻道">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
                 </svg>
             </div>
-			<button class="tool-link" id="voice-btn" onclick="toggleRecording()" title="錄製語音">🗣📢</button>
-<span id="recording-status" style="color: #e91916; font-size: 10px; display: none; margin-left: 10px;"></span>
-            <button id="sendbtn" onclick="sendMessage()" disabled>聊天</button>
-			
+            <span id="recording-status" style="color: var(--danger); font-size: 11px; display: none; font-weight: 600;">上傳中...</span>
         </div>
-		
+        
+        <div class="input-box-wrapper">
+            <button id="scrollToBottomBtn" title="滾動到最新訊息">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+            </button>
+            <div id="msginput" contenteditable="plaintext-only" placeholder="傳送訊息到聊天室..." autocomplete="off" disabled></div>
+            
+            <div class="action-bar">
+                <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')" title="表情/資源庫">
+                    <svg width="30" height="30" viewBox="0 0 20 20" fill="#650beb"><path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/></svg>
+                </button>
+                <button id="voice-btn" onclick="toggleRecording()" title="錄製語音">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                </button>
+                <button id="sendbtn" onclick="sendMessage()" disabled>傳送</button>
+            </div>
+        </div>
     </div>
-</div>
+</footer>
 
 <script>
 // ===================== 重要設定 =====================
@@ -519,7 +617,7 @@ function renderBadges(badgeStr) {
 }
 function getMyBadges() { return myBadges || ""; }
 
-// ===================== 捲動相關 (已修復返回分頁捲動問題) =====================
+// ===================== 捲動相關 (已修復返回分頁捲動問題 & GPU優化) =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
 
@@ -527,35 +625,41 @@ function forceScrollToBottom(force = false) {
     if (!chat) return;
 
     let attempts = 0;
-    const maxAttempts = 20;      // 最多嘗試 20 次
-    const baseDelay = 16;        // 約一幀時間
+    const maxAttempts = 20;
+    const baseDelay = 16;
 
+    // GPU 優化: 將 DOM 的讀取與寫入包裝在 requestAnimationFrame 避免 Layout Thrashing
     function scrollNow() {
-        chat.scrollTop = chat.scrollHeight + 9999;
-        // 回報當前滾動位置（可選）
-        // console.log(`scrollNow: scrollTop=${chat.scrollTop}, scrollHeight=${chat.scrollHeight}, clientHeight=${chat.clientHeight}`);
+        requestAnimationFrame(() => {
+            chat.scrollTop = chat.scrollHeight + 9999;
+        });
     }
 
     function tryScroll() {
-        scrollNow();
-        const isAtBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 5;
-        if (!isAtBottom && attempts < maxAttempts) {
-            attempts++;
-            // 使用指數退避延遲，讓媒體加載有更多時間完成
-            const delay = baseDelay * Math.min(Math.pow(1.2, attempts), 8);
-            setTimeout(tryScroll, delay);
-        } else if (!isAtBottom && attempts >= maxAttempts) {
-            // 最終強制再滾一次
-            scrollNow();
-        }
+        requestAnimationFrame(() => {
+            // 讀取階段 (Read phase)
+            const currentScrollHeight = chat.scrollHeight;
+            const currentClientHeight = chat.clientHeight;
+            const currentScrollTop = chat.scrollTop;
+            
+            const isAtBottom = (currentScrollHeight - currentClientHeight - currentScrollTop) < 5;
+            
+            // 寫入階段 (Write phase)
+            chat.scrollTop = currentScrollHeight + 9999;
+
+            if (!isAtBottom && attempts < maxAttempts) {
+                attempts++;
+                const delay = baseDelay * Math.min(Math.pow(1.2, attempts), 8);
+                setTimeout(tryScroll, delay);
+            } else if (!isAtBottom && attempts >= maxAttempts) {
+                scrollNow();
+            }
+        });
     }
 
-    // 立即執行第一次
     scrollNow();
-    // 啟動遞迴檢查
     tryScroll();
 
-    // 額外處理：監聽容器內所有媒體加載完成事件，再次滾動
     if (force) {
         const mediaElements = chat.querySelectorAll('img, iframe, video');
         let pending = mediaElements.length;
@@ -564,7 +668,6 @@ function forceScrollToBottom(force = false) {
             pending--;
             if (pending === 0) {
                 scrollNow();
-                // 短暫延遲後再試一次，確保高度完全收斂
                 setTimeout(scrollNow, 50);
             }
         };
@@ -583,7 +686,8 @@ let mediaScrollTimer = null;
 function onMediaLoaded() { 
     if (!autoScroll) return;
     if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
-    mediaScrollTimer = setTimeout(() => forceScrollToBottom(false), 50);
+    // GPU 優化: 加上 requestAnimationFrame
+    mediaScrollTimer = setTimeout(() => requestAnimationFrame(() => forceScrollToBottom(false)), 50);
 }
 
 // 優化：處理隱藏分頁時的訊息緩衝
@@ -612,10 +716,13 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function checkScrollPosition() {
-    const chat = document.getElementById('chat-container');
-    const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 60;
-    autoScroll = isAtBottom;
-    if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
+    requestAnimationFrame(() => {
+        const chat = document.getElementById('chat-container');
+        if(!chat) return;
+        const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 60;
+        autoScroll = isAtBottom;
+        if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
+    });
 }
 function setupScrollListener() {
     const chat = document.getElementById('chat-container');
@@ -627,9 +734,11 @@ function setupScrollListener() {
 function scrollToMsg(msgId) {
     let $msg = $(`.id-${msgId}`);
     if($msg.length){
-        let container = $("#chat-container")[0];
-        let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
-        container.scrollTo({ top: top, behavior: 'smooth' });
+        requestAnimationFrame(() => {
+            let container = $("#chat-container")[0];
+            let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
+            container.scrollTo({ top: top, behavior: 'smooth' });
+        });
     }
 }
 
@@ -1001,6 +1110,7 @@ function resetAudioState(btn){
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
+
 async function toggleRecording() {
     const btn = document.getElementById('voice-btn');
     const status = document.getElementById('recording-status');
@@ -1012,16 +1122,14 @@ async function toggleRecording() {
             mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
-                if (status) { status.style.display = "inline"; status.textContent = ""; }
+                if (status) { status.style.display = "inline-block"; }
                 await uploadAudioAndInsertTag(audioBlob);
                 if (status) status.style.display = 'none';
-                btn.textContent = "🗣📢";
-                btn.style.color = "";
+                btn.classList.remove('recording');
             };
             mediaRecorder.start();
             isRecording = true;
-            btn.textContent = "🟥";
-            btn.style.color = "#e91916";
+            btn.classList.add('recording');
         } catch (err) { alert("無法開啟麥克風: " + err); }
     } else {
         mediaRecorder.stop();
@@ -1029,6 +1137,7 @@ async function toggleRecording() {
         isRecording = false;
     }
 }
+
 async function uploadAudioAndInsertTag(blob) {
     const tmpFormData = new FormData();
     tmpFormData.append('file', blob, `voice_${Date.now()}.mp3`);
@@ -1045,11 +1154,12 @@ async function uploadAudioAndInsertTag(blob) {
         } else { alert("上傳失敗"); }
     } catch (error) { console.error("Upload error:", error); alert("上傳出錯"); }
 }
+
 function insertVoiceTag(url) {
     const input = document.getElementById('msginput');
-    if (!input) { console.error("找不到輸入框 #msginput"); return; }
+    if (!input) return;
     input.focus();
-    const finalTag = `[a] ${url} [o]`;
+    const finalTag = `[a] ${url} [o] `;
     document.execCommand('insertText', false, finalTag);
     input.dispatchEvent(new Event('input', { bubbles: true }));
 }
@@ -1293,8 +1403,8 @@ function startChat() {
         socket.send(`PASS ${pass}`);
         socket.send(`NICK ${nick}`);
         socket.send(`JOIN #${CHANNEL}`);
-        let statusMsg = ACCESS_TOKEN ? `已登入連線到 ${CHANNEL}` : `匿名連線到 ${CHANNEL} (僅觀看)`;
-        document.getElementById('status').textContent = statusMsg;
+        let statusMsg = ACCESS_TOKEN ? `連線至 #${CHANNEL}` : `匿名觀看 #${CHANNEL}`;
+        document.getElementById('status').innerHTML = statusMsg;
         document.getElementById('msginput').disabled = !ACCESS_TOKEN;
         document.getElementById('sendbtn').disabled = !ACCESS_TOKEN;
     };
@@ -1410,7 +1520,7 @@ function loginWithPopup() {
         const token = localStorage.getItem('twitch_token');
         if (token) {
             ACCESS_TOKEN = token.replace('oauth:', '');
-            fetchUserInfo(token);
+            fetchUserInfo(ACCESS_TOKEN);
         }
     }, 500);
 }
@@ -1429,7 +1539,7 @@ async function fetchUserInfo(token) {
     } catch(e) { console.error(e); alert('登入失敗'); logout(); }
 }
 function loginSuccess() {
-    document.getElementById('status').textContent = `已登入：${myDisplayName}`;
+    document.getElementById('status').innerHTML = `已登入：${myDisplayName}`;
     document.getElementById('msginput').disabled = false;
     document.getElementById('sendbtn').disabled = false;
     document.getElementById('loginBtn').style.display = 'none';
@@ -1534,7 +1644,7 @@ async function initApp() {
      document.getElementById('loginBtn').onclick = loginWithPopup;
      document.getElementById('logoutBtn').onclick = logout;
      
-    const settingBtn = document.querySelector('.setting-btn');
+   const settingBtn = document.querySelector('.setting-btn');
     if (settingBtn) {
         settingBtn.addEventListener('click', function() {
             let newChannel = prompt("請輸入要連線的頻道名稱", CHANNEL);
@@ -1562,10 +1672,15 @@ async function initApp() {
     fetchRecentMessages();
     if(scrollToBottomBtn) scrollToBottomBtn.addEventListener('click', () => forceScrollToBottom(true));
     
+    // GPU 優化: 為 ResizeObserver 加入 Debounce 機制並包裝 rAF
     const messagesContainer = document.getElementById('messages');
     if (messagesContainer) {
+        let roTimer = null;
         const resizeObserver = new ResizeObserver(() => {
-            if (autoScroll) forceScrollToBottom(false);
+            if (autoScroll) {
+                if(roTimer) clearTimeout(roTimer);
+                roTimer = setTimeout(() => requestAnimationFrame(() => forceScrollToBottom(false)), 50);
+            }
         });
         resizeObserver.observe(messagesContainer);
     }
