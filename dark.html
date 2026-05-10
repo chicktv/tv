@@ -149,17 +149,18 @@
             z-index: 1;
         }
 
-        .chat-line { 
+       .chat-line { 
             position: relative; 
-            line-height: 1.5; 
-            color: var(--text-main); 
-            transition: background var(--transition-fast); 
-            padding: 6px 2px; 
-            /* GPU 優化: 移除 content-visibility: auto; 避免 Edge 高速捲動時產生 Layout Thrashing */
-            contain: layout style; 
-            display: flex;
-            flex-direction: rows;
-            gap: 2px;
+            border-radius: 4px; 
+            line-height: 1.6; 
+            word-wrap: break-word; 
+            color: var(--t-text); 
+            transition: background 0.3s, border 0.3s; 
+            padding: 1px; 
+            margin-bottom: 5px; 
+            border: 1px solid transparent;
+            content-visibility: auto;
+            contain-intrinsic-size: 0 40px; 
         }
         .chat-line:hover { background: rgba(255, 255, 255, 0.03); }
         .chat-line:has(.quote-box) { border: 1px solid #9147ff; background: rgba(145, 71, 255, 0.1) !important; margin-left: 2px; }
