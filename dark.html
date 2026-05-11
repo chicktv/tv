@@ -567,6 +567,7 @@ let dragging = false;
 let autoScroll = true;
 let scrollTimeout = null;
 let scrollRequestActive = false; 
+let isInitialLoad = true; // 新增：追蹤是否為剛載入歷史訊息的狀態
 const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
 const MAX_MESSAGES = 40;
 let recentUsers = [];
@@ -649,6 +650,8 @@ function forceScrollToBottom(force = false) {
 
     const doScroll = () => {
         chat.scrollTop = chat.scrollHeight + 9999;
+        autoScroll = true; // 確保狀態同步被鎖在 true
+        if(scrollToBottomBtn) scrollToBottomBtn.style.display = 'none';
     };
 
     // CPU 優化: 使用 requestAnimationFrame 替換掉原本的重度遞迴迴圈 避免 Layout Thrashing
@@ -656,6 +659,7 @@ function forceScrollToBottom(force = false) {
         doScroll();
         // 給瀏覽器一點時間計算真正的 layout 高度，再次捲動確保到底
         setTimeout(doScroll, 80);
+        setTimeout(doScroll, 300); // 針對大批量 DOM 渲染追加一幀防護
     });
 }
 
@@ -665,10 +669,11 @@ function onMediaLoaded() {
     if (!chat) return;
     
     // 媒體載入時會瞬間撐高容器，導致 scrollHeight 增加，原本的 isAtBottom 判定會誤判為 false
-    // 所以放寬誤差範圍至 350px (涵蓋大部分影片/圖片的最大高度)
-    const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 450;
+    // 放寬誤差範圍至 800px (涵蓋大部分大量歷史影片/圖片載入的狀況)
+    const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 800;
 
-    if (autoScroll || isNearBottom) {
+    // 加入 isInitialLoad 判斷：若還在剛載入階段，無視距離直接強制捲動
+    if (autoScroll || isNearBottom || isInitialLoad) {
         if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
         mediaScrollTimer = setTimeout(() => {
             autoScroll = true; // 恢復自動捲動狀態
@@ -744,6 +749,10 @@ function setupScrollListener() {
         if (!isScrolling) {
             window.requestAnimationFrame(() => {
                 checkScrollPosition();
+                // 如果判斷出目前並非自動置底（表示使用者主動往上滾動了），則解除初始化鎖定
+                if (!autoScroll) {
+                    isInitialLoad = false;
+                }
                 isScrolling = false;
             });
             isScrolling = true;
@@ -1394,6 +1403,9 @@ async function fetchRecentMessages() {
         }
     } catch (err) { console.error('獲取歷史訊息失敗:', err); }
 	forceScrollToBottom(true);
+    
+    // 新增：給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
+    setTimeout(() => { isInitialLoad = false; }, 8000);
 }
 
 // ===================== 連線邏輯 =====================
@@ -1699,9 +1711,9 @@ async function initApp() {
         const resizeObserver = new ResizeObserver(() => {
             const chat = document.getElementById('chat-container');
             if (!chat) return;
-            // 當 ResizeObserver 觸發時，如果是因為內部元素撐開，我們允許 350px 的放寬判定
-            const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 450;
-            if (autoScroll || isNearBottom) {
+            // 放寬判定：新增 isInitialLoad 支援，並且放寬距離至 800px 以應付極端圖片流
+            const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 800;
+            if (autoScroll || isNearBottom || isInitialLoad) {
                 chat.scrollTop = chat.scrollHeight + 9999;
                 autoScroll = true;
             }
