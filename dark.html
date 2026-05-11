@@ -332,7 +332,7 @@
         .footer { 
             /* GPU 優化: 移除 backdrop-filter: blur(10px); */
             background: #121214; 
-            padding: 12px 5px; 
+            padding: 5px 5px; 
             border-top: 1px solid var(--border-color); 
             position: relative; 
             z-index: 100;
@@ -340,11 +340,11 @@
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
        .input-section { display: flex; flex-direction: column; gap: 8px; position: relative; }
         
-        .tool-bar { display: flex; gap: 0px; align-items: center; padding-left: 4px; height:13px;}
+        .tool-bar { display: flex; gap: 1px; align-items: center; padding-left: 4px; height:13px;}
         .tool-link { 
             background: none; border: none; color: var(--text-muted); 
-            cursor: pointer; font-size: 13px; padding: 4px; font-weight: 500; 
-            transition: all var(--transition-fast); display: flex; align-items: center; gap: 4px;
+            cursor: pointer; font-size: 13px; padding: 1px; font-weight: 500; 
+            transition: all var(--transition-fast); display: flex; align-items: center; gap: 1px;
             border-radius: var(--radius-sm);
         }
         .tool-link:hover { color: var(--text-main); background: var(--bg-surface-active); }
@@ -503,7 +503,7 @@
             
             <div class="action-bar">
                 <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')" title="表情/資源庫">
-                    <svg width="30" height="30" viewBox="0 0 20 20" fill="#650beb"><path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/></svg>
+                    <span style="font-size: 25px;">🦉</span>
                 </button>
                 <button id="voice-btn" onclick="toggleRecording()" title="錄製語音">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
@@ -666,7 +666,7 @@ function onMediaLoaded() {
     
     // 媒體載入時會瞬間撐高容器，導致 scrollHeight 增加，原本的 isAtBottom 判定會誤判為 false
     // 所以放寬誤差範圍至 350px (涵蓋大部分影片/圖片的最大高度)
-    const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 350;
+    const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 450;
 
     if (autoScroll || isNearBottom) {
         if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
@@ -1390,6 +1390,7 @@ async function fetchRecentMessages() {
                 }
             });
             if (combinedHtml) appendMessageWithScroll(combinedHtml);
+			
         }
     } catch (err) { console.error('獲取歷史訊息失敗:', err); }
 	forceScrollToBottom(true);
