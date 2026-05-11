@@ -563,7 +563,6 @@ let reconnectAttempts = 0;
 let maxReconnectDelay = 30000;
 let isConnecting = false;
 let dragging = false;
-let offsetX = 0, offsetY = 0;
 let autoScroll = true;
 let scrollTimeout = null;
 let scrollRequestActive = false; 
@@ -575,6 +574,7 @@ let mentionListVisible = false;
 let mentionSelectedIndex = 0;
 let mentionSearchTerm = "";
 const MAX_RTAG_DEPTH = 5;
+let offsetX = 0, offsetY = 0;
 
 // 预编译正则
 const RE_S_TAG = /\[S\](.*?)E\]/g;
@@ -639,44 +639,41 @@ function renderBadges(badgeStr) {
 }
 function getMyBadges() { return myBadges || ""; }
 
-// ===================== 捲動相關 (已修復遞迴導致的 CPU 飆升問題) =====================
+// ===================== 捲動相關 (已修復媒體載入不捲動到底的問題) =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
 
     const chat = document.getElementById('chat-container');
     if (!chat) return;
 
-    // CPU 優化: 使用 requestAnimationFrame 替換掉原本的重度遞迴迴圈 (tryScroll) 避免 Layout Thrashing
-    requestAnimationFrame(() => {
+    const doScroll = () => {
         chat.scrollTop = chat.scrollHeight + 9999;
-    });
+    };
 
-    // 額外處理：監聽容器內所有媒體加載完成事件，再次滾動
-    if (force) {
-        // 優化: 只選取未處理過的媒體元素
-        const mediaElements = chat.querySelectorAll('img:not([data-loaded]), iframe:not([data-loaded]), video:not([data-loaded])');
-        mediaElements.forEach(el => {
-            if (el.complete || el.readyState >= 2) {
-                el.setAttribute('data-loaded', 'true');
-            } else {
-                const onLoad = () => {
-                    el.setAttribute('data-loaded', 'true');
-                    requestAnimationFrame(() => {
-                        if (autoScroll || force) chat.scrollTop = chat.scrollHeight + 9999;
-                    });
-                };
-                el.addEventListener('load', onLoad, { once: true });
-                el.addEventListener('error', onLoad, { once: true }); // 防止錯誤卡住
-            }
-        });
-    }
+    // CPU 優化: 使用 requestAnimationFrame 替換掉原本的重度遞迴迴圈 避免 Layout Thrashing
+    requestAnimationFrame(() => {
+        doScroll();
+        // 給瀏覽器一點時間計算真正的 layout 高度，再次捲動確保到底
+        setTimeout(doScroll, 80);
+    });
 }
 
 let mediaScrollTimer = null;
 function onMediaLoaded() { 
-    if (!autoScroll) return;
-    if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
-    mediaScrollTimer = setTimeout(() => forceScrollToBottom(false), 50);
+    const chat = document.getElementById('chat-container');
+    if (!chat) return;
+    
+    // 媒體載入時會瞬間撐高容器，導致 scrollHeight 增加，原本的 isAtBottom 判定會誤判為 false
+    // 所以放寬誤差範圍至 350px (涵蓋大部分影片/圖片的最大高度)
+    const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 350;
+
+    if (autoScroll || isNearBottom) {
+        if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
+        mediaScrollTimer = setTimeout(() => {
+            autoScroll = true; // 恢復自動捲動狀態
+            forceScrollToBottom(true);
+        }, 50);
+    }
 }
 
 // 優化：處理隱藏分頁時的訊息緩衝
@@ -1697,7 +1694,14 @@ async function initApp() {
     const messagesContainer = document.getElementById('messages');
     if (messagesContainer) {
         const resizeObserver = new ResizeObserver(() => {
-            if (autoScroll) forceScrollToBottom(false);
+            const chat = document.getElementById('chat-container');
+            if (!chat) return;
+            // 當 ResizeObserver 觸發時，如果是因為內部元素撐開，我們允許 350px 的放寬判定
+            const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 350;
+            if (autoScroll || isNearBottom) {
+                chat.scrollTop = chat.scrollHeight + 9999;
+                autoScroll = true;
+            }
         });
         resizeObserver.observe(messagesContainer);
     }
