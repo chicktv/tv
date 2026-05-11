@@ -1698,7 +1698,7 @@ async function initApp() {
             const chat = document.getElementById('chat-container');
             if (!chat) return;
             // 當 ResizeObserver 觸發時，如果是因為內部元素撐開，我們允許 350px 的放寬判定
-            const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 350;
+            const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 450;
             if (autoScroll || isNearBottom) {
                 chat.scrollTop = chat.scrollHeight + 9999;
                 autoScroll = true;
