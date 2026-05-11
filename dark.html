@@ -1392,6 +1392,7 @@ async function fetchRecentMessages() {
             if (combinedHtml) appendMessageWithScroll(combinedHtml);
         }
     } catch (err) { console.error('獲取歷史訊息失敗:', err); }
+	forceScrollToBottom(true);
 }
 
 // ===================== 連線邏輯 =====================
