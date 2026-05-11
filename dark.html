@@ -718,6 +718,10 @@ document.addEventListener('visibilitychange', () => {
         limitMessages();
         // 渲染後強制捲動到底部
         forceScrollToBottom(true);
+		
+    
+    // 新增：給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
+    setTimeout(() => { isInitialLoad = false; }, 8000);
     }
     
     // CPU 優化: 確保離開頁面時影片真正停止，進入時交由 Observer 恢復
