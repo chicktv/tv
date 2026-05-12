@@ -717,10 +717,7 @@ document.addEventListener('visibilitychange', () => {
         
         messageBuffer = [];
         limitMessages();
-        // 渲染後強制捲動到底部
-        forceScrollToBottom(true);
-		
-    
+       
     // 新增：給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
     setTimeout(() => { isInitialLoad = false; }, 8000);
     }
