@@ -1,5 +1,9 @@
- "default-creator-campaign-reward/1": "https://static-cdn.jtvnw.net/badges/v1/072f22ee-9efb-486d-997c-2a5b575b4845/1",
-    "crash/1": "https://static-cdn.jtvnw.net/badges/v1/c194a433-5fb4-4f57-a5e7-64ff9f02bf24/1",
-    "went-outside/1": "https://static-cdn.jtvnw.net/badges/v1/544b6594-e11e-4230-8d42-d81c84002524/1",
-    "speedons-6/1": "https://static-cdn.jtvnw.net/badges/v1/00fff6f2-8ac0-4001-b736-c02654756697/1",
-    "unicorn-tachanka/1": "https://static-cdn.jtvnw.net/badges/v1/dc23d5e0-b9ec-4729-9d53-ca1a8328add0/1"
+"road-to-twitchcon-26/1": "https://static-cdn.jtvnw.net/badges/v1/03eeb136-3249-49cc-b45a-569edea04907/1",
+    "lego-batman-legacy-of-the-dark-knight/1": "https://static-cdn.jtvnw.net/badges/v1/4d54795e-5f6c-4b5b-9a30-0d78e6d0d67b/1",
+    "skulls-10th-anniversary/1": "https://static-cdn.jtvnw.net/badges/v1/682bdd23-f49d-4c5b-bd82-2c00a65ea22a/1",
+    "007-gun-barrel/1": "https://static-cdn.jtvnw.net/badges/v1/6ae7ce40-99e6-4d83-8487-f8b990bf5f32/1",
+    "civ-vii---test-of-time/1": "https://static-cdn.jtvnw.net/badges/v1/eae24f68-7b45-4cf0-8854-d3e419006238/1",
+    "brawlhallawoo/1": "https://static-cdn.jtvnw.net/badges/v1/a3e4f5e7-a6c9-4458-b8c4-f83a0f725566/1",
+    "waterslug/1": "https://static-cdn.jtvnw.net/badges/v1/7c98905d-49ed-44f0-886e-ab6983268db6/1",
+    "yuzu/1": "https://static-cdn.jtvnw.net/badges/v1/bc590afa-de5e-4202-96ff-fe4bdff3e04e/1",
+    "hime/1": "https://static-cdn.jtvnw.net/badges/v1/20098028-701d-49c5-a5b6-22763ce23dd9/1"
