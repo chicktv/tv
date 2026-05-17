@@ -2968,44 +2968,46 @@
             insertTextAtCursor(tag);
         };
 
-        async function fetchRecentMessages() {
-            try {
-                const response = await fetch(
-                    `https://recent-messages.robotty.de/api/v2/recent-messages/${CHAT_CHANNEL}?limit=15`);
-                const data = await response.json();
-                if (data && data.messages) {
-                    let combinedHtml = "";
-                    data.messages.forEach(rawIrcMsg => {
-                        const match = rawIrcMsg.match(
-                            /^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
-                        if (match) {
-                            const tagStr = match[1] || "";
-                            const userLogin = match[2];
-                            const messageContent = match[3];
-                            const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2,
-                                5);
-                            let userColor = "#9147ff";
-                            if (tagStr) {
-                                const tags = {};
-                                tagStr.split(';').forEach(t => {
-                                    const pair = t.split('=');
-                                    if (pair.length === 2) tags[pair[0]] = pair[1];
-                                });
-                                if (tags['color']) userColor = tags['color'];
-                            }
-                            const userRecord = {
-                                content: messageContent,
-                                user: { login: userLogin, displayName: userLogin },
-                                displayName: userLogin,
-                                timestamp: Date.now(),
-                                avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
-                            };
-                            msgCache[ts] = userRecord;
-                            addRecentUser({ login: userLogin, displayName: userLogin, badges: "",
-                                avatar: userRecord.avatar });
-                            const rTagProcessed = processRTag(messageContent, 0);
-                            const contentHtml = parseContent(rTagProcessed);
-                            combinedHtml += `
+    async function fetchRecentMessages() {
+    try {
+        // 移除網址後方的 ?limit=15，讓 API 返回完整的歷史紀錄（通常最新在最下面）
+        const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHAT_CHANNEL}`);
+        const data = await response.json();
+        if (data && data.messages) {
+            let combinedHtml = ""; 
+            
+            // 使用 .slice(-15) 擷取陣列中最後面（最新）的 15 條訊息
+            const recent15Messages = data.messages.slice(-15);
+
+            recent15Messages.forEach(rawIrcMsg => {
+                const match = rawIrcMsg.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
+                if (match) {
+                    const tagStr = match[1] || "";
+                    const userLogin = match[2];
+                    const messageContent = match[3];
+                    const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+                    let userColor = "#9147ff"; 
+                    if (tagStr) {
+                        const tags = {};
+                        tagStr.split(';').forEach(t => {
+                            const pair = t.split('=');
+                            if(pair.length === 2) tags[pair[0]] = pair[1];
+                        });
+                        if (tags['color']) userColor = tags['color'];
+                    }
+                    const userRecord = {
+                        content: messageContent,
+                        user: { login: userLogin, displayName: userLogin },
+                        displayName: userLogin,
+                        timestamp: Date.now(),
+                        avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
+                    };
+                    msgCache[ts] = userRecord;
+                    addRecentUser({ login: userLogin, displayName: userLogin, badges: "", avatar: userRecord.avatar });
+
+                    const rTagProcessed = processRTag(messageContent, 0); 
+                    const contentHtml = parseContent(rTagProcessed);
+                    combinedHtml += `
                         <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
                             <div class="reply-btn-group">
                                 <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
@@ -3014,11 +3016,12 @@
                             <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${userLogin}')">${userLogin}</b>: 
                             <span class="message">${contentHtml}</span>
                         </div>`;
-                        }
-                    });
-                    if (combinedHtml) appendMessageWithScroll(combinedHtml);
                 }
-            } catch (err) { console.error('獲取歷史訊息失敗:', err); }
+            });
+            if (combinedHtml) appendMessageWithScroll(combinedHtml);
+            
+        }
+    } catch (err) { console.error('獲取歷史訊息失敗:', err); }
             setTimeout(() => { isInitialLoad = false; }, 8000);
             forceScrollToBottom(true);
         }
