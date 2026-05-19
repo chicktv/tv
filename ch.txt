@@ -4,3 +4,4 @@
 朗子,arlongjaijai2025,twitch,$2y$10$p9jwaQNERKU1afyhMhYYhuUge9xZW61Qc48ZUSrh71cfp4gD1ZLz2,42.3.73.119
 wc,no25no2501,kick,$2y$10$HUOYF/gad6mqdHnedXP3du/6fHpnkT46lD7J/IGi0.nsKqPb0fYcS,104.28.163.54
 然哥,yinlove,kick,$2y$10$6Zod55NCM3pMTYtB3qqh/.2a4VEDWH/Jsq.lZbF/Jhl6z9qH.C0U6,218.250.194.166
+NU,number8atctv,kick,$2y$10$C4aAB69VatrhkOy/CdZ3HuQbSIf8C67HlvnVXVfFS5hY72ZdQqJYC,86.148.206.68
