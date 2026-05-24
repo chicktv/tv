@@ -1,4 +1,6 @@
 {   
+    "bubsy-4d/1": "https://static-cdn.jtvnw.net/badges/v1/0652a149-9fc6-4a9b-82c4-31793c0e384a/1",
+    "alterra-corporation/1": "https://static-cdn.jtvnw.net/badges/v1/18d8ad18-788e-4b47-9c9b-783a41c13ec3/1",
     "road-to-twitchcon-26/1": "https://chicktv.github.io/tv/badges/v1/03eeb136-3249-49cc-b45a-569edea04907/1",
     "lego-batman-legacy-of-the-dark-knight/1": "https://chicktv.github.io/tv/badges/v1/4d54795e-5f6c-4b5b-9a30-0d78e6d0d67b/1",
     "skulls-10th-anniversary/1": "https://chicktv.github.io/tv/badges/v1/682bdd23-f49d-4c5b-bd82-2c00a65ea22a/1",
