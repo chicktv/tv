@@ -47,7 +47,7 @@
             gap: 0.625em;
         }
 
-        #lists {
+          #lists {
             display: flex;
             flex-wrap: nowrap;
             gap: 0.5em;
@@ -57,14 +57,43 @@
             white-space: nowrap;
             flex: 1;
             min-width: 0;
-            padding: 0.3125em 0;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+            padding: 0.3125em 0 0.625em 0;   /* 底部內邊距讓捲軸不貼邊 */
+            -ms-overflow-style: auto;        /* 強制顯示捲軸 (IE/Edge) */
+            scrollbar-width: auto;           /* Firefox 顯示捲軸 */
+            cursor: grab;
+        }
+        #lists:active {
+            cursor: grabbing;
+        }
+        /* 自訂 webkit 橫向捲軸樣式 - 酷炫深色系 */
+        #lists::-webkit-scrollbar {
+            height: 8px;                     /* 橫向捲軸高度 */
+            background-color: #1f1f2b;
+            border-radius: 10px;
+        }
+        #lists::-webkit-scrollbar-track {
+            background: #1a1a24;
+            border-radius: 10px;
+            margin: 0 4px;
+        }
+        #lists::-webkit-scrollbar-thumb {
+            background: #4a4a5a;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        #lists::-webkit-scrollbar-thumb:hover {
+            background: #6f6f8a;
+        }
+        #lists::-webkit-scrollbar-thumb:active {
+            background: #00ff88;
+        }
+        /* 確保移動端功能表模式時lists隱藏不影響捲軸邏輯 (手機功能表獨佔) */
+        @media (max-width: 768px) {
+            #lists {
+                display: none;
+            }
         }
 
-        #lists::-webkit-scrollbar {
-            display: none;
-        }
 
         .button-wrapper {
             position: relative;
