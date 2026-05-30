@@ -5,3 +5,4 @@
 wc,no25no2501,kick,$2y$10$HUOYF/gad6mqdHnedXP3du/6fHpnkT46lD7J/IGi0.nsKqPb0fYcS,104.28.163.54
 然哥,yinlove,kick,$2y$10$6Zod55NCM3pMTYtB3qqh/.2a4VEDWH/Jsq.lZbF/Jhl6z9qH.C0U6,218.250.194.166
 NU,number8atctv,kick,$2y$10$C4aAB69VatrhkOy/CdZ3HuQbSIf8C67HlvnVXVfFS5hY72ZdQqJYC,86.148.206.68
+火,falconjurer,kick,$2y$10$BwcAsmWhlB3VnxbChiQBWO4waga.OWAoFYED61nRjXiNwxIm4vytS,119.246.70.10
