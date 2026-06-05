@@ -873,7 +873,7 @@
             let url = "";
             if(channel.platform === "kick") url = `https://kick.com/api/v2/channels/${channel.id}`;
             if(channel.platform === "twitch") url = `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
-            if(channel.platform === "ok") url = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+            if(channel.platform === "ok") url = `https://young-cloud-e59f.chicktv001.workers.dev/?quest=${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
             if(!url) return;
 
             try {
