@@ -285,26 +285,21 @@
             contain: layout paint;
         }
 
-        .video {
-            width: 48%;
-            height: 48%;
-            border: none;
-        }
-        .video1, .full-screen-video {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+         .video, .video1, .full-screen-video {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 
-        #multi-stream-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.625em;
-            height: 100%;
-            width: 100%;
-            overflow: auto;
-        }
+       #multi-stream-container {
+    display: grid;
+    grid-template-columns: 1fr; /* 預設 1 欄 */
+    grid-template-rows: 1fr;    /* 預設 1 列 */
+    gap: 0.625em;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* 強制隱藏滾動條 */
+}
         .hls-video-element {
             width: 100%;
             height: 100%;
@@ -596,6 +591,8 @@
             if (!container) return;
             destroyAllHLSInstances();
             container.innerHTML = "";
+			container.style.gridTemplateColumns = "1fr";
+            container.style.gridTemplateRows = "1fr";
             if (!channel) {
                 container.innerHTML = `<div style="color:#aaa; text-align:center; padding:2rem;">未選擇頻道</div>`;
                 currentDisplayChannel = null;
@@ -660,6 +657,11 @@
             
             const isMuted = fullSelected.length > 1;
             const isOnlyOne = fullSelected.length === 1;
+			const count = fullSelected.length;
+           const cols = Math.ceil(Math.sqrt(count));
+           const rows = Math.ceil(count / cols);
+           container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
             const frag = document.createDocumentFragment();
 
             fullSelected.forEach(ch => {
