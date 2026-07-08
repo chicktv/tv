@@ -96,16 +96,10 @@
         }
         
         /* 5. 影片限制：最大 250px */
-         #chat-container video.media-preview {
-    max-height: 300px !important;
-    min-height: auto !important;
-    max-width: 300px !important;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain !important;
-    transform: translateZ(0);
-    -ms-transform: translateZ(0);
-}
+        #chat-container video.media-preview {
+            max-height: 300px !important;
+            min-height: auto !important;
+        }
         
         /* ===================================================================== */
 
@@ -133,7 +127,7 @@
             padding: 1px; 
             margin-bottom: 5px; 
             border: 1px solid transparent;
-            content-visibility: auto;
+            content-visibility: visible !important;
             contain-intrinsic-size: 0 40px; 
         }
 
