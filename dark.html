@@ -509,7 +509,7 @@
                 <button id="voice-btn" onclick="toggleRecording()" title="錄製語音">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
                 </button>
-                <button id="sendbtn" onclick="sendMessage()" disabled>傳送</button>
+                <button id="sendbtn" onclick="sendMessage()" >傳送</button>
             </div>
         </div>
     </div>
@@ -1302,6 +1302,10 @@ function hideMentionList() {
 
 // ===================== 發送訊息 =====================
 function sendMessage() {
+	if (!ACCESS_TOKEN) {
+        loginWithPopup();
+        return;
+    }
     const input = document.getElementById('msginput');
     let val = input.textContent.trim();
     if(!val || !socket || socket.readyState !== 1) return;
@@ -1447,7 +1451,7 @@ function startChat() {
         let statusMsg = ACCESS_TOKEN ? `連線至 #${CHANNEL}` : `匿名觀看 #${CHANNEL}`;
         document.getElementById('status').innerHTML = statusMsg;
         document.getElementById('msginput').disabled = !ACCESS_TOKEN;
-        document.getElementById('sendbtn').disabled = !ACCESS_TOKEN;
+        document.getElementById('sendbtn').disabled = false;
     };
     socket.onerror = (err) => {
         document.getElementById('status').textContent = '連線錯誤，即將重連...';
