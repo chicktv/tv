@@ -529,10 +529,12 @@
         </div>
     </div>
 
-    <div id="channel-selection" style="display: none;">
-        <h3>📡 選擇要同時觀看的台：</h3>
+   <div id="channel-selection" style="display: none;">
+        <h3>📡 選擇要同時觀看的台：</h3>   
         <div id="channel-options"></div>
         <button onclick="watchSelectedChannels()">▶️ 開始觀看</button>
+		 <button onclick="checkAllLiveChannels()" style="background: #00ff88; color: #0d0d0d; font-weight: bold; border: none; padding: 4px 12px; font-size: 0.85rem;">所有在線頻道</button>
+            <button onclick="clearAllChannelSelection()" style="background: #333; color: #ccc; border: 1px solid #444; padding: 4px 12px; font-size: 0.85rem;">全選</button>
     </div>
     
     <div id="multi-stream-container-wrapper">
@@ -922,7 +924,32 @@
             container.appendChild(frag);
             channels.forEach(ch => updateChannelOptionLabel(ch.id));
         }
+        // 新增：一鍵勾選所有目前狀態為 live 的台
+        function checkAllLiveChannels() {
+            channels.forEach(ch => {
+                // 取得該頻道的當前直播狀態
+                const status = channelStatuses[ch.id] || 'unknown';
+                // 轉換成對應的 HTML 元素 ID
+                const idSafe = ch.id.replace(/[^a-zA-Z0-9]/g, '_');
+                const chk = document.getElementById(`chk_${idSafe}`);
+                
+                if (chk) {
+                    if (status === 'live') {
+                        chk.checked = true; // 是 Live 就勾選
+                    } else {
+                        chk.checked = false; // 不是 Live 就取消勾選（可依需求決定是否保留原本勾選）
+                    }
+                }
+            });
+        }
 
+        // 新增：一鍵清除看更台裡的所有勾選
+        function clearAllChannelSelection() {
+            const checkboxes = document.querySelectorAll("#channel-options input[type='checkbox']");
+            checkboxes.forEach(chk => {
+                chk.checked = true;
+            });
+        }
         function toggleChannelSelection(){ const div=document.getElementById("channel-selection"); if(div.style.display==="none"){ generateChannelOptions(); div.style.display="block"; } else div.style.display="none"; }
 
         // 漢堡選單
