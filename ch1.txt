@@ -7,3 +7,4 @@ NU,number8atctv,kick
 火,falconjurer,kick
 洗衫,laundrytoday,kick
 友2,yaubotaibackup,kick
+神,godzilla-god-2077,kick
