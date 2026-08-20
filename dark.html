@@ -1359,63 +1359,76 @@ window.insertRecursiveQuote = function(login, ts) {
 };
 
 // ===================== 歷史訊息 =====================
-async function fetchRecentMessages() {
-    try {
-        // 移除網址後方的 ?limit=15，讓 API 返回完整的歷史紀錄（通常最新在最下面）
-        const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}`);
-        const data = await response.json();
-        if (data && data.messages) {
-            let combinedHtml = ""; 
-            
-            // 使用 .slice(-15) 擷取陣列中最後面（最新）的 15 條訊息
-            const recent15Messages = data.messages.slice(-15);
+let isFetchingHistory = false;
 
-            recent15Messages.forEach(rawIrcMsg => {
-                const match = rawIrcMsg.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
+async function fetchRecentMessages() {
+    // 防重複執行
+    if (isFetchingHistory) return;
+    isFetchingHistory = true;
+
+    try {
+        const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=30`);
+        const data = await response.json();
+
+        if (data && data.messages && data.messages.length > 0) {
+            let combinedHtml = ""; 
+
+            data.messages.forEach(rawIrcMsg => {
+                const match = rawIrcMsg.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :([\s\S]+)/);
                 if (match) {
                     const tagStr = match[1] || "";
                     const userLogin = match[2];
                     const messageContent = match[3];
-                    const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
-                    let userColor = "#9147ff"; 
+
+                    const tags = {};
                     if (tagStr) {
-                        const tags = {};
                         tagStr.split(';').forEach(t => {
                             const pair = t.split('=');
-                            if(pair.length === 2) tags[pair[0]] = pair[1];
+                            if (pair.length === 2) tags[pair[0]] = pair[1];
                         });
-                        if (tags['color']) userColor = tags['color'];
                     }
+
+                    const displayName = tags['display-name'] ? decodeURIComponent(tags['display-name']) : userLogin;
+                    const userColor = tags['color'] ? tags['color'] : "#9147ff";
+                    const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+
                     const userRecord = {
                         content: messageContent,
-                        user: { login: userLogin, displayName: userLogin },
-                        displayName: userLogin,
+                        user: { login: userLogin, displayName: displayName },
+                        displayName: displayName,
                         timestamp: Date.now(),
                         avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
                     };
+
                     msgCache[ts] = userRecord;
-                    addRecentUser({ login: userLogin, displayName: userLogin, badges: "", avatar: userRecord.avatar });
+                    addRecentUser({ login: userLogin, displayName: displayName, badges: "", avatar: userRecord.avatar });
 
                     const rTagProcessed = processRTag(messageContent, 0); 
                     const contentHtml = parseContent(rTagProcessed);
+
                     combinedHtml += `
                         <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
                             <div class="reply-btn-group">
-                                <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
-                                <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="引用">🔗</div>
+                                <div class="reply-btn" onclick="replyNative('${displayName}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
+                                <div class="reply-btn2" onclick="insertRecursiveQuote('${displayName}','${ts}')" title="引用">🔗</div>
                             </div>
-                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${userLogin}')">${userLogin}</b>: 
+                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${displayName}')">${displayName}</b>: 
                             <span class="message">${contentHtml}</span>
                         </div>`;
                 }
             });
+
             if (combinedHtml) appendMessageWithScroll(combinedHtml);
-            
         }
-    } catch (err) { console.error('獲取歷史訊息失敗:', err); }
-	forceScrollToBottom(true);
-    
-    // 新增：給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
+    } catch (err) { 
+        console.error('獲取歷史訊息失敗:', err); 
+    } finally {
+        isFetchingHistory = false;
+    }
+
+    forceScrollToBottom(true);
+
+    // 給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
     setTimeout(() => { isInitialLoad = false; }, 8000);
 }
 
