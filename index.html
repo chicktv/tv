@@ -877,14 +877,27 @@
             let url = "";
             if(channel.platform === "kick") url = `https://kick.com/api/v2/channels/${channel.id}`;
             if(channel.platform === "twitch") url = `https://api.twitch.tv/helix/streams?user_login=${channel.id}`;
-            if(channel.platform === "ok") url = `https://young-cloud-e59f.chicktv001.workers.dev/${encodeURIComponent('https://ok.ru/videoembed/' + channel.id)}`;
+            if(channel.platform === "ok") url = `https://young-cloud-e59f.chicktv001.workers.dev/https://ok.ru/videoembed/${channel.id}`;
             if(!url) return;
 
-            try {
+           try {
                 if(channel.platform === "ok") {
                     const resp = await fetch(url);
                     const html = await resp.text();
-                    channelStatuses[channel.id] = (html.includes('status:"online"') || html.includes('"status":"online"')) ? 'live' : 'not-live';
+                    
+                    console.log(`[OK Check Raw Text]`, JSON.stringify(html));
+
+                    // 轉換成大寫並移除常見干擾字元
+                    const upperText = html.toUpperCase();
+                    
+                    // 1. 原生屬性判斷
+                    // 2. Worker 輸出中包含 "LIVE" (以單詞邊界匹配，排除其他字)
+                    const isOkLive = upperText.includes('STATUS:"ONLINE"') || 
+                                     upperText.includes('"STATUS":"ONLINE"') || 
+                                     /\bLIVE\b/.test(upperText);
+                    
+                    channelStatuses[channel.id] = isOkLive ? 'live' : 'not-live';
+                    console.log(`[OK Check Final Result] ${channel.id}:`, channelStatuses[channel.id]);
                 } else {
                     const headers = channel.platform === "twitch" ? { "Authorization": `Bearer ${TWITCH_TOKEN}`, "Client-Id": TWITCH_CLIENT_ID } : {};
                     const resp = await fetch(url, { headers });
