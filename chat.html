@@ -642,6 +642,22 @@ function renderBadges(badgeStr) {
 }
 function getMyBadges() { return myBadges || ""; }
 
+// --- 新增：處理一般文字訊息提及到自己時的標記 ---
+function highlightSelfMentions(text) {
+    if (!text || (!myDisplayName && !myLoginId)) return text;
+    let result = text;
+    if (myDisplayName) {
+        // (^|\s) 確保 @ 前面是空白或行首，(?!\\w) 確保後面不是其他文字
+        const regexName = new RegExp(`(^|\\s)(@${myDisplayName})(?!\\w)`, 'gi');
+        result = result.replace(regexName, `$1<span class="mention-self-tag">$2</span>`);
+    }
+    if (myLoginId && myLoginId.toLowerCase() !== (myDisplayName || "").toLowerCase()) {
+        const regexLogin = new RegExp(`(^|\\s)(@${myLoginId})(?!\\w)`, 'gi');
+        result = result.replace(regexLogin, `$1<span class="mention-self-tag">$2</span>`);
+    }
+    return result;
+}
+
 // ===================== 捲動相關 (已修復媒體載入不捲動到底的問題) =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
@@ -1285,13 +1301,20 @@ function selectMentionUser(item) {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
     const range = sel.getRangeAt(0);
-    const before = input.textContent.substring(0, range.startOffset);
-    const atPos = before.lastIndexOf('@');
-    if (atPos !== -1) {
-        insertTextAtCursor('@' + item.dataset.displayName + ' ');
-        hideMentionList();
-        input.focus();
+    
+    // --- 修改：在插入完整名稱前，先選取並刪除原本輸入的 @ 標籤內容 ---
+    if (range.startContainer.nodeType === Node.TEXT_NODE) {
+        const textContent = range.startContainer.textContent;
+        const atPos = textContent.lastIndexOf('@', range.startOffset - 1);
+        if (atPos !== -1) {
+            range.setStart(range.startContainer, atPos);
+            range.deleteContents(); 
+        }
     }
+    
+    insertTextAtCursor('@' + item.dataset.displayName + ' ');
+    hideMentionList();
+    input.focus();
 }
 function hideMentionList() {
     const list = document.getElementById('mention-list');
@@ -1314,7 +1337,10 @@ function sendMessage() {
     let finalCmd = "", replyDisplay = "";
     let myBadgeStr = getMyBadges();
     let badgeHtml = renderBadges(myBadgeStr);
-	let processedContentForDisplay = processRTag(val, 0);
+    
+    // --- 修改：處理自己送出的訊息在畫面上的自我高亮效果 ---
+	let processedContentForDisplay = highlightSelfMentions(processRTag(val, 0));
+    
     if(pendingReply.id){
         finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
         let repliedMsg = msgCache[pendingReply.id];
@@ -1404,7 +1430,9 @@ async function fetchRecentMessages() {
                     addRecentUser({ login: userLogin, displayName: displayName, badges: "", avatar: userRecord.avatar });
 
                     const rTagProcessed = processRTag(messageContent, 0); 
-                    const contentHtml = parseContent(rTagProcessed);
+                    // --- 修改：套用歷史訊息的一般文字被提及高亮 ---
+                    const highlightedMsg = highlightSelfMentions(rTagProcessed);
+                    const contentHtml = parseContent(highlightedMsg);
 
                     combinedHtml += `
                         <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
@@ -1542,6 +1570,10 @@ function startChat() {
                 if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
             displayMsg = processRTag(displayMsg, 0);
+            
+            // --- 修改：處理 WebSocket 接收的即時一般文字提及高亮 ---
+            displayMsg = highlightSelfMentions(displayMsg);
+            
             let contentHtml = parseContent(displayMsg);
             let badgeHtml = renderBadges(badgeStr);
             let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-user-login="${userLogin}" data-msg-ts="${ts}">
