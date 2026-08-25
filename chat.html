@@ -1274,6 +1274,9 @@ function showMentionList(users, atPos) {
         let badgeHtml = u.badges ? renderBadges(u.badges) : '';
         item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy"><span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
         item.dataset.login = u.login; item.dataset.displayName = u.displayName;
+        
+        // 阻止 mousedown 預設動作，避免點擊時輸入框失去焦點與游標位置
+        item.addEventListener('mousedown', (e) => e.preventDefault());
         item.addEventListener('click', () => selectMentionUser(item));
         list.appendChild(item);
     });
@@ -1298,23 +1301,41 @@ function updateMentionSelection() {
 }
 function selectMentionUser(item) {
     const input = document.getElementById('msginput');
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
+    input.focus();
     
-    // --- 修改：在插入完整名稱前，先選取並刪除原本輸入的 @ 標籤內容 ---
-    if (range.startContainer.nodeType === Node.TEXT_NODE) {
-        const textContent = range.startContainer.textContent;
-        const atPos = textContent.lastIndexOf('@', range.startOffset - 1);
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const text = input.textContent;
+        const caretPos = range.startOffset;
+        
+        // 取得游標前最後一個 '@' 的位置
+        const beforeCaret = text.substring(0, caretPos);
+        const atPos = beforeCaret.lastIndexOf('@');
+        
         if (atPos !== -1) {
-            range.setStart(range.startContainer, atPos);
-            range.deleteContents(); 
+            // 將 '@' 到游標間的文字替換為指定的用戶名稱
+            const afterCaret = text.substring(caretPos);
+            const mentionText = '@' + item.dataset.displayName + ' ';
+            const newText = text.substring(0, atPos) + mentionText + afterCaret;
+            
+            input.textContent = newText;
+            
+            // 重新設定游標位置至插入名稱的後方
+            const newCaretPos = atPos + mentionText.length;
+            const newRange = document.createRange();
+            if (input.childNodes.length > 0) {
+                const textNode = input.childNodes[0];
+                newRange.setStart(textNode, Math.min(newCaretPos, textNode.length));
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
         }
     }
     
-    insertTextAtCursor('@' + item.dataset.displayName + ' ');
     hideMentionList();
-    input.focus();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 function hideMentionList() {
     const list = document.getElementById('mention-list');
