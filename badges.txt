@@ -359,5 +359,8 @@
   "squirtle/1": "https://chicktv.github.io/tv/badges/v1/6e19714e-571f-4737-bc8b-865ebfb3e2c7/1",
   "nasa-roman/1": "https://chicktv.github.io/tv/badges/v1/c411b949-c736-4b1a-9769-d759e213923c/1",
   "dron-e/1": "https://chicktv.github.io/tv/badges/v1/70e9e169-1fbf-4279-b23c-a714ccb0c9ef/1",
-  "diablo/1": "https://chicktv.github.io/tv/badges/v1/12e66b34-5748-4eb0-8cf1-63d01e925b4f/1"
+  "diablo/1": "https://chicktv.github.io/tv/badges/v1/12e66b34-5748-4eb0-8cf1-63d01e925b4f/1",
+    "2026-worlds-costumed-pikachu/1": "https://chicktv.github.io/tv/badges/v1/bace09ab-0403-405a-b412-d9567738d210/3",
+    "pokemonxp-costumed-pikachu/1": "https://chicktv.github.io/tv/badges/v1/e3374139-6240-462e-b77d-d3ac00a4da23/3",
+    "mouseathon/1": "https://chicktv.github.io/tv/badges/v1/8bce8f4e-f53a-4922-b715-35167b0fae7b/3"
 }
