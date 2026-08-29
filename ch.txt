@@ -8,3 +8,4 @@ NU,number8atctv,kick,$2y$10$C4aAB69VatrhkOy/CdZ3HuQbSIf8C67HlvnVXVfFS5hY72ZdQqJY
 洗衫,laundrytoday,kick,$2y$10$1nk4MvOOpdnH.T5Nlj9/pOQntIUIppH009p6vd6660gLGiGf.OW0G,62.197.154.40
 友2,yaubotaibackup,kick,$2y$10$IfnTtsZ6HizFslFLaFW8Re5DHk0QmwvnNHWaT/w69oUHZ0Rfrebw.,14.199.99.40
 羅拔,baggio1967,kick,$2y$10$lLd5syNWg0HrsugTaqLo7O0oWHcydqPJtnDVASLCnPoBL0Deu.fo.,112.119.174.85
+絕2,underwear,at,$2y$10$o1PcMuMljX0sSK31firjCOWwUnk5AhHgyKUIyNlZV3H9YJsNxeWhO,182.152.54.91
