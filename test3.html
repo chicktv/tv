@@ -1000,10 +1000,60 @@ function processRTag(str, depth = 0) {
 
 // ===================== 資源載入與表情面板 =====================
 async function fetchBadges() {
+    if (!ACCESS_TOKEN) {
+        customBadges = {};
+        return; // 需要使用者授權才能調用 Helix API
+    }
     try {
-        const res = await fetch('https://chicktv.github.io/tv/b.txt');
-        customBadges = await res.json();
-    } catch(e) { console.error(e); customBadges = {}; }
+        const headers = {
+            'Client-ID': CLIENT_ID,
+            'Authorization': 'Bearer ' + ACCESS_TOKEN
+        };
+        
+        // 1. 取得 Broadcaster ID
+        const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${CHANNEL}`, { headers });
+        const userData = await userRes.json();
+        let broadcasterId = null;
+        if (userData && userData.data && userData.data.length > 0) {
+            broadcasterId = userData.data[0].id;
+        }
+
+        // 2. 取得全域 Twitch 徽章
+        const globalRes = await fetch(`https://api.twitch.tv/helix/chat/badges/global`, { headers });
+        const globalData = await globalRes.json();
+        
+        // 3. 取得該頻道專屬 Twitch 徽章
+        let channelData = null;
+        if (broadcasterId) {
+            const channelRes = await fetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${broadcasterId}`, { headers });
+            channelData = await channelRes.json();
+        }
+
+        customBadges = {};
+        
+        // 解析並建立全域徽章映射表
+        if (globalData && globalData.data) {
+            globalData.data.forEach(set => {
+                set.versions.forEach(version => {
+                    customBadges[`${set.set_id}/${version.id}`] = version.image_url_1x;
+                    if (!customBadges[set.set_id]) customBadges[set.set_id] = version.image_url_1x; // fallback
+                });
+            });
+        }
+        
+        // 解析頻道專屬徽章 (會覆蓋全域相同的 set_id)
+        if (channelData && channelData.data) {
+            channelData.data.forEach(set => {
+                set.versions.forEach(version => {
+                    customBadges[`${set.set_id}/${version.id}`] = version.image_url_1x;
+                    if (!customBadges[set.set_id]) customBadges[set.set_id] = version.image_url_1x;
+                });
+            });
+        }
+    } catch(e) { 
+        console.error("載入 Twitch 官方徽章失敗:", e); 
+        customBadges = {}; 
+    }
 }
 async function loadAudioData() {
     try {
@@ -1699,7 +1749,12 @@ function loginSuccess() {
     document.getElementById('userAvatar').src = myAvatar;
     document.getElementById('userName').textContent = myDisplayName;
     if (socket) socket.close();
-    startChat();
+    
+    // 登入成功拿到 Token 後讀取官方徽章
+    fetchBadges().then(() => {
+        updateBadgeCarousel();
+        startChat();
+    });
 }
 function logout() {
     localStorage.removeItem('twitch_token');
