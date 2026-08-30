@@ -48,7 +48,9 @@
         #chat-container::-webkit-scrollbar-thumb, #emojiContent::-webkit-scrollbar-thumb, #emojiTabs::-webkit-scrollbar-thumb, #mention-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         #chat-container::-webkit-scrollbar-thumb:hover, #emojiContent::-webkit-scrollbar-thumb:hover, #emojiTabs::-webkit-scrollbar-thumb:hover, #mention-list::-webkit-scrollbar-thumb:hover { background: var(--t-purp); }
 
-        /* 統一控制媒體嵌入大小 */
+        /* ================= 統一控制媒體嵌入大小 (解決衝突版) ================= */
+        
+        /* 1. 基礎共用屬性：所有媒體共用的寬度、圓角與邊距 */
         #chat-container .media-preview,
         #chat-container iframe.media-preview,
         #chat-container iframe[src*="youtube.com"],
@@ -61,38 +63,45 @@
         #chat-container iframe[src*="threads.com"] {
             width: auto !important;
             height: auto !important;
-            max-width: 250px !important;
-            max-height: 450px !important;
+            max-width: 300px !important;
             border-radius: 8px !important;
             border: 0px solid #444 !important;
             margin: 5px 0 !important;
-            object-fit: fill !important;
-            /* GPU 優化: 強制使用硬體加速層 */
-            transform: translateZ(0); 
+            object-fit: fill !important; 
         }
 
+        /* 2. 特定 iframe 與推文：強制鎖定 400px 高度 */
         #chat-container iframe[src*="youtube.com"],
         #chat-container iframe[src*="youtube-nocookie.com"],
         #chat-container blockquote.twitter-tweet,
         #chat-container iframe[src*="threads.com"],
         #chat-container iframe[src*="store.steampowered.com"] {
             min-height: 400px !important;
-			max-height: 400px !important;
+            max-height: 400px !important;
+        }
+
+        /* 3. Facebook 或其他無特殊指定的高度：最大 450px */
+        #chat-container iframe[src*="facebook.com"],
+        #chat-container iframe[src*="youtu.be"],
+        #chat-container .twitter-tweet-container {
+            max-height: 450px !important;
         }
 
         #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
 
+        /* 4. 圖片限制：最大 250px */
         #chat-container img.media-preview {
-            height: auto !important;
             max-height: 250px !important;
             min-height: auto !important;
-            object-fit: fill !important;
         }
+        
+        /* 5. 影片限制：最大 250px */
         #chat-container video.media-preview {
-            height: auto !important;
-            max-height: 250px !important;
+            max-height: 300px !important;
             min-height: auto !important;
         }
+        
+        /* ===================================================================== */
 
         .header-bar { 
             /* GPU 優化: 移除 backdrop-filter: blur(8px); */
@@ -114,12 +123,11 @@
             line-height: 1.6; 
             word-wrap: break-word; 
             color: var(--t-text); 
-            /* GPU 優化: 移除 transition: all */
-            transition: background-color 0.3s, border-color 0.3s; 
+            transition: background 0.3s, border 0.3s; 
             padding: 1px; 
             margin-bottom: 5px; 
             border: 1px solid transparent;
-            content-visibility: auto;
+            content-visibility: visible !important;
             contain-intrinsic-size: 0 40px; 
         }
 
@@ -136,7 +144,7 @@
        .btn-primary {
             background: var(--t-purp); color: white; border: none; border-radius: var(--radius-sm);
             padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
-            transition: background-color var(--transition-fast), transform var(--transition-fast);
+            transition: background var(--transition-fast), transform var(--transition-fast);
         }
         .btn-primary:hover { background: var(--t-purp-hover); transform: translateY(-1px); }
 		
@@ -145,19 +153,19 @@
 }
 
 .control-btn {
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    transition: all 0.3s ease;
 }
         .reply-btn-group {
             position: absolute;
             right: 10px;
-            top: 10px;
+            top: 2px;
             display: flex;
             gap: 8px;
             z-index: 10;
         }
         .reply-btn, .reply-btn2 {
-            width: 28px;
-            height: 28px;
+            width: 25px;
+            height: 25px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -167,7 +175,7 @@
             font-size: 14px;
             background: rgba(0,0,0,0.7);
             border: 1px solid #555;
-            transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+            transition: all 0.15s;
         }
         .reply-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .reply-btn:hover, .reply-btn2:hover { background-color: #9147ff; border-color: #fff; transform: scale(1.05);}
@@ -185,7 +193,7 @@
             cursor: pointer; 
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(0, 0, 0, 0.2);
-            transition: background-color 0.1s ease, border-color 0.1s ease;
+            transition: all 0.1s ease;
             word-break: break-word;
         }
         .quote-box:hover { 
@@ -217,7 +225,7 @@
             justify-content: center;
             z-index: 100;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: all 0.3s ease;
             font-size: 20px;
         }
         
@@ -229,21 +237,13 @@
         .delete-btn { position: absolute;top: -8px;right: -8px;background: #e91916;color: white;width: 20px;height: 20px;border-radius: 50%;font-size: 12px;line-height: 20px;text-align: center;cursor: pointer;display: none; z-index: 100; border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
         .show-del .delete-btn { display: block; }
         .audio-item { cursor:pointer; background:rgba(145,71,255,0.1); border:1px solid #444; border-radius:4px; padding:8px; text-align:center; font-size:11px; position:relative; color: #fff; }
+        .audio-icon-btn { cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: all 0.2s ease; user-select: none; }
+        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; animation: pulse-audio 1.5s infinite; }
         
-        /* GPU 優化: 重構音訊按鈕動畫，避免使用 box-shadow 引發 Repaint Storm */
-        .audio-icon-btn { position: relative; cursor: pointer; font-size: 20px; vertical-align: middle; display: inline-block; padding: 5px; background: rgba(145, 71, 255, 0.2); border-radius: 4px; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; user-select: none; z-index: 1; }
-        .audio-icon-btn::after {
-            content: ''; position: absolute; inset: 0; border-radius: inherit;
-            border: 2px solid rgba(145, 71, 255, 0.8);
-            opacity: 0; pointer-events: none; z-index: -1;
-        }
-        .audio-icon-btn.playing { background: #9147ff; color: white; border-color: white; }
-        .audio-icon-btn.playing::after { animation: pulse-audio-ring 1.5s infinite; }
-        
-        @keyframes pulse-audio-ring {
-            0% { transform: scale(1); opacity: 1; }
-            70% { transform: scale(1.6); opacity: 0; }
-            100% { transform: scale(1); opacity: 0; }
+        @keyframes pulse-audio {
+            0% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(145, 71, 255, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(145, 71, 255, 0); }
         }
         
         #userInfo { display: none; align-items: center; gap: 8px; font-size: 13px; }
@@ -298,7 +298,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: background-color 0.2s;
+            transition: background 0.2s;
             color: var(--t-text);
             font-size: 14px;
         }
@@ -332,7 +332,7 @@
         .footer { 
             /* GPU 優化: 移除 backdrop-filter: blur(10px); */
             background: #121214; 
-            padding: 12px 5px; 
+            padding: 5px 5px; 
             border-top: 1px solid var(--border-color); 
             position: relative; 
             z-index: 100;
@@ -340,11 +340,11 @@
         #reply-indicator { display:none; color:#adadb8; font-size:12px; margin-bottom:8px; padding:8px; background:rgba(145,71,255,0.1); border-radius:4px; border: 1px solid rgba(145,71,255,0.3); }
        .input-section { display: flex; flex-direction: column; gap: 8px; position: relative; }
         
-        .tool-bar { display: flex; gap: 12px; align-items: center; padding-left: 4px; height:13px;}
+        .tool-bar { display: flex; gap: 1px; align-items: center; padding-left: 4px; height:13px;}
         .tool-link { 
             background: none; border: none; color: var(--text-muted); 
-            cursor: pointer; font-size: 13px; padding: 4px; font-weight: 500; 
-            transition: color var(--transition-fast), background-color var(--transition-fast); display: flex; align-items: center; gap: 4px;
+            cursor: pointer; font-size: 13px; padding: 1px; font-weight: 500; 
+            transition: all var(--transition-fast); display: flex; align-items: center; gap: 1px;
             border-radius: var(--radius-sm);
         }
         .tool-link:hover { color: var(--text-main); background: var(--bg-surface-active); }
@@ -355,11 +355,33 @@
             display: flex; align-items: flex-end; 
             background: var(--bg-surface); border: 1px solid var(--border-strong); 
             border-radius: var(--radius-md); padding: 8px 12px; 
-            transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+            transition: all var(--transition-fast);
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         .input-box-wrapper:focus-within { border-color: var(--t-purp); background: var(--bg-base); box-shadow: 0 0 0 2px var(--t-purp-muted); }
         
+        /* --- Chat Badge Carousel 樣式 --- */
+        .chat-badge-carousel {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-right: 8px;
+            border-right: 1px solid var(--border-strong);
+            margin-right: 8px;
+            margin-bottom: 4px; /* 對齊輸入框文字基準線 */
+        }
+        .chat-badge-carousel:empty {
+            display: none;
+            padding: 0;
+            margin: 0;
+            border: none;
+        }
+        .chat-badge-carousel img.badge {
+            width: 18px;
+            height: 18px;
+            margin-right: 0;
+        }
+
         #msginput { 
             flex: 1; background: transparent; border: none; color: var(--text-main); 
             font-size: 15px; outline: none; padding: 4px 0; font-family: inherit; 
@@ -368,22 +390,27 @@
         }
         #msginput:empty:before { content: attr(placeholder); color: var(--text-muted); pointer-events: none; }
         #msginput:disabled { cursor: not-allowed; opacity: 0.5; }
-        
+        #msginput::-webkit-scrollbar {width: 6px;}
+        #msginput::-webkit-scrollbar-track {background: transparent;}
+        #msginput::-webkit-scrollbar-thumb {background: #888;border-radius: 10px;}
+        #msginput::-webkit-scrollbar-thumb:hover {background: #555;}
         .action-bar { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
         
         #voice-btn {
             background: transparent; border: none; font-size: 18px;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
             width: 36px; height: 36px; border-radius: var(--radius-round);
-            transition: color var(--transition-fast), background-color var(--transition-fast); color: var(--text-muted);
+            transition: all var(--transition-fast); color: var(--text-muted);
+			display:none;
         }
         #voice-btn:hover { background: var(--bg-surface-active); color: var(--text-main); }
         #voice-btn.recording { color: var(--danger); background: rgba(233, 25, 22, 0.1); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
 
         #sendbtn { 
             background: var(--t-purp); border: none; color: white; cursor: pointer; 
             padding: 8px 20px; border-radius: var(--radius-md); font-weight: 600; font-size: 14px; 
-            transition: background-color var(--transition-fast), transform var(--transition-fast);
+            transition: all var(--transition-fast);
         }
         #sendbtn:hover:not(:disabled) { background: var(--t-purp-hover); transform: translateY(-1px); }
         #sendbtn:disabled { background: var(--bg-surface-active); color: var(--text-muted); cursor: not-allowed; }
@@ -391,11 +418,14 @@
         .setting-btn { 
             cursor: pointer; color: var(--text-muted); padding: 8px; 
             border-radius: var(--radius-sm); display: flex; align-items: center;
-            transition: color var(--transition-fast), background-color var(--transition-fast);
-			display:none;
+            transition: all var(--transition-fast);
+			display:block;
         }
         .setting-btn:hover { color: var(--t-purp); background: var(--bg-surface-active); }
 
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
         #emojiPanel { 
             position: fixed; 
             display: none; 
@@ -443,7 +473,7 @@
             <span id="userName"></span>
             <button id="logoutBtn" class="btn-danger">登出</button>
         </div>
-        <button id="loginBtn" class="btn-primary">連線 Twitch</button>
+        <button id="loginBtn" class="btn-primary">以TWITCH登入</button>
     </div>
 </header>
 
@@ -464,8 +494,8 @@
 
 <footer class="footer">
     <div id="reply-indicator">
-        <div>正在回覆 <span id="replying-to-user" class="user"></span></div>
-        <div class="cancel-reply" onclick="cancelReply()">✕</div>
+        正在回覆 <span id="replying-to-user" style="color:#9147ff; font-weight:bold;"></span> 
+        <span onclick="cancelReply()" style="float:right; cursor:pointer; color:#efeff1;">✕ 取消回覆</span>
     </div>
     
     <div class="input-section">
@@ -479,6 +509,9 @@
             <button class="tool-link" onclick="insertTagOnly('[a] ')" title="插入音訊">
                 <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg> 音訊
             </button>
+			<button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')" title="表情/資源庫">
+                    <img src="https://chicktv.github.io/tv/chick.webp" style="width:20px; height:auto; padding-left:10px; padding-right:10px;">
+                </button>
             <div class="setting-btn" title="切換聊天頻道">
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
@@ -491,16 +524,17 @@
             <button id="scrollToBottomBtn" title="滾動到最新訊息">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
             </button>
+            
+            <div id="chat-badge-carousel" class="chat-badge-carousel"></div>
+            
             <div id="msginput" contenteditable="plaintext-only" placeholder="傳送訊息到聊天室..." autocomplete="off" disabled></div>
             
             <div class="action-bar">
-                <button class="tool-link" onclick="renderEmojiPanel(); $('#emojiPanel').css('display','flex')" title="表情/資源庫">
-                    <svg width="30" height="30" viewBox="0 0 20 20" fill="#650beb"><path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14.5c-3.59 0-6.5-2.91-6.5-6.5S6.41 3.5 10 3.5s6.5 2.91 6.5 6.5-2.91 6.5-6.5 6.5zM6.5 9c.83 0 1.5-.67 1.5-1.5S7.33 6 6.5 6 5 6.67 5 7.5 5.67 9 6.5 9zm7 0c.83 0 1.5-.67 1.5-1.5S14.33 6 13.5 6 12 6.67 12 7.5s.67 1.5 1.5 1.5zM10 14c-1.66 0-3.14-.69-4.2-1.8l1.41-1.41C7.83 11.53 8.84 12 10 12s2.17-.47 2.79-1.21l1.41 1.41C13.14 13.31 11.66 14 10 14z"/></svg>
-                </button>
+              
                 <button id="voice-btn" onclick="toggleRecording()" title="錄製語音">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
                 </button>
-                <button id="sendbtn" onclick="sendMessage()" disabled>傳送</button>
+                <button id="sendbtn" onclick="sendMessage()" >傳送</button>
             </div>
         </div>
     </div>
@@ -520,12 +554,26 @@ const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&r
 let messageBuffer = []; // 頁面隱藏時的訊息暫存
 const MAX_BUFFER_SIZE = 50;
 
+// CPU 優化：設定 IntersectionObserver 用於影片播放管理，防止不可見區域的影片持續佔用 CPU 資源
+const mediaObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        const el = entry.target;
+        if (el.tagName === 'VIDEO') {
+            if (entry.isIntersecting) {
+                if (el.paused) el.play().catch(e => console.log("Play interrupted", e));
+            } else {
+                if (!el.paused) el.pause();
+            }
+        }
+    });
+}, { rootMargin: '300px 0px' }); // 提早 300px 載入/播放，提供更好體驗
+
 // ===================== 原有全局變數 =====================
 let ACCESS_TOKEN = "";
 let myLoginId = "";
 let myDisplayName = "";
 let myAvatar = "";
-let myBadges = "";
+let myBadges = localStorage.getItem('twitch_my_badges') || ""; 
 let socket = null;
 let altMap = {};
 let emojiLists = {};
@@ -542,18 +590,19 @@ let reconnectAttempts = 0;
 let maxReconnectDelay = 30000;
 let isConnecting = false;
 let dragging = false;
-let offsetX = 0, offsetY = 0;
 let autoScroll = true;
 let scrollTimeout = null;
 let scrollRequestActive = false; 
+let isInitialLoad = true; // 新增：追蹤是否為剛載入歷史訊息的狀態
 const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
-const MAX_MESSAGES = 40;
+const MAX_MESSAGES = 50;
 let recentUsers = [];
 let seenUsersSet = new Set(); 
 let mentionListVisible = false;
 let mentionSelectedIndex = 0;
 let mentionSearchTerm = "";
 const MAX_RTAG_DEPTH = 5;
+let offsetX = 0, offsetY = 0;
 
 // 预编译正则
 const RE_S_TAG = /\[S\](.*?)E\]/g;
@@ -564,10 +613,10 @@ const RE_y_URL = /\[y\]\s*([^\s\[]+)/gi;
 const RE_a_TAG = /\[a\](.*?)\[o\]/gi;
 const RE_HTTP_LINK = /(^|\s)(https?:\/\/[^\s]+)/gi;
 const RE_IS_YOUTUBE = /youtu/i;
-const RE_IS_IMG_EXT = /img|jpg|png|gif/i;
+const RE_IS_IMG_EXT = /(img|jpg|png|gif)(?:\?[^\s"']*)?/i;
 const RE_IS_TWITTER_X = /twitter|https:\/\/x\.com/i;
 const RE_IS_THREADS = /www\.threads\.com/i;
-const RE_IS_VIDEO_EXT = /\.(webm|mp4|m3u8|flv)/i;
+const RE_IS_VIDEO_EXT = /\.(webm|mp4|m3u8|flv)(?:\?[^\s]*)?/i;
 const RE_IS_STEAM = /steampowered|steamcommunity/i;
 
 // ===================== 工具函數 =====================
@@ -618,77 +667,73 @@ function renderBadges(badgeStr) {
 }
 function getMyBadges() { return myBadges || ""; }
 
-// ===================== 捲動相關 (已修復返回分頁捲動問題 & GPU優化) =====================
+// --- 新增：更新輸入框左側的徽章展示區 ---
+function updateBadgeCarousel() {
+    const carousel = document.getElementById('chat-badge-carousel');
+    if (!carousel) return;
+    const badgeStr = getMyBadges();
+    if (badgeStr) {
+        carousel.innerHTML = renderBadges(badgeStr);
+    } else {
+        carousel.innerHTML = '';
+    }
+}
+
+// --- 新增：處理一般文字訊息提及到自己時的標記 ---
+function highlightSelfMentions(text) {
+    if (!text || (!myDisplayName && !myLoginId)) return text;
+    let result = text;
+    if (myDisplayName) {
+        // (^|\s) 確保 @ 前面是空白或行首，(?!\\w) 確保後面不是其他文字
+        const regexName = new RegExp(`(^|\\s)(@${myDisplayName})(?!\\w)`, 'gi');
+        result = result.replace(regexName, `$1<span class="mention-self-tag">$2</span>`);
+    }
+    if (myLoginId && myLoginId.toLowerCase() !== (myDisplayName || "").toLowerCase()) {
+        const regexLogin = new RegExp(`(^|\\s)(@${myLoginId})(?!\\w)`, 'gi');
+        result = result.replace(regexLogin, `$1<span class="mention-self-tag">$2</span>`);
+    }
+    return result;
+}
+
+// ===================== 捲動相關 (已修復媒體載入不捲動到底的問題) =====================
 function forceScrollToBottom(force = false) {
     if (!force && !autoScroll) return;
 
     const chat = document.getElementById('chat-container');
     if (!chat) return;
 
-    let attempts = 0;
-    const maxAttempts = 20;
-    const baseDelay = 16;
+    const doScroll = () => {
+        chat.scrollTop = chat.scrollHeight + 9999;
+        autoScroll = true; // 確保狀態同步被鎖在 true
+        if(scrollToBottomBtn) scrollToBottomBtn.style.display = 'none';
+    };
 
-    // GPU 優化: 將 DOM 的讀取與寫入包裝在 requestAnimationFrame 避免 Layout Thrashing
-    function scrollNow() {
-        requestAnimationFrame(() => {
-            chat.scrollTop = chat.scrollHeight + 9999;
-        });
-    }
-
-    function tryScroll() {
-        requestAnimationFrame(() => {
-            // 讀取階段 (Read phase)
-            const currentScrollHeight = chat.scrollHeight;
-            const currentClientHeight = chat.clientHeight;
-            const currentScrollTop = chat.scrollTop;
-            
-            const isAtBottom = (currentScrollHeight - currentClientHeight - currentScrollTop) < 5;
-            
-            // 寫入階段 (Write phase)
-            chat.scrollTop = currentScrollHeight + 9999;
-
-            if (!isAtBottom && attempts < maxAttempts) {
-                attempts++;
-                const delay = baseDelay * Math.min(Math.pow(1.2, attempts), 8);
-                setTimeout(tryScroll, delay);
-            } else if (!isAtBottom && attempts >= maxAttempts) {
-                scrollNow();
-            }
-        });
-    }
-
-    scrollNow();
-    tryScroll();
-
-    if (force) {
-        const mediaElements = chat.querySelectorAll('img, iframe, video');
-        let pending = mediaElements.length;
-        if (pending === 0) return;
-        const onLoad = () => {
-            pending--;
-            if (pending === 0) {
-                scrollNow();
-                setTimeout(scrollNow, 50);
-            }
-        };
-        mediaElements.forEach(el => {
-            if (el.complete || el.readyState >= 2) {
-                onLoad();
-            } else {
-                el.addEventListener('load', onLoad, { once: true });
-                el.addEventListener('error', onLoad, { once: true });
-            }
-        });
-    }
+    // CPU 優化: 使用 requestAnimationFrame 替換掉原本的重度遞迴迴圈 避免 Layout Thrashing
+    requestAnimationFrame(() => {
+        doScroll();
+        // 給瀏覽器一點時間計算真正的 layout 高度，再次捲動確保到底
+        setTimeout(doScroll, 80);
+        setTimeout(doScroll, 300); // 針對大批量 DOM 渲染追加一幀防護
+    });
 }
 
 let mediaScrollTimer = null;
 function onMediaLoaded() { 
-    if (!autoScroll) return;
-    if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
-    // GPU 優化: 加上 requestAnimationFrame
-    mediaScrollTimer = setTimeout(() => requestAnimationFrame(() => forceScrollToBottom(false)), 50);
+    const chat = document.getElementById('chat-container');
+    if (!chat) return;
+    
+    // 媒體載入時會瞬間撐高容器，導致 scrollHeight 增加，原本的 isAtBottom 判定會誤判為 false
+    // 放寬誤差範圍至 800px (涵蓋大部分大量歷史影片/圖片載入的狀況)
+    const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 800;
+
+    // 加入 isInitialLoad 判斷：若還在剛載入階段，無視距離直接強制捲動
+    if (autoScroll || isNearBottom || isInitialLoad) {
+        if (mediaScrollTimer) clearTimeout(mediaScrollTimer);
+        mediaScrollTimer = setTimeout(() => {
+            autoScroll = true; // 恢復自動捲動狀態
+            forceScrollToBottom(true);
+        }, 50);
+    }
 }
 
 // 優化：處理隱藏分頁時的訊息緩衝
@@ -698,7 +743,15 @@ function appendMessageWithScroll(html) {
         if (messageBuffer.length > MAX_BUFFER_SIZE) messageBuffer.shift();
         return;
     }
-    $("#messages").append(html);
+    
+    // CPU 優化: 將新增的影片加入 IntersectionObserver 管理
+    const $newElements = $(html);
+    $("#messages").append($newElements);
+    
+    $newElements.find('video.media-preview').addBack('video.media-preview').each(function() {
+        mediaObserver.observe(this);
+    });
+
     limitMessages();
     if (autoScroll) forceScrollToBottom(false);
 }
@@ -708,38 +761,66 @@ document.addEventListener('visibilitychange', () => {
     if (!document.hidden && messageBuffer.length > 0) {
         // 返回網頁時，一次性批次渲染緩存訊息
         const $msgs = $("#messages");
-        $msgs.append(messageBuffer.join(''));
+        const $elements = $(messageBuffer.join(''));
+        $msgs.append($elements);
+        
+        $elements.find('video.media-preview').addBack('video.media-preview').each(function() {
+            mediaObserver.observe(this);
+        });
+        
         messageBuffer = [];
         limitMessages();
-        // 渲染後強制捲動到底部
-        forceScrollToBottom(true);
+       
+    // 新增：給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
+    setTimeout(() => { isInitialLoad = false; }, 8000);
     }
+    
+    // CPU 優化: 確保離開頁面時影片真正停止，進入時交由 Observer 恢復
+    document.querySelectorAll('video.media-preview').forEach(v => {
+        if (document.hidden) {
+            v.pause();
+        } else {
+            // 返回時，只要在視口內就恢復
+            const rect = v.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                v.play().catch(()=>{});
+            }
+        }
+    });
 });
 
 function checkScrollPosition() {
-    requestAnimationFrame(() => {
-        const chat = document.getElementById('chat-container');
-        if(!chat) return;
-        const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 60;
-        autoScroll = isAtBottom;
-        if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
-    });
+    const chat = document.getElementById('chat-container');
+    const isAtBottom = chat.scrollHeight - chat.clientHeight - chat.scrollTop < 60;
+    autoScroll = isAtBottom;
+    if(scrollToBottomBtn) scrollToBottomBtn.style.display = autoScroll ? 'none' : 'flex';
 }
+
+// CPU 優化: 改用 requestAnimationFrame 避免滾動事件觸發過度計算 (Layout thrashing)
+let isScrolling = false;
 function setupScrollListener() {
     const chat = document.getElementById('chat-container');
     chat.addEventListener('scroll', () => {
-        if (scrollTimeout) clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(checkScrollPosition, 100);
+        if (!isScrolling) {
+            window.requestAnimationFrame(() => {
+                checkScrollPosition();
+                // 如果判斷出目前並非自動置底（表示使用者主動往上滾動了），則解除初始化鎖定
+                if (!autoScroll) {
+                    isInitialLoad = false;
+                }
+                isScrolling = false;
+            });
+            isScrolling = true;
+        }
     }, { passive: true });
 }
+
 function scrollToMsg(msgId) {
     let $msg = $(`.id-${msgId}`);
     if($msg.length){
-        requestAnimationFrame(() => {
-            let container = $("#chat-container")[0];
-            let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
-            container.scrollTo({ top: top, behavior: 'smooth' });
-        });
+        let container = $("#chat-container")[0];
+        let top = $msg.offset().top - $(container).offset().top + container.scrollTop - 50;
+        container.scrollTo({ top: top, behavior: 'smooth' });
     }
 }
 
@@ -770,14 +851,16 @@ function parseContent(str) {
         if (!str.includes('[') && !str.includes('http')) {
             return str.split(' ').map(w => {
                 let src = altMap[w.toLowerCase()];
-                return src ? `<img src="${src}" class="alt-emoji" loading="lazy">` : w;
+                // CPU 優化: 加入 decoding="async" 給 alt-emoji 避免主線程阻塞
+                return src ? `<img src="${src}" class="alt-emoji" loading="lazy" decoding="async">` : w;
             }).join(' ');
         }
         let a = str, placeholders = [];
         a = a.replace(RE_S_TAG, (m, b) => {
             b = b.replace(/[\r\n]/g, "").replace(/ /g, '').replace('[S]', '').replace('[', '');
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy"/></a>`);
+            // CPU 優化: 圖像 decoding="async"
+            placeholders.push(`<a class="media-preview" href="${b}" target="_blank"><img src="${b}" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy" decoding="async"/></a>`);
             return id;
         });
         a = a.replace(RE_s_TAG, (m, content) => {
@@ -799,7 +882,7 @@ function parseContent(str) {
                 let appId = b.match("app/([0-9]+)");
                 e = appId ? `<iframe class="media-preview" src="https://store.steampowered.com/widget/${appId[1]}" frameborder="0" onload="onMediaLoaded()" loading="lazy"></iframe>` : b;
             } else {
-                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy"/></a>`;
+                e = `<a href="${b}" target="_blank"><img src="${b}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy" decoding="async"/></a>`;
             }
             placeholders.push(e);
             return id;
@@ -807,7 +890,7 @@ function parseContent(str) {
         a = a.replace(RE_s_URL, (m, url) => {
             if (url.includes('__PH_')) return m;
             let id = `__PH_${placeholders.length}__`;
-            placeholders.push(`<a href="${url}" target="_blank"><img src="${url}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy"/></a>`);
+            placeholders.push(`<a href="${url}" target="_blank"><img src="${url}" class="media-preview" onload="onMediaLoaded()" onerror="onMediaLoaded()" loading="lazy" decoding="async"/></a>`);
             return id;
         });
         a = a.replace(RE_y_TAG, (m, content) => {
@@ -861,7 +944,7 @@ function parseContent(str) {
         a = words.map(w => {
             if (w.includes('__PH_')) return w;
             let src = altMap[w.toLowerCase()];
-            return src ? `<img src="${src}" class="alt-emoji" loading="lazy">` : w;
+            return src ? `<img src="${src}" class="alt-emoji" loading="lazy" decoding="async">` : w;
         }).join(' ');
         placeholders.forEach((html, i) => { a = a.replace(`__PH_${i}__`, html); });
         return a;
@@ -918,7 +1001,7 @@ function processRTag(str, depth = 0) {
 // ===================== 資源載入與表情面板 =====================
 async function fetchBadges() {
     try {
-        const res = await fetch('https://chicktv.github.io/tv/badges.txt');
+        const res = await fetch('https://chicktv.github.io/tv/b.txt');
         customBadges = await res.json();
     } catch(e) { console.error(e); customBadges = {}; }
 }
@@ -1226,8 +1309,11 @@ function showMentionList(users, atPos) {
     users.forEach((u, idx) => {
         const item = document.createElement('div'); item.className = 'mention-item'; if(idx===0) item.classList.add('selected');
         let badgeHtml = u.badges ? renderBadges(u.badges) : '';
-        item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy">${badgeHtml}<span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
+        item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy"><span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
         item.dataset.login = u.login; item.dataset.displayName = u.displayName;
+        
+        // 阻止 mousedown 預設動作，避免點擊時輸入框失去焦點與游標位置
+        item.addEventListener('mousedown', (e) => e.preventDefault());
         item.addEventListener('click', () => selectMentionUser(item));
         list.appendChild(item);
     });
@@ -1252,16 +1338,41 @@ function updateMentionSelection() {
 }
 function selectMentionUser(item) {
     const input = document.getElementById('msginput');
+    input.focus();
+    
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    const before = input.textContent.substring(0, range.startOffset);
-    const atPos = before.lastIndexOf('@');
-    if (atPos !== -1) {
-        insertTextAtCursor('@' + item.dataset.displayName + ' ');
-        hideMentionList();
-        input.focus();
+    if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const text = input.textContent;
+        const caretPos = range.startOffset;
+        
+        // 取得游標前最後一個 '@' 的位置
+        const beforeCaret = text.substring(0, caretPos);
+        const atPos = beforeCaret.lastIndexOf('@');
+        
+        if (atPos !== -1) {
+            // 將 '@' 到游標間的文字替換為指定的用戶名稱
+            const afterCaret = text.substring(caretPos);
+            const mentionText = '@' + item.dataset.displayName + ' ';
+            const newText = text.substring(0, atPos) + mentionText + afterCaret;
+            
+            input.textContent = newText;
+            
+            // 重新設定游標位置至插入名稱的後方
+            const newCaretPos = atPos + mentionText.length;
+            const newRange = document.createRange();
+            if (input.childNodes.length > 0) {
+                const textNode = input.childNodes[0];
+                newRange.setStart(textNode, Math.min(newCaretPos, textNode.length));
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
+        }
     }
+    
+    hideMentionList();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 function hideMentionList() {
     const list = document.getElementById('mention-list');
@@ -1272,6 +1383,10 @@ function hideMentionList() {
 
 // ===================== 發送訊息 =====================
 function sendMessage() {
+	if (!ACCESS_TOKEN) {
+        loginWithPopup();
+        return;
+    }
     const input = document.getElementById('msginput');
     let val = input.textContent.trim();
     if(!val || !socket || socket.readyState !== 1) return;
@@ -1280,7 +1395,10 @@ function sendMessage() {
     let finalCmd = "", replyDisplay = "";
     let myBadgeStr = getMyBadges();
     let badgeHtml = renderBadges(myBadgeStr);
-	let processedContentForDisplay = processRTag(val, 0);
+    
+    // --- 修改：處理自己送出的訊息在畫面上的自我高亮效果 ---
+	let processedContentForDisplay = highlightSelfMentions(processRTag(val, 0));
+    
     if(pendingReply.id){
         finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
         let repliedMsg = msgCache[pendingReply.id];
@@ -1325,54 +1443,79 @@ window.insertRecursiveQuote = function(login, ts) {
 };
 
 // ===================== 歷史訊息 =====================
+let isFetchingHistory = false;
+
 async function fetchRecentMessages() {
+    // 防重複執行
+    if (isFetchingHistory) return;
+    isFetchingHistory = true;
+
     try {
-        const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=15`);
+        const response = await fetch(`https://recent-messages.robotty.de/api/v2/recent-messages/${CHANNEL}?limit=30`);
         const data = await response.json();
-        if (data && data.messages) {
+
+        if (data && data.messages && data.messages.length > 0) {
             let combinedHtml = ""; 
+
             data.messages.forEach(rawIrcMsg => {
-                const match = rawIrcMsg.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)/);
+                const match = rawIrcMsg.match(/^(?:@(\S+) )?:([^!]+)![^ ]+ PRIVMSG #[^ ]+ :([\s\S]+)/);
                 if (match) {
                     const tagStr = match[1] || "";
                     const userLogin = match[2];
                     const messageContent = match[3];
-                    const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
-                    let userColor = "#9147ff"; 
+
+                    const tags = {};
                     if (tagStr) {
-                        const tags = {};
                         tagStr.split(';').forEach(t => {
                             const pair = t.split('=');
-                            if(pair.length === 2) tags[pair[0]] = pair[1];
+                            if (pair.length === 2) tags[pair[0]] = pair[1];
                         });
-                        if (tags['color']) userColor = tags['color'];
                     }
+
+                    const displayName = tags['display-name'] ? decodeURIComponent(tags['display-name']) : userLogin;
+                    const userColor = tags['color'] ? tags['color'] : "#9147ff";
+                    const ts = "hist_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+
                     const userRecord = {
                         content: messageContent,
-                        user: { login: userLogin, displayName: userLogin },
-                        displayName: userLogin,
+                        user: { login: userLogin, displayName: displayName },
+                        displayName: displayName,
                         timestamp: Date.now(),
                         avatar: 'https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-70x70.png'
                     };
+
                     msgCache[ts] = userRecord;
-                    addRecentUser({ login: userLogin, displayName: userLogin, badges: "", avatar: userRecord.avatar });
+                    addRecentUser({ login: userLogin, displayName: displayName, badges: "", avatar: userRecord.avatar });
 
                     const rTagProcessed = processRTag(messageContent, 0); 
-                    const contentHtml = parseContent(rTagProcessed);
+                    // --- 修改：套用歷史訊息的一般文字被提及高亮 ---
+                    const highlightedMsg = highlightSelfMentions(rTagProcessed);
+                    const contentHtml = parseContent(highlightedMsg);
+
                     combinedHtml += `
                         <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
                             <div class="reply-btn-group">
-                                <div class="reply-btn" onclick="replyNative('${userLogin}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
-                                <div class="reply-btn2" onclick="insertRecursiveQuote('${userLogin}','${ts}')" title="引用">🔗</div>
+                                <div class="reply-btn" onclick="replyNative('${displayName}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
+                                <div class="reply-btn2" onclick="insertRecursiveQuote('${displayName}','${ts}')" title="引用">🔗</div>
                             </div>
-                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${userLogin}')">${userLogin}</b>: 
+                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${displayName}')">${displayName}</b>: 
                             <span class="message">${contentHtml}</span>
                         </div>`;
                 }
             });
+
             if (combinedHtml) appendMessageWithScroll(combinedHtml);
         }
-    } catch (err) { console.error('獲取歷史訊息失敗:', err); }
+    } catch (err) { 
+        console.error('獲取歷史訊息失敗:', err); 
+    } finally {
+        isFetchingHistory = false;
+    }
+
+    forceScrollToBottom(true);
+
+    // 給予 8 秒的時間緩衝，這 8 秒內只要歷史訊息的任何圖片或媒體載入完畢，都會無視距離無腦貼到底部
+    setTimeout(() => { isInitialLoad = false; }, 8000);
 }
 
 // ===================== 連線邏輯 =====================
@@ -1407,7 +1550,7 @@ function startChat() {
         let statusMsg = ACCESS_TOKEN ? `連線至 #${CHANNEL}` : `匿名觀看 #${CHANNEL}`;
         document.getElementById('status').innerHTML = statusMsg;
         document.getElementById('msginput').disabled = !ACCESS_TOKEN;
-        document.getElementById('sendbtn').disabled = !ACCESS_TOKEN;
+        document.getElementById('sendbtn').disabled = false;
     };
     socket.onerror = (err) => {
         document.getElementById('status').textContent = '連線錯誤，即將重連...';
@@ -1428,7 +1571,11 @@ function startChat() {
             if (data.includes('CAP') || data.includes('USERSTATE')) {
                 if (data.includes('USERSTATE')) {
                     let badgeTag = getTagValue(data, "badges");
-                    if (badgeTag) { myBadges = badgeTag; localStorage.setItem('twitch_my_badges', badgeTag); }
+                    if (badgeTag) {
+                        myBadges = badgeTag;
+                        localStorage.setItem('twitch_my_badges', badgeTag);
+                        updateBadgeCarousel();
+                    }
                     let colorTag = getTagValue(data, "color");
                     if (colorTag) myColor = colorTag;
                 }
@@ -1485,6 +1632,10 @@ function startChat() {
                 if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
             displayMsg = processRTag(displayMsg, 0);
+            
+            // --- 修改：處理 WebSocket 接收的即時一般文字提及高亮 ---
+            displayMsg = highlightSelfMentions(displayMsg);
+            
             let contentHtml = parseContent(displayMsg);
             let badgeHtml = renderBadges(badgeStr);
             let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-user-login="${userLogin}" data-msg-ts="${ts}">
@@ -1666,6 +1817,7 @@ async function initApp() {
     setupScrollListener();
     await fetchBadges();
     await loadResources();
+    updateBadgeCarousel(); // 確保資源載入後，初始更新一次徽章
     setupAutoTag();
     setupMentionEvents();
     setupEmojiPanelDrag();
@@ -1673,14 +1825,16 @@ async function initApp() {
     fetchRecentMessages();
     if(scrollToBottomBtn) scrollToBottomBtn.addEventListener('click', () => forceScrollToBottom(true));
     
-    // GPU 優化: 為 ResizeObserver 加入 Debounce 機制並包裝 rAF
     const messagesContainer = document.getElementById('messages');
     if (messagesContainer) {
-        let roTimer = null;
         const resizeObserver = new ResizeObserver(() => {
-            if (autoScroll) {
-                if(roTimer) clearTimeout(roTimer);
-                roTimer = setTimeout(() => requestAnimationFrame(() => forceScrollToBottom(false)), 50);
+            const chat = document.getElementById('chat-container');
+            if (!chat) return;
+            // 放寬判定：新增 isInitialLoad 支援，並且放寬距離至 800px 以應付極端圖片流
+            const isNearBottom = (chat.scrollHeight - chat.clientHeight - chat.scrollTop) < 800;
+            if (autoScroll || isNearBottom || isInitialLoad) {
+                chat.scrollTop = chat.scrollHeight + 9999;
+                autoScroll = true;
             }
         });
         resizeObserver.observe(messagesContainer);
