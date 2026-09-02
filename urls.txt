@@ -1,3 +1,5 @@
-"2026-worlds-costumed-pikachu/1": "https://static-cdn.jtvnw.net/badges/v1/bace09ab-0403-405a-b412-d9567738d210/3",
-"pokemonxp-costumed-pikachu/1": "https://static-cdn.jtvnw.net/badges/v1/e3374139-6240-462e-b77d-d3ac00a4da23/3",
-"mouseathon/1": "https://static-cdn.jtvnw.net/badges/v1/8bce8f4e-f53a-4922-b715-35167b0fae7b/3"
+"harley-mayhem/1": "https://static-cdn.jtvnw.net/badges/v1/1d235db6-09cc-458f-9805-be2efc178e54/3",
+    "sorcerer-rogier-elden-ring/1": "https://static-cdn.jtvnw.net/badges/v1/3d6ad3b0-0a0f-43ae-a969-c5215d8d5a06/3",
+    "mootivation/1": "https://static-cdn.jtvnw.net/badges/v1/9e1abb05-df79-49ee-bdb8-12869bb64f51/3",
+    "wardog/1": "https://static-cdn.jtvnw.net/badges/v1/a00140ee-7c25-4cd1-95d9-54b9603f1f80/3",
+    "warlord/1": "https://static-cdn.jtvnw.net/badges/v1/233322a6-0c31-43e7-acfa-f10e732e87da/3"
