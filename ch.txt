@@ -13,3 +13,4 @@ NU,number8atctv,kick,$2y$10$C4aAB69VatrhkOy/CdZ3HuQbSIf8C67HlvnVXVfFS5hY72ZdQqJY
 小妹,step1h,twitch,$2y$10$05bfV3.MZSV12lbeWLxrWuiUbBp3c6WvMYbH/qEiQnSn7tFYpgcFK,1.64.165.142
 Wc,no25no2501,twitch,$2y$10$/XRGhB5SH4pi3lQwsXIU/u.r7MshEQjA.YdVvUjQXBRscV5Nhynj2,119.247.235.53
 爵,jeukpo,kick,$2y$10$lY0TBb23JsOVyZ4Qj2vbEuBcl/KfdgeQdcfzddrRtzrbsspo0eYNm,187.15.135.215
+W,whw9457,kick,$2y$10$4jHIbQIp5ZoJ6x/g/EMStu/zseIFTqKnDZOyYkCK3yLtyeSjTkucC,187.15.135.212
