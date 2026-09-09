@@ -148,7 +148,8 @@
             user-select: none;
             background: #222;
             padding: 4px 12px;
-            border-radius: 40px;
+            border-radius: 6px;
+			height:36px;
             font-size: 0.85rem;
             white-space: nowrap;
         }
@@ -185,6 +186,11 @@
 
         .toggle-switch input:checked + .slider::before {
             transform: translateX(22px);
+        }
+
+        /* 紫色 Toggle 樣式 */
+        .purple-toggle input:checked + .slider {
+            background-color: #8a2be2;
         }
 
         .toggle-label {
@@ -229,10 +235,6 @@
             color: lime;
             padding: 8px 12px;
             min-width: 80px;
-        }
-
-        #chatToggleBtn {
-            background: #6a35bb;
         }
 
         button {
@@ -475,7 +477,12 @@
                 <button id="addChannelBtn">➕ 加台</button>
                 <button id="delChannelBtn">🗑 del台</button>
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">📺 看更台</button>
-                <button id="chatToggleBtn">💬 chat(免插件)</button>
+                <label class="toggle-switch purple-toggle" id="chatToggleWrapper">
+				 <span class="toggle-label" id="chatToggleLabel">TWITCH</span>
+                    <input type="checkbox" id="chatToggle">					
+                    <span class="slider"></span>
+                    
+                </label>
             </div>
         </div>
     </div>
@@ -777,11 +784,13 @@
 
         function addButton(channel, parentNode) {
             const btn = document.createElement("button");
-            const safeId = (channel.id || "unknown").replace(/[^a-zA-Z0-9]/g, '_');
+            // 修正：使用平台加上ID作為唯一識別碼
+            const statusKey = `${channel.platform}_${channel.id}`;
+            const safeId = statusKey.replace(/[^a-zA-Z0-9]/g, '_');
             btn.className = "status-button";
             btn.id = `btn-${safeId}`;
             
-            const status = channelStatuses[channel.id] || 'unknown';
+            const status = channelStatuses[statusKey] || 'unknown';
             if(status === 'live') btn.classList.add('live');
             else if(status === 'not-live') btn.classList.add('not-live');
             else if(status === 'unknown2') btn.classList.add('unknown2');
@@ -803,11 +812,12 @@
             parentNode.appendChild(wrapper);
         }
 
-        function updateButtonStatus(channelId) {
-            const safeId = (channelId || "unknown").replace(/[^a-zA-Z0-9]/g, '_');
+        function updateButtonStatus(channel) {
+            const statusKey = `${channel.platform}_${channel.id}`;
+            const safeId = statusKey.replace(/[^a-zA-Z0-9]/g, '_');
             const btn = document.getElementById(`btn-${safeId}`);
             if(!btn) return;
-            const status = channelStatuses[channelId] || 'unknown';
+            const status = channelStatuses[statusKey] || 'unknown';
             btn.className = "status-button"; // Reset
             if(status === 'live') btn.classList.add('live');
             else if(status === 'not-live') btn.classList.add('not-live');
@@ -815,11 +825,12 @@
             else btn.classList.add('unknown');
         }
 
-        function updateMenuButtonStatus(channelId) {
-            const safeId = (channelId || "unknown").replace(/[^a-zA-Z0-9]/g, '_');
+        function updateMenuButtonStatus(channel) {
+            const statusKey = `${channel.platform}_${channel.id}`;
+            const safeId = statusKey.replace(/[^a-zA-Z0-9]/g, '_');
             const menuBtn = document.getElementById(`menu-btn-${safeId}`);
             if(!menuBtn) return;
-            const status = channelStatuses[channelId] || 'unknown';
+            const status = channelStatuses[statusKey] || 'unknown';
             menuBtn.className = "menu-status-button status-button";
             if(status === 'live') menuBtn.classList.add('live');
             else if(status === 'not-live') menuBtn.classList.add('not-live');
@@ -834,10 +845,12 @@
             }
         }
 
-        function updateChannelOptionLabel(channelId) { 
-            const label = document.getElementById(`status-label-${channelId.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        function updateChannelOptionLabel(channel) { 
+            const statusKey = `${channel.platform}_${channel.id}`;
+            const idSafe = statusKey.replace(/[^a-zA-Z0-9]/g, '_');
+            const label = document.getElementById(`status-label-${idSafe}`);
             if(label){
-                const status = channelStatuses[channelId] || 'unknown';
+                const status = channelStatuses[statusKey] || 'unknown';
                 label.className = "channel-option-label";
                 if(status === 'live') label.classList.add('live');
                 else if(status === 'not-live') label.classList.add('not-live');
@@ -845,33 +858,35 @@
                 else label.classList.add('unknown');
             }
         }
-        function updateUIForChannel(channelId){ updateButtonStatus(channelId); updateMenuButtonStatus(channelId); updateChannelOptionLabel(channelId); }
+        function updateUIForChannel(channel){ updateButtonStatus(channel); updateMenuButtonStatus(channel); updateChannelOptionLabel(channel); }
 
         // ******* 直播狀態查詢 *******
         async function fetchStatus(channel) {
+            if(!channel||!channel.id) return;
+            const statusKey = `${channel.platform}_${channel.id}`;
+            
             if(channel.platform === "at") {
                 try {
                     const resp = await fetch(`https://api.angelthump.com/v2/streams/${channel.id}`);
                     if (resp.ok) {
                         const data = await resp.json();
-                        if (data.type === 'live') channelStatuses[channel.id] = 'live';
-                        else channelStatuses[channel.id] = 'not-live';
-                    } else channelStatuses[channel.id] = 'not-live';
-                } catch(e) { channelStatuses[channel.id] = 'not-live'; }
-                updateUIForChannel(channel.id); return;
+                        if (data.type === 'live') channelStatuses[statusKey] = 'live';
+                        else channelStatuses[statusKey] = 'not-live';
+                    } else channelStatuses[statusKey] = 'not-live';
+                } catch(e) { channelStatuses[statusKey] = 'not-live'; }
+                updateUIForChannel(channel); return;
             }
-            if(!channel||!channel.id) return;
-            if(channel.platform === "youtube"){ channelStatuses[channel.id] = 'unknown2'; updateUIForChannel(channel.id); return; }
-            if(channel.platform === "m3u8"){ channelStatuses[channel.id] = 'live'; updateUIForChannel(channel.id); return; }
+            if(channel.platform === "youtube"){ channelStatuses[statusKey] = 'unknown2'; updateUIForChannel(channel); return; }
+            if(channel.platform === "m3u8"){ channelStatuses[statusKey] = 'live'; updateUIForChannel(channel); return; }
             if (channel.platform === "bs") {
                 try {
                     const resp = await fetch(`https://r.jina.ai/${channel.id}`);
                     const text = await resp.text();
-                    if (text.includes("Channel is offline")) channelStatuses[channel.id] = 'not-live';
-                    else if (text.includes("Live")) channelStatuses[channel.id] = 'live';
-                    else channelStatuses[channel.id] = 'unknown';
-                } catch(e) { channelStatuses[channel.id] = 'unknown'; }
-                updateUIForChannel(channel.id); return;
+                    if (text.includes("Channel is offline")) channelStatuses[statusKey] = 'not-live';
+                    else if (text.includes("Live")) channelStatuses[statusKey] = 'live';
+                    else channelStatuses[statusKey] = 'unknown';
+                } catch(e) { channelStatuses[statusKey] = 'unknown'; }
+                updateUIForChannel(channel); return;
             }
 
             let url = "";
@@ -896,8 +911,8 @@
                                      upperText.includes('"STATUS":"ONLINE"') || 
                                      /\bLIVE\b/.test(upperText);
                     
-                    channelStatuses[channel.id] = isOkLive ? 'live' : 'not-live';
-                    console.log(`[OK Check Final Result] ${channel.id}:`, channelStatuses[channel.id]);
+                    channelStatuses[statusKey] = isOkLive ? 'live' : 'not-live';
+                    console.log(`[OK Check Final Result] ${channel.id}:`, channelStatuses[statusKey]);
                 } else {
                     const headers = channel.platform === "twitch" ? { "Authorization": `Bearer ${TWITCH_TOKEN}`, "Client-Id": TWITCH_CLIENT_ID } : {};
                     const resp = await fetch(url, { headers });
@@ -905,12 +920,12 @@
                     let isLive = false;
                     if(channel.platform === "kick") isLive = data.livestream?.is_live === true;
                     if(channel.platform === "twitch") isLive = data.data?.length > 0;
-                    channelStatuses[channel.id] = isLive ? 'live' : 'not-live';
+                    channelStatuses[statusKey] = isLive ? 'live' : 'not-live';
                 }
-                updateUIForChannel(channel.id);
+                updateUIForChannel(channel);
             } catch(e) {
-                channelStatuses[channel.id] = 'unknown';
-                updateUIForChannel(channel.id);
+                channelStatuses[statusKey] = 'unknown';
+                updateUIForChannel(channel);
             }
         }
 
@@ -923,7 +938,8 @@
             container.innerHTML = "";
             const frag = document.createDocumentFragment();
             channels.forEach(ch => {
-                const idSafe = ch.id.replace(/[^a-zA-Z0-9]/g,'_');
+                const statusKey = `${ch.platform}_${ch.id}`;
+                const idSafe = statusKey.replace(/[^a-zA-Z0-9]/g,'_');
                 let icon = '📺';
                 if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                 else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
@@ -935,15 +951,16 @@
                 frag.appendChild(wrapper);
             });
             container.appendChild(frag);
-            channels.forEach(ch => updateChannelOptionLabel(ch.id));
+            channels.forEach(ch => updateChannelOptionLabel(ch));
         }
         // 新增：一鍵勾選所有目前狀態為 live 的台
         function checkAllLiveChannels() {
             channels.forEach(ch => {
+                const statusKey = `${ch.platform}_${ch.id}`;
                 // 取得該頻道的當前直播狀態
-                const status = channelStatuses[ch.id] || 'unknown';
+                const status = channelStatuses[statusKey] || 'unknown';
                 // 轉換成對應的 HTML 元素 ID
-                const idSafe = ch.id.replace(/[^a-zA-Z0-9]/g, '_');
+                const idSafe = statusKey.replace(/[^a-zA-Z0-9]/g, '_');
                 const chk = document.getElementById(`chk_${idSafe}`);
                 
                 if (chk) {
@@ -974,7 +991,8 @@
                 list.innerHTML="";
                 const frag = document.createDocumentFragment();
                 channels.forEach(ch=>{
-                    const safeId=(ch.id||"unknown").replace(/[^a-zA-Z0-9]/g,'_');
+                    const statusKey = `${ch.platform}_${ch.id}`;
+                    const safeId = statusKey.replace(/[^a-zA-Z0-9]/g,'_');
                     const btn=document.createElement("button");
                     btn.className="menu-status-button status-button";
                     btn.id=`menu-btn-${safeId}`;
@@ -991,7 +1009,7 @@
                     frag.appendChild(btn);
                 });
                 list.appendChild(frag);
-                channels.forEach(ch => updateMenuButtonStatus(ch.id));
+                channels.forEach(ch => updateMenuButtonStatus(ch));
                 menu.style.display="block";
                 document.body.style.overflow="hidden";
             }else{
@@ -1015,7 +1033,8 @@
             container.innerHTML = '';
             const frag = document.createDocumentFragment();
             channels.forEach((ch, idx) => {
-                const status = channelStatuses[ch.id] || 'unknown';
+                const statusKey = `${ch.platform}_${ch.id}`;
+                const status = channelStatuses[statusKey] || 'unknown';
                 let statusColor = '#aaa';
                 if(status === 'live') statusColor = '#00ff88';
                 else if(status === 'not-live') statusColor = '#ff3333';
@@ -1063,7 +1082,7 @@
         }
         window.editClick = function(){ openDeleteModal(); };
         
-        function showPopup(){ window.open("https://chicktv01.vercel.app", "_blank", "width=800,height=600"); }
+        function showPopup(){ window.open("https://chicktv01.42web.io", "_blank", "width=800,height=600"); }
 
         // 隱藏離線開關
         (function initHideNotLiveToggle() {
@@ -1080,15 +1099,36 @@
             toggle.addEventListener('change', (e) => { apply(e.target.checked); localStorage.setItem('hideNotLiveToggle', e.target.checked); });
         })();
 
-        // 聊天切換
-        let isSK = true;
-        document.getElementById('chatToggleBtn')?.addEventListener('click', function() {
+        // 聊天切換 Toggle (紫色) & 記憶用戶最後選擇
+        (function initChatToggle() {
+            const toggle = document.getElementById('chatToggle');
+            const label = document.getElementById('chatToggleLabel');
             const iframe = document.getElementById('chat_embed');
-            if(isSK) iframe.src = 'https://chicktv.github.io/tv/chat.html';
-            else iframe.src = `https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=${encodeURIComponent(parent)}`;
-            this.textContent = isSK ? '💬 TCHAT' : '💬 CCHAT';
-            isSK = !isSK;
-        });
+            if(!toggle || !iframe) return;
+
+            function applyChatState(isAltChat) {
+                if(isAltChat) {
+                    
+                    iframe.src = `https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=${encodeURIComponent(parent)}`;
+                } else {
+                    
+                    iframe.src = 'https://chicktv.github.io/tv/chat.html';
+                }
+            }
+
+            const savedState = localStorage.getItem('chatToggleState');
+            const isChecked = savedState === 'true';
+            toggle.checked = isChecked;
+            if(savedState !== null) {
+                applyChatState(isChecked);
+            }
+
+            toggle.addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                applyChatState(checked);
+                localStorage.setItem('chatToggleState', checked);
+            });
+        })();
 
         // 加台模態窗
         document.getElementById('addChannelBtn').onclick = () => document.getElementById('addChannelModal').classList.add('active');
