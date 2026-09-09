@@ -14,3 +14,4 @@ NU,number8atctv,kick
 Wc,no25no2501,twitch
 爵,jeukpo,kick
 W,whw9457,kick
+AY,collartv,kick
