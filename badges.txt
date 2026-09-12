@@ -370,5 +370,14 @@
 	"warlord/1": "https://chicktv.github.io/tv/badges/v1/233322a6-0c31-43e7-acfa-f10e732e87da/3",
 	"zevent-2026/1": "https://chicktv.github.io/tv/badges/v1/daea9c61-566f-41da-9b0a-1c520faf5c01/3",
 	"onimusha-armament/1": "https://chicktv.github.io/tv/badges/v1/379bfc94-8276-4e9e-9a34-615e10c55baf/3",
-	"nopixel-v-launch/1": "https://chicktv.github.io/tv/badges/v1/6a34b65f-93f6-4ebd-8f75-898bdaff79e8/3"
+	"nopixel-v-launch/1": "https://chicktv.github.io/tv/badges/v1/6a34b65f-93f6-4ebd-8f75-898bdaff79e8/3",
+	"subtember-2026/1": "https://chicktv.github.io/tv/badges/v1/6ae639f0-a06d-40a9-ad16-7b7e7c18a323/3",
+	"volume-up/1": "https://chicktv.github.io/tv/badges/v1/8d2a48c5-f188-4468-b165-d4771f539c24/3",
+	"solasta-2-multiplayer/1": "https://chicktv.github.io/tv/badges/v1/e8430418-13e9-4325-b2ad-85664d2a4ddd/3",
+	"runescape-dragonwilds-eye/1": "https://chicktv.github.io/tv/badges/v1/a5b43a31-4534-4f9e-875b-b9f0d1be8f73/3",
+	"chains/1": "https://chicktv.github.io/tv/badges/v1/909fa1c7-8f4c-41c4-9910-ee936f7236d7/3",
+	"dallas/1": "https://chicktv.github.io/tv/badges/v1/a5ba44a9-2ccd-4b69-b5b8-9e28f1c887e7/3",
+	"hoxton/1": "https://chicktv.github.io/tv/badges/v1/bce13ab6-e9ae-4d9a-bf52-8ea7ba3ce8c4/3",
+	"wolf/1": "https://chicktv.github.io/tv/badges/v1/714081b8-aded-46d7-a6c3-14b2d79f19be/3",
+	"wsci-2026/1": "https://chicktv.github.io/tv/badges/v1/e61d79be-7d9d-4de2-8571-41f00bf2081a/3"
 }
