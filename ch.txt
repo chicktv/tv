@@ -15,4 +15,3 @@ Wc,no25no2501,twitch,$2y$10$/XRGhB5SH4pi3lQwsXIU/u.r7MshEQjA.YdVvUjQXBRscV5Nhynj
 爵,jeukpo,kick,$2y$10$lY0TBb23JsOVyZ4Qj2vbEuBcl/KfdgeQdcfzddrRtzrbsspo0eYNm,187.15.135.215
 W,whw9457,kick,$2y$10$4jHIbQIp5ZoJ6x/g/EMStu/zseIFTqKnDZOyYkCK3yLtyeSjTkucC,187.15.135.212
 ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,186.247.39.59
-大波,dindinxd19,twitch,$2y$10$qMa/p/iim0UtLeX6b2FhmODOKZqKqTvFadwCTU4t0nGbWCumS./Jq,1.64.95.118
