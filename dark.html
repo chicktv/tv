@@ -360,6 +360,28 @@
         }
         .input-box-wrapper:focus-within { border-color: var(--t-purp); background: var(--bg-base); box-shadow: 0 0 0 2px var(--t-purp-muted); }
         
+        /* --- Chat Badge Carousel 樣式 --- */
+        .chat-badge-carousel {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-right: 8px;
+            border-right: 1px solid var(--border-strong);
+            margin-right: 8px;
+            margin-bottom: 4px; /* 對齊輸入框文字基準線 */
+        }
+        .chat-badge-carousel:empty {
+            display: none;
+            padding: 0;
+            margin: 0;
+            border: none;
+        }
+        .chat-badge-carousel img.badge {
+            width: 18px;
+            height: 18px;
+            margin-right: 0;
+        }
+
         #msginput { 
             flex: 1; background: transparent; border: none; color: var(--text-main); 
             font-size: 15px; outline: none; padding: 4px 0; font-family: inherit; 
@@ -397,7 +419,7 @@
             cursor: pointer; color: var(--text-muted); padding: 8px; 
             border-radius: var(--radius-sm); display: flex; align-items: center;
             transition: all var(--transition-fast);
-			display:none;
+			display:block;
         }
         .setting-btn:hover { color: var(--t-purp); background: var(--bg-surface-active); }
 
@@ -502,6 +524,9 @@
             <button id="scrollToBottomBtn" title="滾動到最新訊息">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
             </button>
+            
+            <div id="chat-badge-carousel" class="chat-badge-carousel"></div>
+            
             <div id="msginput" contenteditable="plaintext-only" placeholder="傳送訊息到聊天室..." autocomplete="off" disabled></div>
             
             <div class="action-bar">
@@ -548,7 +573,7 @@ let ACCESS_TOKEN = "";
 let myLoginId = "";
 let myDisplayName = "";
 let myAvatar = "";
-let myBadges = "";
+let myBadges = localStorage.getItem('twitch_my_badges') || ""; 
 let socket = null;
 let altMap = {};
 let emojiLists = {};
@@ -641,6 +666,34 @@ function renderBadges(badgeStr) {
     return html;
 }
 function getMyBadges() { return myBadges || ""; }
+
+// --- 新增：更新輸入框左側的徽章展示區 ---
+function updateBadgeCarousel() {
+    const carousel = document.getElementById('chat-badge-carousel');
+    if (!carousel) return;
+    const badgeStr = getMyBadges();
+    if (badgeStr) {
+        carousel.innerHTML = renderBadges(badgeStr);
+    } else {
+        carousel.innerHTML = '';
+    }
+}
+
+// --- 新增：處理一般文字訊息提及到自己時的標記 ---
+function highlightSelfMentions(text) {
+    if (!text || (!myDisplayName && !myLoginId)) return text;
+    let result = text;
+    if (myDisplayName) {
+        // (^|\s) 確保 @ 前面是空白或行首，(?!\\w) 確保後面不是其他文字
+        const regexName = new RegExp(`(^|\\s)(@${myDisplayName})(?!\\w)`, 'gi');
+        result = result.replace(regexName, `$1<span class="mention-self-tag">$2</span>`);
+    }
+    if (myLoginId && myLoginId.toLowerCase() !== (myDisplayName || "").toLowerCase()) {
+        const regexLogin = new RegExp(`(^|\\s)(@${myLoginId})(?!\\w)`, 'gi');
+        result = result.replace(regexLogin, `$1<span class="mention-self-tag">$2</span>`);
+    }
+    return result;
+}
 
 // ===================== 捲動相關 (已修復媒體載入不捲動到底的問題) =====================
 function forceScrollToBottom(force = false) {
@@ -948,9 +1001,115 @@ function processRTag(str, depth = 0) {
 // ===================== 資源載入與表情面板 =====================
 async function fetchBadges() {
     try {
-        const res = await fetch('https://chicktv.github.io/tv/badges.txt');
-        customBadges = await res.json();
-    } catch(e) { console.error(e); customBadges = {}; }
+        let success = false;
+        
+        // 嘗試 1：使用官方 Helix API (需要有 ACCESS_TOKEN 才能使用)
+        if (ACCESS_TOKEN) {
+            try {
+                const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${CHANNEL}`, {
+                    headers: { 'Client-ID': CLIENT_ID, 'Authorization': 'Bearer ' + ACCESS_TOKEN }
+                });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    if (userData.data && userData.data.length > 0) {
+                        const broadcasterId = userData.data[0].id;
+                        let newBadges = {};
+                        
+                        const globalRes = await fetch(`https://api.twitch.tv/helix/chat/badges/global`, {
+                            headers: { 'Client-ID': CLIENT_ID, 'Authorization': 'Bearer ' + ACCESS_TOKEN }
+                        });
+                        if (globalRes.ok) {
+                            const globalData = await globalRes.json();
+                            globalData.data.forEach(set => {
+                                set.versions.forEach(v => {
+                                    newBadges[`${set.set_id}/${v.id}`] = v.image_url_1x;
+                                    if (!newBadges[set.set_id]) newBadges[set.set_id] = v.image_url_1x;
+                                });
+                            });
+                        }
+                        
+                        const channelRes = await fetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${broadcasterId}`, {
+                            headers: { 'Client-ID': CLIENT_ID, 'Authorization': 'Bearer ' + ACCESS_TOKEN }
+                        });
+                        if (channelRes.ok) {
+                            const channelData = await channelRes.json();
+                            channelData.data.forEach(set => {
+                                set.versions.forEach(v => {
+                                    newBadges[`${set.set_id}/${v.id}`] = v.image_url_1x;
+                                    if (!newBadges[set.set_id]) newBadges[set.set_id] = v.image_url_1x;
+                                });
+                            });
+                        }
+                        
+                        if (Object.keys(newBadges).length > 0) {
+                            customBadges = newBadges;
+                            success = true;
+                        }
+                    }
+                }
+            } catch(err) {
+                console.warn('從官方 Helix API 讀取 Twitch Badges 失敗:', err);
+            }
+        }
+        
+        // 嘗試 2：若未登入(無 Token)或 Helix 失敗，嘗試使用 Twitch 官方公開的 GraphQL
+        if (!success) {
+            try {
+                const gqlRes = await fetch("https://gql.twitch.tv/gql", {
+                    method: "POST",
+                    headers: { "Client-Id": "kimne78kx3ncx6brgo4mv6wki5h1ko" },
+                    body: JSON.stringify([{
+                        operationName: "Chat_Badges",
+                        variables: { channelLogin: CHANNEL },
+                        query: `query Chat_Badges($channelLogin: String!) {
+                            badges { setID versions { id imageURL(size: "1") } }
+                            user(login: $channelLogin) { badges { setID versions { id imageURL(size: "1") } } }
+                        }`
+                    }])
+                });
+                
+                if (gqlRes.ok) {
+                    const gqlData = await gqlRes.json();
+                    const resData = gqlData[0].data;
+                    let newBadges = {};
+                    
+                    if (resData.badges) {
+                        resData.badges.forEach(set => {
+                            set.versions.forEach(v => {
+                                newBadges[`${set.setID}/${v.id}`] = v.imageURL;
+                                if (!newBadges[set.setID]) newBadges[set.setID] = v.imageURL;
+                            });
+                        });
+                    }
+                    if (resData.user && resData.user.badges) {
+                        resData.user.badges.forEach(set => {
+                            set.versions.forEach(v => {
+                                newBadges[`${set.setID}/${v.id}`] = v.imageURL;
+                                if (!newBadges[set.setID]) newBadges[set.setID] = v.imageURL;
+                            });
+                        });
+                    }
+                    
+                    if (Object.keys(newBadges).length > 0) {
+                        customBadges = newBadges;
+                        success = true;
+                    }
+                }
+            } catch (err) {
+                console.warn('從 Twitch 官方 GraphQL 讀取 Badges 失敗:', err);
+            }
+        }
+
+        // 嘗試 3：全部失敗才使用 b.txt
+        if (!success) {
+            console.log('官方 API 讀取失敗，降級使用 b.txt 讀取 Badges');
+            const res = await fetch('https://chicktv.github.io/tv/b.txt');
+            customBadges = await res.json();
+        }
+    } catch(e) { 
+        console.error('載入 Badges 嚴重錯誤:', e); 
+        customBadges = {}; 
+    }
 }
 async function loadAudioData() {
     try {
@@ -1258,6 +1417,9 @@ function showMentionList(users, atPos) {
         let badgeHtml = u.badges ? renderBadges(u.badges) : '';
         item.innerHTML = `<img class="user-avatar" src="${u.avatar}" loading="lazy"><span class="display-name">${u.displayName}</span><span class="login-name">@${u.login}</span>`;
         item.dataset.login = u.login; item.dataset.displayName = u.displayName;
+        
+        // 阻止 mousedown 預設動作，避免點擊時輸入框失去焦點與游標位置
+        item.addEventListener('mousedown', (e) => e.preventDefault());
         item.addEventListener('click', () => selectMentionUser(item));
         list.appendChild(item);
     });
@@ -1282,16 +1444,41 @@ function updateMentionSelection() {
 }
 function selectMentionUser(item) {
     const input = document.getElementById('msginput');
+    input.focus();
+    
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    const before = input.textContent.substring(0, range.startOffset);
-    const atPos = before.lastIndexOf('@');
-    if (atPos !== -1) {
-        insertTextAtCursor('@' + item.dataset.displayName + ' ');
-        hideMentionList();
-        input.focus();
+    if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const text = input.textContent;
+        const caretPos = range.startOffset;
+        
+        // 取得游標前最後一個 '@' 的位置
+        const beforeCaret = text.substring(0, caretPos);
+        const atPos = beforeCaret.lastIndexOf('@');
+        
+        if (atPos !== -1) {
+            // 將 '@' 到游標間的文字替換為指定的用戶名稱
+            const afterCaret = text.substring(caretPos);
+            const mentionText = '@' + item.dataset.displayName + ' ';
+            const newText = text.substring(0, atPos) + mentionText + afterCaret;
+            
+            input.textContent = newText;
+            
+            // 重新設定游標位置至插入名稱的後方
+            const newCaretPos = atPos + mentionText.length;
+            const newRange = document.createRange();
+            if (input.childNodes.length > 0) {
+                const textNode = input.childNodes[0];
+                newRange.setStart(textNode, Math.min(newCaretPos, textNode.length));
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
+        }
     }
+    
+    hideMentionList();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 function hideMentionList() {
     const list = document.getElementById('mention-list');
@@ -1314,7 +1501,10 @@ function sendMessage() {
     let finalCmd = "", replyDisplay = "";
     let myBadgeStr = getMyBadges();
     let badgeHtml = renderBadges(myBadgeStr);
-	let processedContentForDisplay = processRTag(val, 0);
+    
+    // --- 修改：處理自己送出的訊息在畫面上的自我高亮效果 ---
+	let processedContentForDisplay = highlightSelfMentions(processRTag(val, 0));
+    
     if(pendingReply.id){
         finalCmd = `@reply-parent-msg-id=${pendingReply.id} PRIVMSG #${CHANNEL} :${val}`;
         let repliedMsg = msgCache[pendingReply.id];
@@ -1404,7 +1594,9 @@ async function fetchRecentMessages() {
                     addRecentUser({ login: userLogin, displayName: displayName, badges: "", avatar: userRecord.avatar });
 
                     const rTagProcessed = processRTag(messageContent, 0); 
-                    const contentHtml = parseContent(rTagProcessed);
+                    // --- 修改：套用歷史訊息的一般文字被提及高亮 ---
+                    const highlightedMsg = highlightSelfMentions(rTagProcessed);
+                    const contentHtml = parseContent(highlightedMsg);
 
                     combinedHtml += `
                         <div class="chat-line historical-msg id-${ts}" data-user-login="${userLogin}">
@@ -1485,7 +1677,11 @@ function startChat() {
             if (data.includes('CAP') || data.includes('USERSTATE')) {
                 if (data.includes('USERSTATE')) {
                     let badgeTag = getTagValue(data, "badges");
-                    if (badgeTag) { myBadges = badgeTag; localStorage.setItem('twitch_my_badges', badgeTag); }
+                    if (badgeTag) {
+                        myBadges = badgeTag;
+                        localStorage.setItem('twitch_my_badges', badgeTag);
+                        updateBadgeCarousel();
+                    }
                     let colorTag = getTagValue(data, "color");
                     if (colorTag) myColor = colorTag;
                 }
@@ -1542,6 +1738,10 @@ function startChat() {
                 if (displayMsg.startsWith(mention)) displayMsg = displayMsg.substring(mention.length);
             }
             displayMsg = processRTag(displayMsg, 0);
+            
+            // --- 修改：處理 WebSocket 接收的即時一般文字提及高亮 ---
+            displayMsg = highlightSelfMentions(displayMsg);
+            
             let contentHtml = parseContent(displayMsg);
             let badgeHtml = renderBadges(badgeStr);
             let line = `<div class="chat-line ts-${ts} id-${msgId||ts}" data-user-login="${userLogin}" data-msg-ts="${ts}">
@@ -1702,27 +1902,33 @@ async function initApp() {
      document.getElementById('loginBtn').onclick = loginWithPopup;
      document.getElementById('logoutBtn').onclick = logout;
      
-   const settingBtn = document.querySelector('.setting-btn');
-    if (settingBtn) {
-        settingBtn.addEventListener('click', function() {
-            let newChannel = prompt("請輸入要連線的頻道名稱", CHANNEL);
-            if (newChannel && newChannel.trim() !== "") {
-                CHANNEL = newChannel.trim().toLowerCase();
-                localStorage.setItem('twitch_channel', CHANNEL);
-                if (socket) {
-                    socket.onclose = null;
-                    try { socket.close(); } catch(e) {}
-                    socket = null;
-                }
-                startChat();
-                document.getElementById('status').textContent = `已切換至 #${CHANNEL}，重新連線中...`;
-            }
-        });
+   // 替換後的程式碼：
+$('.setting-btn').off('click').on('click', function () {
+    const input = prompt('請輸入要連線的 Twitch 頻道名稱：', CHANNEL);
+    if (!input) return;
+
+    const newChannel = input.trim().toLowerCase();
+    if (newChannel && newChannel !== CHANNEL) {
+        CHANNEL = newChannel;
+        localStorage.setItem('twitch_channel', newChannel);
+
+        $('#messages').empty();
+        msgCache = {};
+        userCache = {};
+
+        if (socket) {
+            isConnecting = false;
+            socket.close();
+        }
+        startChat();
+		 document.getElementById('status').textContent = `已切換至 #${CHANNEL}，重新連線中...`;
     }
+});
 
     setupScrollListener();
     await fetchBadges();
     await loadResources();
+    updateBadgeCarousel(); // 確保資源載入後，初始更新一次徽章
     setupAutoTag();
     setupMentionEvents();
     setupEmojiPanelDrag();
