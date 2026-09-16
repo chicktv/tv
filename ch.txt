@@ -14,4 +14,4 @@ Wc,no25no2501,twitch,$2y$10$/XRGhB5SH4pi3lQwsXIU/u.r7MshEQjA.YdVvUjQXBRscV5Nhynj
 爵,jeukpo,kick,$2y$10$lY0TBb23JsOVyZ4Qj2vbEuBcl/KfdgeQdcfzddrRtzrbsspo0eYNm,187.15.135.215,
 W,whw9457,kick,$2y$10$4jHIbQIp5ZoJ6x/g/EMStu/zseIFTqKnDZOyYkCK3yLtyeSjTkucC,187.15.135.212,
 ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,186.247.39.59,
-槍戰,step1h,twitch,$2y$10$c9EMnE1pN3KDe5iyZBT4cOY1P28cfLLETKeL2MEn22J4hgPOXYTCe,1.64.165.142,77.111.247.36#NO_FP|dev_p1rw84koobmu21qrnq|77.111.245.15#NO_FP@dev_syf5t87kafkmu3gagye
+槍戰,step1h,twitch,$2y$10$c9EMnE1pN3KDe5iyZBT4cOY1P28cfLLETKeL2MEn22J4hgPOXYTCe,1.64.165.142,77.111.247.36#NO_FP|dev_p1rw84koobmu21qrnq|77.111.245.15#NO_FP@dev_syf5t87kafkmu3gagye|77.111.246.40#NO_FP@dev_zqkssi7w7nmu3gemkd
