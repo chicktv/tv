@@ -15,4 +15,3 @@ Wc,no25no2501,twitch
 W,whw9457,kick
 ATV,collartv,kick
 槍戰,step1h,twitch
-施政,https://www.youtube.com/watch?v=UL8iGQiTrlA,youtube
