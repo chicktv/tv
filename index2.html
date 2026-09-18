@@ -776,7 +776,7 @@
                         hls.attachMedia(videoElem);
                         currentHLSInstances.push(hls);
                     } else videoElem.src = idOrUrl;
-                } else if (platform === "vaughn") {
+                } else if (platform === "vaugh") {
                     const videoElem = document.createElement("video");
                     videoElem.className = `hls-video-element ${wrapperClass}`;
                     videoElem.controls = true;
@@ -996,7 +996,7 @@
                 } catch(e) { channelStatuses[statusKey] = 'not-live'; }
                 updateUIForChannel(channel); return;
             }
-            if(channel.platform === "vaugh") {
+            if(channel.platform === "vaughn") {
                 try {
                     const resp = await fetch(`https://young-cloud-e59f.chicktv001.workers.dev/?quest=https://api.vaughnsoft.net/v1/stream/vl/${channel.id}`);
                     if (resp.ok) {
