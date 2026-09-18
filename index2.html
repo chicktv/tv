@@ -641,7 +641,7 @@
     if (channel.platform === "bs") return channel.id; 
     
     // 將 Vaughn 串流網址包裝進你專屬的 Cloudflare Worker Proxy 中
-    if (channel.platform === "vaugh") {
+    if (channel.platform === "vaughn") {
         const originalUrl = `https://stream-cdn-iad3.vaughnsoft.net/play/live_${channel.id}.flv`;
         return `https://cold-frost-3328.chicktv02.workers.dev/?url=${encodeURIComponent(originalUrl)}`;
     }
@@ -776,7 +776,7 @@
                         hls.attachMedia(videoElem);
                         currentHLSInstances.push(hls);
                     } else videoElem.src = idOrUrl;
-                } else if (platform === "vaugh") {
+                } else if (platform === "vaughn") {
                     const videoElem = document.createElement("video");
                     videoElem.className = `hls-video-element ${wrapperClass}`;
                     videoElem.controls = true;
