@@ -633,15 +633,20 @@
         }
 
         function getStreamUrl(channel, muted = false) {
-            if (!channel) return "";
-            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=${muted}&autoplay=true`;
-            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}&muted=${muted}`;
-            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1${muted ? '&muted=1' : ''}`;
-            if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}${muted ? '&muted=true' : ''}`;
-            if (channel.platform === "bs") return channel.id; 
-            if (channel.platform === "vaugh") return `https://stream-cdn-iad3.vaughnsoft.net/play/live_${channel.id}.flv`;
-            return "";
-        }
+    if (!channel) return "";
+    if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=${muted}&autoplay=true`;
+    if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}&muted=${muted}`;
+    if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1${muted ? '&muted=1' : ''}`;
+    if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}${muted ? '&muted=true' : ''}`;
+    if (channel.platform === "bs") return channel.id; 
+    
+    // 將 Vaughn 串流網址包裝進你專屬的 Cloudflare Worker Proxy 中
+    if (channel.platform === "vaugh") {
+        const originalUrl = `https://stream-cdn-iad3.vaughnsoft.net/play/live_${channel.id}.flv`;
+        return `https://cold-frost-3328.chicktv02.workers.dev/?url=${encodeURIComponent(originalUrl)}`;
+    }
+    return "";
+}
 
         function displaySingleChannel(channel) {
             const container = document.getElementById("multi-stream-container");
