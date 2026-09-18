@@ -16,3 +16,4 @@ W,whw9457,kick
 ATV,collartv,kick
 槍戰,step1h,twitch
 美1,triplestarhunters,vaughn
+美2,meidingdang,vaughn
