@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <meta name="referrer" content="no-referrer">
     <meta charset="UTF-8">
     <title>🐔</title>
+	<meta name="referrer" content="no-referrer"> <!-- 新增：隱藏 Referer 避免被防盜鏈機制阻擋 -->
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- 引入 flv.js 以支援 .flv 串流播放 -->
+    <script src="https://chicktv.github.io/tv/flv.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -305,9 +309,9 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 200%;
-            height: 200%;
-            transform: scale(0.5);
+            width: 220%;
+            height: 220%;
+            transform: scale(0.454545);
             transform-origin: top left;
             border: none;
             border-radius: inherit;
@@ -536,6 +540,7 @@
                     <option value="m3u8">M3U8 (HLS)</option>
                     <option value="youtube">YouTube Live</option>
                     <option value="bs">BeamStream (BS)</option>
+                    <option value="vaughn">Vaughn</option>
                 </select>
             </div>
             <div class="modal-buttons">
@@ -594,6 +599,7 @@
         let channels = [];
         let channelStatuses = {};
         let currentHLSInstances = [];
+        let currentFLVInstances = []; // 新增：用於儲存 FLV.js 播放器實例
         let currentDisplayChannel = null; 
         const parent = location.hostname || "localhost";
 
@@ -611,17 +617,36 @@
                 currentHLSInstances.forEach(instance => { if (instance && typeof instance.destroy === 'function') instance.destroy(); });
                 currentHLSInstances = [];
             }
+            if (currentFLVInstances.length) {
+                currentFLVInstances.forEach(instance => { 
+                    if (instance) {
+                        try {
+                            instance.pause();
+                            instance.unload();
+                            instance.detachMediaElement();
+                            instance.destroy();
+                        } catch(e) { console.warn(e); }
+                    } 
+                });
+                currentFLVInstances = [];
+            }
         }
 
         function getStreamUrl(channel, muted = false) {
-            if (!channel) return "";
-            if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=${muted}&autoplay=true`;
-            if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}&muted=${muted}`;
-            if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1${muted ? '&muted=1' : ''}`;
-            if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}${muted ? '&muted=true' : ''}`;
-            if (channel.platform === "bs") return channel.id; 
-            return "";
-        }
+    if (!channel) return "";
+    if (channel.platform === "kick") return `https://player.kick.com/${channel.id}?muted=${muted}&autoplay=true`;
+    if (channel.platform === "twitch") return `https://player.twitch.tv/?channel=${channel.id}&parent=${encodeURIComponent(parent)}&muted=${muted}`;
+    if (channel.platform === "ok") return `https://ok.ru/videoembed/${channel.id}?nochat=1&autoplay=1${muted ? '&muted=1' : ''}`;
+    if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}${muted ? '&muted=true' : ''}`;
+    if (channel.platform === "bs") return channel.id; 
+    
+    // 將 Vaughn 串流網址包裝進你專屬的 Cloudflare Worker Proxy 中
+    if (channel.platform === "vaughn") {
+        const originalUrl = `https://stream-cdn-iad3.vaughnsoft.net/play/live_${channel.id}.flv`;
+        return `https://cold-frost-3328.chicktv02.workers.dev/?url=${encodeURIComponent(originalUrl)}`;
+    }
+    return "";
+}
 
         function displaySingleChannel(channel) {
             const container = document.getElementById("multi-stream-container");
@@ -655,6 +680,29 @@
                     videoElem.src = idOrUrl;
                 } else {
                     container.innerHTML = `<div style="color:red;">⚠️ 瀏覽器不支援 HLS</div>`;
+                }
+            } else if (platform === "vaughn") {
+                const videoElem = document.createElement("video");
+                videoElem.className = "hls-video-element"; // 重用 HLS 樣式確保全版與置中
+                videoElem.controls = true;
+                videoElem.autoplay = true;
+                videoElem.muted = false;
+                videoElem.playsInline = true;
+                container.appendChild(videoElem);
+
+                if (typeof flvjs !== 'undefined' && flvjs.isSupported()) {
+                    const flvPlayer = flvjs.createPlayer({
+                        type: 'flv',
+                        url: getStreamUrl(channel, false),
+                        isLive: true,
+                        cors: true
+                    });
+                    flvPlayer.attachMediaElement(videoElem);
+                    flvPlayer.load();
+                    flvPlayer.play().catch(e => console.warn(e));
+                    currentFLVInstances.push(flvPlayer);
+                } else {
+                    container.innerHTML = `<div style="color:red;">⚠️ 瀏覽器不支援 FLV.js，無法播放 .flv 格式</div>`;
                 }
             } else if (platform === "youtube") {
                 const iframe = document.createElement("iframe");
@@ -728,6 +776,26 @@
                         hls.attachMedia(videoElem);
                         currentHLSInstances.push(hls);
                     } else videoElem.src = idOrUrl;
+                } else if (platform === "vaugh") {
+                    const videoElem = document.createElement("video");
+                    videoElem.className = `hls-video-element ${wrapperClass}`;
+                    videoElem.controls = true;
+                    videoElem.autoplay = true;
+                    videoElem.muted = isMuted;
+                    frag.appendChild(videoElem);
+                    
+                    if (typeof flvjs !== 'undefined' && flvjs.isSupported()) {
+                        const flvPlayer = flvjs.createPlayer({
+                            type: 'flv',
+                            url: getStreamUrl(ch, isMuted),
+                            isLive: true,
+                            cors: true
+                        });
+                        flvPlayer.attachMediaElement(videoElem);
+                        flvPlayer.load();
+                        flvPlayer.play().catch(e => console.warn(e));
+                        currentFLVInstances.push(flvPlayer);
+                    }
                 } else if (platform === "youtube") {
                     const iframe = document.createElement("iframe");
                     iframe.className = wrapperClass;
@@ -855,6 +923,7 @@
             else if (channel.platform === "youtube") platformIcon = "ⓨ";
             else if (channel.platform === "ok") platformIcon = "ⓞ";
             else if (channel.platform === "bs") platformIcon = "Ⓑ";
+            else if (channel.platform === "vaughn") platformIcon = "ⓥ";
             btn.innerText = `${platformIcon}${channel.name}`;
             btn.onclick = () => { displaySingleChannel(channel); };
             const wrapper = document.createElement("div");
@@ -927,6 +996,18 @@
                 } catch(e) { channelStatuses[statusKey] = 'not-live'; }
                 updateUIForChannel(channel); return;
             }
+            if(channel.platform === "vaughn") {
+                try {
+                    const resp = await fetch(`https://young-cloud-e59f.chicktv001.workers.dev/?quest=https://api.vaughnsoft.net/v1/stream/vl/${channel.id}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        channelStatuses[statusKey] = (data.live === true) ? 'live' : 'not-live';
+                    } else {
+                        channelStatuses[statusKey] = 'not-live';
+                    }
+                } catch(e) { channelStatuses[statusKey] = 'unknown'; }
+                updateUIForChannel(channel); return;
+            }
             if(channel.platform === "youtube"){ channelStatuses[statusKey] = 'unknown2'; updateUIForChannel(channel); return; }
             if(channel.platform === "m3u8"){ channelStatuses[statusKey] = 'live'; updateUIForChannel(channel); return; }
             if (channel.platform === "bs") {
@@ -995,6 +1076,7 @@
                 if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                 else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
                 else if(ch.platform === 'ok') icon='ⓞ'; else if(ch.platform === 'at') icon='Ⓐ';
+                else if(ch.platform === 'vaugh') icon='ⓥ';
                 const wrapper = document.createElement("div");
                 wrapper.style.margin = "5px 0";
                 wrapper.innerHTML = `<input type="checkbox" value="${escapeHtml(ch.id)}" data-platform="${ch.platform}" data-name="${escapeHtml(ch.name)}" id="chk_${idSafe}">
@@ -1055,6 +1137,7 @@
                     if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                     else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
                     else if(ch.platform === 'ok') icon='ⓞ'; else if(ch.platform === 'at') icon='Ⓐ';
+                    else if(ch.platform === 'vaugh') icon='ⓥ';
                     btn.appendChild(document.createTextNode(` ${icon}${escapeHtml(ch.name)}`));
                     btn.onclick=()=>{ displaySingleChannel(ch); toggleChannelMenu(); };
                     frag.appendChild(btn);
@@ -1093,6 +1176,7 @@
                 if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                 else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
                 else if(ch.platform === 'ok') icon='ⓞ'; else if(ch.platform === 'at') icon='Ⓐ';
+                else if(ch.platform === 'vaugh') icon='ⓥ';
                 const div = document.createElement('div');
                 div.className = 'channel-item-delete';
                 div.innerHTML = `
