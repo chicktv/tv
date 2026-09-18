@@ -15,3 +15,4 @@ Wc,no25no2501,twitch
 W,whw9457,kick
 ATV,collartv,kick
 槍戰,step1h,twitch
+美1,triplestarhunters,vaughn
