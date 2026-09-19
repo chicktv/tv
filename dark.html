@@ -2094,7 +2094,7 @@ function applyTheme(theme) {
 // 頁面載入時初始化樣式與自己訊息的監聽器
 $(document).ready(function() {
     // 載入儲存的樣式
-    const savedTheme = localStorage.getItem('chat_theme') || 'default';
+    const savedTheme = localStorage.getItem('chat_theme') || 'discord';
     applyTheme(savedTheme);
     
     // 建立 MutationObserver 自動將自己發出的訊息加上 .msg-self (用於 WhatsApp 靠右排版)
