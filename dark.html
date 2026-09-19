@@ -557,7 +557,7 @@ body.theme-whatsapp {
         body.theme-discord .reply-btn2:hover { background-color: #06c755; }
     </style>
 </head>
-<body onload="initApp()">
+<body onload="initApp()" class="theme-discord">
 
 <header class="header-bar">
     <div id="status">載入中...</div>
@@ -603,9 +603,9 @@ body.theme-whatsapp {
     <div>
         <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 5px;">聊天室樣式:</label>
         <select id="themeSelect" onchange="changeTheme(this.value)" class="custom-input" style="width:100%; cursor:pointer;">
-            <option value="default">預設 Twitch</option>
+            <option value="default">Twitch</option>
             <option value="whatsapp">WhatsApp 樣式</option>
-            <option value="discord">Line 樣式</option>
+            <option value="discord">預設Line 樣式</option>
         </select>
     </div>
 </div>
