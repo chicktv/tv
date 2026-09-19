@@ -17,3 +17,4 @@ ATV,collartv,kick
 槍戰,step1h,twitch
 美1,triplestarhunters,vaughn
 美2,meidingdang,vaughn
+金剛,kingkong_tv,vaughn
