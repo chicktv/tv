@@ -540,7 +540,7 @@
                     <option value="m3u8">M3U8 (HLS)</option>
                     <option value="youtube">YouTube Live</option>
                     <option value="bs">BeamStream (BS)</option>
-                    <option value="vaughn">Vaughn</option>
+                    <option value="n">n</option>
                 </select>
             </div>
             <div class="modal-buttons">
@@ -640,9 +640,9 @@
     if (channel.platform === "at") return `https://player.angelthump.com/?channel=${channel.id}${muted ? '&muted=true' : ''}`;
     if (channel.platform === "bs") return channel.id; 
     
-    // 將 Vaughn 串流網址包裝進你專屬的 Cloudflare Worker Proxy 中
-    if (channel.platform === "vaughn") {
-        const originalUrl = `https://stream-cdn-iad3.vaughnsoft.net/play/live_${channel.id}.flv`;
+    // 將 n 串流網址包裝進你專屬的 Cloudflare Worker Proxy 中
+    if (channel.platform === "n") {
+        const originalUrl = `https://stream-cdn-iad3.nsoft.net/play/live_${channel.id}.flv`;
         return `https://cold-frost-3328.chicktv02.workers.dev/?url=${encodeURIComponent(originalUrl)}`;
     }
     return "";
@@ -681,7 +681,7 @@
                 } else {
                     container.innerHTML = `<div style="color:red;">⚠️ 瀏覽器不支援 HLS</div>`;
                 }
-            } else if (platform === "vaughn") {
+            } else if (platform === "n") {
                 const videoElem = document.createElement("video");
                 videoElem.className = "hls-video-element"; // 重用 HLS 樣式確保全版與置中
                 videoElem.controls = true;
@@ -776,7 +776,7 @@
                         hls.attachMedia(videoElem);
                         currentHLSInstances.push(hls);
                     } else videoElem.src = idOrUrl;
-                } else if (platform === "vaugh") {
+                } else if (platform === "vaughn") {
                     const videoElem = document.createElement("video");
                     videoElem.className = `hls-video-element ${wrapperClass}`;
                     videoElem.controls = true;
@@ -1076,7 +1076,7 @@
                 if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                 else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
                 else if(ch.platform === 'ok') icon='ⓞ'; else if(ch.platform === 'at') icon='Ⓐ';
-                else if(ch.platform === 'vaugh') icon='ⓥ';
+                else if(ch.platform === 'vaughn') icon='ⓥ';
                 const wrapper = document.createElement("div");
                 wrapper.style.margin = "5px 0";
                 wrapper.innerHTML = `<input type="checkbox" value="${escapeHtml(ch.id)}" data-platform="${ch.platform}" data-name="${escapeHtml(ch.name)}" id="chk_${idSafe}">
@@ -1137,7 +1137,7 @@
                     if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                     else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
                     else if(ch.platform === 'ok') icon='ⓞ'; else if(ch.platform === 'at') icon='Ⓐ';
-                    else if(ch.platform === 'vaugh') icon='ⓥ';
+                    else if(ch.platform === 'vaughn') icon='ⓥ';
                     btn.appendChild(document.createTextNode(` ${icon}${escapeHtml(ch.name)}`));
                     btn.onclick=()=>{ displaySingleChannel(ch); toggleChannelMenu(); };
                     frag.appendChild(btn);
@@ -1176,7 +1176,7 @@
                 if(ch.platform === 'kick') icon='Ⓚ'; else if(ch.platform === 'twitch') icon='Ⓣ';
                 else if(ch.platform === 'youtube') icon='ⓨ'; else if(ch.platform === 'bs') icon='Ⓑ';
                 else if(ch.platform === 'ok') icon='ⓞ'; else if(ch.platform === 'at') icon='Ⓐ';
-                else if(ch.platform === 'vaugh') icon='ⓥ';
+                else if(ch.platform === 'vaughn') icon='ⓥ';
                 const div = document.createElement('div');
                 div.className = 'channel-item-delete';
                 div.innerHTML = `
@@ -1247,7 +1247,7 @@
                     iframe.src = `https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=${encodeURIComponent(parent)}`;
                 } else {
                     
-                    iframe.src = 'https://chicktv.github.io/tv/chat.html';
+                    iframe.src = 'https://chicktv.github.io/tv/dark.html';
                 }
             }
 
