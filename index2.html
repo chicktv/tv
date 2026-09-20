@@ -417,35 +417,35 @@
 
         /* ---------------- 模態視窗 ---------------- */
         .modal-mask {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .82);   /* 加深補償，模糊拿掉 */
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    visibility: hidden;
-    opacity: 0;
-    transition: visibility .25s, opacity .25s;
-    contain: strict;                  /* 隔離重繪 */
-}
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .82);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility .25s, opacity .25s;
+            contain: strict;
+        }
         .modal-mask.active { visibility: visible; opacity: 1; }
 
         .modal-panel {
-    background: #1c1c1e;              /* 實色，不再透出背後的影片 */
-    border: .5px solid rgba(255, 255, 255, .12);
-    border-radius: 20px;
-    width: 100%;
-    max-width: 520px;
-    padding: 1.5rem 1.4rem;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, .85);
-    transform: scale(.94) translateY(10px);
-    opacity: 0;
-    transition: transform .3s cubic-bezier(.32, .72, 0, 1), opacity .25s ease;
-    contain: layout paint;            /* 限制重繪範圍 */
-    will-change: transform, opacity;  /* 提示合成層 */
-}
+            background: #1c1c1e;
+            border: .5px solid rgba(255, 255, 255, .12);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 520px;
+            padding: 1.5rem 1.4rem;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .85);
+            transform: scale(.94) translateY(10px);
+            opacity: 0;
+            transition: transform .3s cubic-bezier(.32, .72, 0, 1), opacity .25s ease;
+            contain: layout paint;
+            will-change: transform, opacity;
+        }
         .modal-mask.active .modal-panel {
             transform: scale(1) translateY(0);
             opacity: 1;
@@ -579,24 +579,24 @@
         }
 
         /* ---------------- 看更台浮動面板 ---------------- */
-       #channel-selection {
-    display: none;
-    position: fixed;
-    top: 72px;
-    right: 18px;
-    z-index: 1000;
-    width: 320px;
-    max-height: 74vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 18px;
-    color: var(--label);
-    background: #1c1c1e;              /* 實色，移除 backdrop-filter */
-    border: .5px solid rgba(255, 255, 255, .12);
-    border-radius: 20px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, .8);
-    contain: layout paint;
-}
+        #channel-selection {
+            display: none;
+            position: fixed;
+            top: 72px;
+            right: 18px;
+            z-index: 1000;
+            width: 320px;
+            max-height: 74vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 18px;
+            color: var(--label);
+            background: #1c1c1e;
+            border: .5px solid rgba(255, 255, 255, .12);
+            border-radius: 20px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .8);
+            contain: layout paint;
+        }
 
         #channel-selection h3 {
             font-size: .95rem;
@@ -618,7 +618,6 @@
             min-width: 0;
         }
 
-        /* 隱藏原本的 checkbox，改用 label 整格點擊 */
         #channel-options input[type="checkbox"] {
             position: absolute;
             width: 1px;
@@ -657,13 +656,11 @@
             transform: scale(.955);
         }
 
-        /* 狀態色只影響文字，不影響格子底色 */
         #channel-options .channel-option-label.live,
         #channel-options .channel-option-label.unknown2 { color: var(--green) !important; }
         #channel-options .channel-option-label.not-live { color: var(--red) !important; }
         #channel-options .channel-option-label.unknown  { color: var(--label-2) !important; }
 
-        /* 選中：iOS 藍高亮 + 內描邊 + 勾勾 */
         #channel-options input:checked + .channel-option-label {
             background: rgba(10, 132, 255, .22) !important;
             box-shadow: inset 0 0 0 1.5px var(--blue);
@@ -777,181 +774,176 @@
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover { background: rgba(235, 235, 245, .4); }
-		
-		/* ============ iOS 風格通知系統（輕量版） ============ */
 
-/* 彈窗遮罩：純色半透明，不使用 backdrop-filter */
-.modal-overlay {
-    display: flex;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 20000;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.22s ease, visibility 0.22s ease;
-}
-.modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
+        /* ============ iOS 風格通知系統（輕量版） ============ */
 
-/* iOS 卡片面板 */
-.admin-panel {
-    background: #1c1c1e;          /* iOS dark 卡片色 */
-    color: #ffffff;
-    padding: 22px 20px 20px;
-    border-radius: 18px;
-    width: 90%;
-    max-width: 360px;
-    border: 0.5px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-    transform: scale(0.96);
-    transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
-    will-change: transform;
-}
-.modal-overlay.active .admin-panel {
-    transform: scale(1);
-}
+        .modal-overlay {
+            display: flex;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
 
-/* 標題列 */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-.modal-header h2 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-    color: #ffffff;
-}
-#close-admin-btn {
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-    color: rgba(235, 235, 245, 0.6);
-    padding: 0 6px;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    transition: color 0.15s;
-}
-#close-admin-btn:hover { color: #ffffff; }
+        .admin-panel {
+            background: #1c1c1e;
+            color: #ffffff;
+            padding: 22px 20px 20px;
+            border-radius: 18px;
+            width: 90%;
+            max-width: 360px;
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+            transform: scale(0.96);
+            transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+            will-change: transform;
+        }
+        .modal-overlay.active .admin-panel {
+            transform: scale(1);
+        }
 
-/* iOS 輸入框 */
-#notice-input {
-    width: 100%;
-    height: 110px;
-    margin: 0 0 16px 0;
-    padding: 12px 14px;
-    box-sizing: border-box;
-    background: rgba(118, 118, 128, 0.24);
-    border: none;
-    color: #ffffff;
-    border-radius: 12px;
-    resize: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 1.4;
-    outline: none;
-    transition: background-color 0.15s ease;
-}
-#notice-input::placeholder { color: rgba(235, 235, 245, 0.5); }
-#notice-input:focus { background: rgba(118, 118, 128, 0.34); }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: #ffffff;
+        }
+        #close-admin-btn {
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            color: rgba(235, 235, 245, 0.6);
+            padding: 0 6px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: color 0.15s;
+        }
+        #close-admin-btn:hover { color: #ffffff; }
 
-/* iOS 主要按鈕 */
-#send-btn {
-    width: 100%;
-    padding: 13px;
-    background: #007aff;          /* iOS 藍 */
-    color: #ffffff;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    font-size: 16px;
-    letter-spacing: -0.2px;
-    transition: background-color 0.15s, transform 0.1s;
-    -webkit-tap-highlight-color: transparent;
-}
-#send-btn:hover  { background: #0a84ff; }
-#send-btn:active { background: #0062c4; transform: scale(0.985); }
+        #notice-input {
+            width: 100%;
+            height: 110px;
+            margin: 0 0 16px 0;
+            padding: 12px 14px;
+            box-sizing: border-box;
+            background: rgba(118, 118, 128, 0.24);
+            border: none;
+            color: #ffffff;
+            border-radius: 12px;
+            resize: none;
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 1.4;
+            outline: none;
+            transition: background-color 0.15s ease;
+        }
+        #notice-input::placeholder { color: rgba(235, 235, 245, 0.5); }
+        #notice-input:focus { background: rgba(118, 118, 128, 0.34); }
 
-/* ====== 右上角通知橫幅（iOS 通知中心風格） ====== */
-#notification-pannel {
-    position: fixed;
-    top: 14px;
-    right: 14px;
-    width: 320px;
-    max-width: calc(100% - 28px);
-    background: rgba(28, 28, 30, 0.97);   /* 接近不透明，不用模糊 */
-    color: #ffffff;
-    border-radius: 16px;
-    padding: 14px 16px 12px;
-    border: 0.5px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-    z-index: 30000;
+        #send-btn {
+            width: 100%;
+            padding: 13px;
+            background: #007aff;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: -0.2px;
+            transition: background-color 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #send-btn:hover  { background: #0a84ff; }
+        #send-btn:active { background: #0062c4; transform: scale(0.985); }
 
-    transform: translate3d(calc(100% + 20px), 0, 0);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
-                opacity   0.28s ease,
-                visibility 0.32s ease;
-    will-change: transform, opacity;
-}
-#notification-pannel.show {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
+        /* ====== 右上角通知橫幅 ====== */
+        #notification-pannel {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            width: 320px;
+            max-width: calc(100% - 28px);
+            background: rgba(28, 28, 30, 0.97);
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 14px 16px 12px;
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+            z-index: 30000;
 
-.notice-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(235, 235, 245, 0.65);   /* iOS 次要文字色 */
-    letter-spacing: -0.1px;
-    margin-bottom: 6px;
-}
-#notice-content {
-    font-size: 14px;
-    line-height: 1.5;
-    color: #ffffff;
-    margin-bottom: 12px;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-}
+            transform: translate3d(calc(100% + 20px), 0, 0);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+                        opacity   0.28s ease,
+                        visibility 0.32s ease;
+            will-change: transform, opacity;
+        }
+        #notification-pannel.show {
+            transform: translate3d(0, 0, 0);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
 
-.close-notice-btn {
-    float: right;
-    background: rgba(255, 255, 255, 0.12);
-    border: none;
-    color: #ffffff;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 10px;
-    font-family: inherit;
-    transition: background-color 0.15s;
-    -webkit-tap-highlight-color: transparent;
-}
-.close-notice-btn:hover  { background: rgba(255, 255, 255, 0.2); }
-.close-notice-btn:active { background: rgba(255, 255, 255, 0.3); }
+        .notice-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(235, 235, 245, 0.65);
+            letter-spacing: -0.1px;
+            margin-bottom: 6px;
+        }
+        #notice-content {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #ffffff;
+            margin-bottom: 12px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .close-notice-btn {
+            float: right;
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            color: #ffffff;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 10px;
+            font-family: inherit;
+            transition: background-color 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .close-notice-btn:hover  { background: rgba(255, 255, 255, 0.2); }
+        .close-notice-btn:active { background: rgba(255, 255, 255, 0.3); }
     </style>
 </head>
 <body>
@@ -969,7 +961,7 @@
                 <button id="addChannelBtn">➕ 加台</button>
                 <button id="delChannelBtn">🗑 del台</button>
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">📺 看更台</button>
-				<button id="open-admin-btn">通知</button>
+                <button id="open-admin-btn">通知</button>
                 <label class="toggle-switch purple-toggle" id="chatToggleWrapper">
                     <span class="toggle-label" id="chatToggleLabel">TWITCH</span>
                     <input type="checkbox" id="chatToggle">
@@ -979,23 +971,23 @@
         </div>
     </div>
 
-<div id="admin-modal" class="modal-overlay">
-    <div class="admin-panel">
-        <div class="modal-header">
-            <h2>發送即時通知</h2>
-            <span id="close-admin-btn">&times;</span>
+    <div id="admin-modal" class="modal-overlay">
+        <div class="admin-panel">
+            <div class="modal-header">
+                <h2>發送即時通知</h2>
+                <span id="close-admin-btn">&times;</span>
+            </div>
+            <textarea id="notice-input" placeholder="請輸入通知內容..."></textarea>
+            <button id="send-btn">發布通知</button>
         </div>
-        <textarea id="notice-input" placeholder="請輸入通知內容..."></textarea>
-        <button id="send-btn">發布通知</button>
     </div>
-</div>
 
-<div id="notification-pannel">
-    <div class="notice-header"><span>📢 系統廣播</span></div>
-    <div id="notice-content"></div>
-    <button class="close-notice-btn" id="manual-close-btn">關閉</button>
-    <div style="clear: both;"></div>
-</div>
+    <div id="notification-pannel">
+        <div class="notice-header"><span>📢 系統廣播</span></div>
+        <div id="notice-content"></div>
+        <button class="close-notice-btn" id="manual-close-btn">關閉</button>
+        <div style="clear: both;"></div>
+    </div>
 
     <div id="addChannelModal" class="modal-mask">
         <div class="modal-panel">
@@ -1064,40 +1056,7 @@
 <script>
 /* =====================================================================================
    ★★★  平台註冊表 (PLATFORM REGISTRY)  ★★★
-   -------------------------------------------------------------------------------------
-   想新增一個平台？只需要在下面 PLATFORMS 加一個 key 就好，其他程式都不用改。
-
-   每個平台可以填的欄位：
-     label          選單上顯示的名稱
-     icon           按鈕前面的小圖示
-     type           播放器型別，可選：
-                      'iframe'       → 一般 iframe (buildUrl 回傳網址)
-                      'scaledIframe' → Kick 那種「欺騙大播放器」的縮放 iframe
-                      'hls'          → 用 hls.js 播 .m3u8 (id 直接當網址)
-                      'flv'          → 用 flv.js 播 .flv   (buildUrl 回傳網址)
-     buildUrl(ch, muted) → 回傳播放網址 (iframe / flv 需要)
-     allow          iframe 的 allow 屬性 (可選)
-     referrerPolicy iframe 的 referrerpolicy (可選)
-     aliases        API 回傳的舊平台名稱，例如 ['vl'] 會被對應到 kick
-     status(ch)     async 函式，回傳 'live' | 'not-live' | 'unknown' | 'unknown2'
-                    ('unknown2' 表示「有開台但無法偵測」→ 亮綠燈)
-     idPlaceholder  加台視窗中「頻道ID」欄位的提示文字
-
-   新增範例：
-     myplatform: {
-         label: 'MyPlatform',
-         icon: 'Ⓜ',
-         type: 'iframe',
-         buildUrl: (ch, muted) => `https://myplatform.com/embed/${ch.id}?mute=${muted ? 1 : 0}`,
-         status: async (ch) => {
-             const r = await fetch(`https://api.myplatform.com/${ch.id}`);
-             const d = await r.json();
-             return d.live ? 'live' : 'not-live';
-         },
-         idPlaceholder: 'MyPlatform 頻道 ID'
-     }
    ===================================================================================== */
-
 const PLATFORMS = {
     twitch: {
         label: 'Twitch',
@@ -1169,7 +1128,7 @@ const PLATFORMS = {
         label: 'M3U8 (HLS)',
         icon: 'Ⓜ',
         type: 'hls',
-        status: async () => 'live',   // 直接當成 live
+        status: async () => 'live',
         idPlaceholder: '完整 .m3u8 網址'
     },
 
@@ -1194,7 +1153,7 @@ const PLATFORMS = {
         label: 'BeamStream (BS)',
         icon: 'Ⓑ',
         type: 'iframe',
-        buildUrl: (ch) => ch.id,   // id 本身就是完整 embed 網址
+        buildUrl: (ch) => ch.id,
         status: async (ch) => {
             const resp = await fetch(`https://r.jina.ai/${ch.id}`);
             const text = await resp.text();
@@ -1221,49 +1180,48 @@ const PLATFORMS = {
         },
         idPlaceholder: 'Vaughn 頻道 ID'
     },
-	goodgame: {
-    label: 'GoodGame',
-    icon: 'Ⓖ',
-    type: 'iframe',
-    buildUrl: (ch, muted) =>
-        `https://goodgame.ru/player?${ch.id}${muted ? '&muted=1' : ''}`,
-    status: async (ch) => {
-        try {
-            // ★ 優先用 ggUsername，沒有才退回 ch.id
-            const username = ch.ggUsername || ch.id;
-            const api = `https://goodgame.ru/api/4/users/${encodeURIComponent(username)}/stream`;
+    goodgame: {
+        label: 'GoodGame',
+        icon: 'Ⓖ',
+        type: 'iframe',
+        buildUrl: (ch, muted) =>
+            `https://goodgame.ru/player?${ch.id}${muted ? '&muted=1' : ''}`,
+        status: async (ch) => {
+            try {
+                const username = ch.ggUsername || ch.id;
+                const api = `https://goodgame.ru/api/4/users/${encodeURIComponent(username)}/stream`;
+                const resp = await fetch(
+                    `https://young-cloud-e59f.chicktv001.workers.dev/?quest=${encodeURIComponent(api)}`
+                );
+                if (!resp.ok) return 'not-live';
+                const data = await resp.json();
+                if (!data || !data.id) return 'not-live';
+                if (data.status === true || data.online === true) return 'live';
+                return 'not-live';
+            } catch (e) {
+                console.warn('[GoodGame status error]', e);
+                return 'unknown';
+            }
+        },
+        idPlaceholder: 'GoodGame 頻道名 (例: Pomi)',
+        async resolveId(input) {
+            const api = `https://goodgame.ru/api/4/users/${encodeURIComponent(input)}/stream`;
             const resp = await fetch(
                 `https://young-cloud-e59f.chicktv001.workers.dev/?quest=${encodeURIComponent(api)}`
             );
-            if (!resp.ok) return 'not-live';
+            if (!resp.ok) throw new Error('無法連接 GoodGame API');
             const data = await resp.json();
-            if (!data || !data.id) return 'not-live';
-            if (data.status === true || data.online === true) return 'live';
-            return 'not-live';
-        } catch (e) {
-            console.warn('[GoodGame status error]', e);
-            return 'unknown';
+            if (!data || !data.id) throw new Error('找不到該頻道');
+            return {
+                id: String(data.id),
+                ggUsername: data.channelkey || data.streamkey || input
+            };
         }
-    },
-    idPlaceholder: 'GoodGame 頻道名 (例: Pomi)',
-    async resolveId(input) {
-        const api = `https://goodgame.ru/api/4/users/${encodeURIComponent(input)}/stream`;
-        const resp = await fetch(
-            `https://young-cloud-e59f.chicktv001.workers.dev/?quest=${encodeURIComponent(api)}`
-        );
-        if (!resp.ok) throw new Error('無法連接 GoodGame API');
-        const data = await resp.json();
-        if (!data || !data.id) throw new Error('找不到該頻道');
-        return {
-            id: String(data.id),
-            ggUsername: data.channelkey || data.streamkey || input
-        };
     }
-}
 };
 
 /* -------------------------------------------------------------------------------------
-   播放器渲染器 (依 type 分派) —— 一般情況下不需要改這裡
+   播放器渲染器 (依 type 分派)
    ------------------------------------------------------------------------------------- */
 const RENDERERS = {
     iframe(channel, p, muted, wrapperClass) {
@@ -1375,7 +1333,6 @@ function platformLabel(key) {
     return p ? p.label : (key || '未知');
 }
 
-/** 把 API 回傳的舊平台名稱轉成註冊表 key */
 function resolvePlatform(raw) {
     if (!raw) return null;
     const lower = String(raw).toLowerCase();
@@ -1409,7 +1366,6 @@ function destroyAllHLSInstances() {
     }
 }
 
-/** 建立單一頻道的播放元素 (統一入口) */
 function renderChannelElement(channel, muted, wrapperClass) {
     const p = getPlatform(channel.platform);
     if (!p) return buildErrorDiv(`⚠️ 未知平台: ${channel.platform}`);
@@ -1505,19 +1461,19 @@ async function loadChannelsFromUrl() {
             const data = await resp.text();
             txtChannels = data.split('\n').filter(l => l.trim()).map(line => {
                 const parts = line.split(',').map(p => p.trim());
-               if (parts.length === 3) {
-    return { name: parts[0], id: parts[1], platform: parts[2].toLowerCase(), _fromTxt: true };
-}
-if (parts.length >= 4) {
-    return {
-        name: parts[0],
-        id: parts[1],
-        platform: parts[2].toLowerCase(),
-        ggUsername: parts[3] || undefined,   // ★ GoodGame 頻道名
-        _fromTxt: true
-    };
-}
-return null;
+                if (parts.length === 3) {
+                    return { name: parts[0], id: parts[1], platform: parts[2].toLowerCase(), _fromTxt: true };
+                }
+                if (parts.length >= 4) {
+                    return {
+                        name: parts[0],
+                        id: parts[1],
+                        platform: parts[2].toLowerCase(),
+                        ggUsername: parts[3] || undefined,
+                        _fromTxt: true
+                    };
+                }
+                return null;
             }).filter(Boolean);
         }
     } catch (e) {}
@@ -1635,7 +1591,6 @@ function updateUIForChannel(channel) {
     updateChannelOptionLabel(channel);
 }
 
-/* ******* 直播狀態查詢 (統一走平台註冊表) ******* */
 async function fetchStatus(channel) {
     if (!channel || !channel.id) return;
     const statusKey = `${channel.platform}_${channel.id}`;
@@ -1658,7 +1613,6 @@ function fetchAllStatuses() {
     if (TWITCH_TOKEN && TWITCH_CLIENT_ID) channels.forEach(ch => fetchStatus(ch));
 }
 
-/* 看更台選項產生（九宮格） */
 function generateChannelOptions() {
     const container = document.getElementById("channel-options");
     if (!container) return;
@@ -1715,7 +1669,6 @@ function toggleChannelSelection() {
     } else div.style.display = "none";
 }
 
-/* 漢堡選單 */
 function toggleChannelMenu() {
     const menu = document.getElementById("channel-menu");
     if (menu.style.display === "none" || getComputedStyle(menu).display === "none") {
@@ -1747,7 +1700,6 @@ function toggleChannelMenu() {
     }
 }
 
-/* 刪除頻道邏輯 */
 function openDeleteModal() {
     const modal = document.getElementById('deleteChannelModal');
     if (!modal) return;
@@ -1888,7 +1840,7 @@ function showPopup() {
     });
 })();
 
-/* 加台模態窗 —— 平台下拉選單由 PLATFORMS 自動產生 */
+/* 加台模態窗 */
 function buildPlatformOptions() {
     const sel = document.getElementById('modal-channel-platform');
     if (!sel) return;
@@ -1924,7 +1876,6 @@ document.getElementById('confirmAddChannel').onclick = async () => {
     const p = getPlatform(platform);
     if (!p) return alert("⚠️ 未知的平台類型");
 
-    // 若平台有提供 resolveId，就先解析成真正的 ID
     let extra = {};
     if (typeof p.resolveId === 'function') {
         try {
@@ -1962,7 +1913,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadChannelsFromUrl();
     setInterval(fetchAllStatuses, 300000);
 });
-
 </script>
+
+
+
 </body>
 </html>
