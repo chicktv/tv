@@ -5,241 +5,712 @@
     <meta charset="UTF-8">
     <title>🐔</title>
     <meta name="referrer" content="no-referrer">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, viewport-fit=cover">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://chicktv.github.io/tv/flv.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* =====================================================================
+           iOS 風格 · 黑色主調
+           ===================================================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg:        #000000;
+            --bg-1:      #1c1c1e;
+            --bg-2:      #2c2c2e;
+            --bg-3:      #3a3a3c;
+            --sep:       rgba(84, 84, 88, .65);
+            --label:     #ffffff;
+            --label-2:   rgba(235, 235, 245, .60);
+            --label-3:   rgba(235, 235, 245, .30);
+            --green:     #30d158;
+            --red:       #ff453a;
+            --blue:      #0a84ff;
+            --purple:    #bf5af2;
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+                    "PingFang TC", "PingFang SC", "Helvetica Neue", "Microsoft JhengHei",
+                    system-ui, sans-serif;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            color-scheme: dark;
+        }
+
         body {
-            background: #0d0d0d;
-            display: flex; flex-direction: column; height: 98vh;
-            color: #eee; font-family: 'Segoe UI', system-ui, sans-serif;
-            font-size: clamp(12px, 1vw, 16px); overflow-x: hidden;
+            background: var(--bg);
+            color: var(--label);
+            font-family: var(--font);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-size: clamp(12px, 1vw, 16px);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow-x: hidden;
         }
+
+        ::selection { background: rgba(48, 209, 88, .35); }
+
+        /* ---------------- 頂欄 ---------------- */
         #top-bar {
-            position: relative; border-bottom: 1px solid #333;
-            padding: 0.75em 1.25em; background: rgba(15, 15, 15, 0.98);
-            display: flex; flex-wrap: nowrap; align-items: center;
-            justify-content: space-between; overflow: hidden;
-            min-height: 60px; z-index: 100; contain: layout paint;
+            position: relative;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            min-height: 60px;
+            padding: .6em 1em;
+            background: rgba(20, 20, 22, .78);
+            -webkit-backdrop-filter: saturate(180%) blur(24px);
+            backdrop-filter: saturate(180%) blur(24px);
+            border-bottom: .5px solid var(--sep);
+            overflow: hidden;
+            contain: layout paint;
         }
+
         .top-container {
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%; flex-wrap: nowrap; gap: 0.625em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            flex-wrap: nowrap;
+            gap: .625em;
         }
+
+        /* ---------------- 頻道列 ---------------- */
         #lists {
-            display: flex; flex-wrap: nowrap; gap: 0.5em; align-items: center;
-            overflow-x: auto; overflow-y: hidden; white-space: nowrap;
-            flex: 1; min-width: 0; padding: 0.3125em 0 0.625em 0;
-            -ms-overflow-style: auto; scrollbar-width: auto; cursor: grab;
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: .5em;
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            padding: .35em 0 .5em;
+            cursor: grab;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(235, 235, 245, .22) transparent;
+            -webkit-overflow-scrolling: touch;
         }
         #lists:active { cursor: grabbing; }
-        #lists::-webkit-scrollbar { height: 8px; background-color: #1f1f2b; border-radius: 10px; }
-        #lists::-webkit-scrollbar-track { background: #1a1a24; border-radius: 10px; margin: 0 4px; }
-        #lists::-webkit-scrollbar-thumb { background: #4a4a5a; border-radius: 10px; transition: background 0.2s; }
-        #lists::-webkit-scrollbar-thumb:hover { background: #6f6f8a; }
-        #lists::-webkit-scrollbar-thumb:active { background: #00ff88; }
-        @media (max-width: 768px) { #lists { display: none; } }
 
-        .button-wrapper { position: relative; display: inline-flex; flex-shrink: 0; margin-right: 0.3125em; }
-        .status-button {
-            background: #222; border: 1px solid #444; color: #eee;
-            padding: 0.5em 1em; border-radius: 8px;
-            transition: background-color 0.15s, border-color 0.15s;
-            font-weight: 500; cursor: pointer; white-space: nowrap;
-            font-size: clamp(10px, 0.85vw, 14px); min-height: 36px;
-            display: flex; align-items: center; justify-content: center; position: relative;
+        #lists::-webkit-scrollbar { height: 6px; background: transparent; }
+        #lists::-webkit-scrollbar-track { background: transparent; }
+        #lists::-webkit-scrollbar-thumb {
+            background: rgba(235, 235, 245, .22);
+            border-radius: 3px;
         }
-        .status-button:hover { background: #333; }
+        #lists::-webkit-scrollbar-thumb:hover { background: rgba(235, 235, 245, .4); }
+        #lists::-webkit-scrollbar-thumb:active { background: var(--green); }
+
+        @media (max-width: 768px) {
+            #lists { display: none; }
+        }
+
+        /* ---------------- 通用按鈕 ---------------- */
+        button {
+            font-family: inherit;
+            font-size: clamp(12px, .9vw, 14px);
+            font-weight: 500;
+            color: var(--label);
+            background: var(--bg-1);
+            border: none;
+            border-radius: 10px;
+            padding: 0 14px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: background-color .18s ease, transform .12s ease, opacity .18s ease;
+        }
+        button:hover  { background: var(--bg-2); }
+        button:active { transform: scale(.955); }
+
+        #mobile-menu-btn {
+            display: none;
+            background: var(--purple);
+            color: #fff;
+        }
+        #mobile-menu-btn:hover { background: #cf7ef7; }
+
+        .button-wrapper {
+            position: relative;
+            display: inline-flex;
+            flex-shrink: 0;
+        }
+
+        /* ---------------- 頻道狀態按鈕 ---------------- */
+        .status-button {
+            background: var(--bg-1);
+            color: var(--label);
+            border: none;
+            min-height: 36px;
+            padding: .5em 1em;
+            border-radius: 10px;
+            font-size: clamp(10px, .85vw, 14px);
+            font-weight: 500;
+        }
+        .status-button:hover { background: var(--bg-2); }
+
         .live, .unknown2 {
-            color: #00ff88 !important; border: 1px solid #00ff88 !important;
+           color: #00ff88 !important; border: 1px solid #00ff88 !important;
             background: rgba(0, 255, 136, 0.05) !important;
         }
-        .not-live { color: #ff3333 !important; border-color: #ff3333 !important; }
-        .unknown { color: #FFFFFF !important; border-color: #666 !important; }
-
-        .toggle-switch {
-            display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-            user-select: none; background: #222; padding: 4px 12px;
-            border-radius: 6px; height: 36px; font-size: 0.85rem; white-space: nowrap;
+        .not-live {
+            color: var(--red) !important;
+            background: rgba(255, 69, 58, .15) !important;
+            border: none !important;
         }
+        .unknown {
+            color: var(--label-2) !important;
+            background: var(--bg-1) !important;
+            border: none !important;
+        }
+
+        /* 看更台清單裡的文字標籤不吃膠囊底色 */
+        .channel-option-label.live,
+        .channel-option-label.unknown2 { color: var(--green) !important; background: transparent !important; }
+        .channel-option-label.not-live { color: var(--red) !important; background: transparent !important; }
+        .channel-option-label.unknown  { color: var(--label-2) !important; background: transparent !important; }
+
+        /* ---------------- iOS 開關 ---------------- */
+        .toggle-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            background: var(--bg-1);
+            padding: 0 12px;
+            border-radius: 10px;
+            height: 36px;
+            font-size: .82rem;
+            white-space: nowrap;
+            transition: background-color .18s ease;
+        }
+        .toggle-switch:active { background: var(--bg-2); }
+
         .toggle-switch .slider {
-            position: relative; display: inline-block; width: 44px; height: 22px;
-            background-color: #555; border-radius: 34px; transition: background-color 0.2s;
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+            background-color: #39393d;
+            border-radius: 100px;
+            flex-shrink: 0;
+            transition: background-color .3s cubic-bezier(.25, .1, .25, 1);
         }
         .toggle-switch .slider::before {
-            content: ""; position: absolute; width: 18px; height: 18px;
-            left: 2px; bottom: 2px; background-color: white; border-radius: 50%;
-            transition: transform 0.2s;
+            content: "";
+            position: absolute;
+            width: 27px;
+            height: 27px;
+            left: 2px;
+            top: 2px;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, .15), 0 1px 1px rgba(0, 0, 0, .16);
+            transition: transform .3s cubic-bezier(.25, .1, .25, 1);
         }
         .toggle-switch input { display: none; }
-        .toggle-switch input:checked + .slider { background-color: #00ff88; }
-        .toggle-switch input:checked + .slider::before { transform: translateX(22px); }
-        .purple-toggle input:checked + .slider { background-color: #8a2be2; }
-        .toggle-label { color: #eee; font-weight: 500; }
+        .toggle-switch input:checked + .slider { background-color: var(--green); }
+        .toggle-switch input:checked + .slider::before { transform: translateX(20px); }
+        .purple-toggle input:checked + .slider { background-color: var(--purple); }
+        .toggle-label { color: var(--label); font-weight: 500; }
 
+        /* ---------------- 右側控制區 ---------------- */
         #input-container {
-            display: flex; align-items: center; gap: 0.5em; flex-wrap: nowrap;
-            overflow: hidden; white-space: nowrap; margin-top: 0;
-            flex-shrink: 0; margin-left: auto; padding-left: 0.625em;
+            display: flex;
+            align-items: center;
+            gap: .5em;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: auto;
+            padding-left: .5em;
         }
-        #channel-selection {
-            display: none; position: fixed; top: 10px; right: 80px;
-            background: #111; padding: 20px; border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.8); color: #fff; z-index: 1000;
-            border: 1px solid #333; max-height: 80vh; overflow-y: auto; contain: layout paint;
-        }
+
+        /* ---------------- 表單元素 ---------------- */
         input, select {
-            background: #222; border: 1px solid #444; border-radius: 6px;
-            color: lime; padding: 8px 12px; min-width: 80px;
+            font-family: inherit;
+            font-size: .95rem;
+            color: var(--label);
+            background: var(--bg-2);
+            border: none;
+            border-radius: 10px;
+            padding: 9px 12px;
+            min-width: 0;
+            transition: box-shadow .2s ease, background-color .2s ease;
         }
-        button {
-            background: #2a2a2a; border: 1px solid #444; color: #fff;
-            padding: 0.5em 0.875em; border-radius: 6px; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 0.375em;
-            font-size: clamp(12px, 0.9vw, 14px); height: 36px;
-            white-space: nowrap; box-sizing: border-box;
-        }
-        button:hover { background: #333; }
 
+        input::placeholder { color: var(--label-3); }
+
+        input:focus, select:focus {
+            outline: none;
+            background: var(--bg-3);
+            box-shadow: 0 0 0 3px rgba(10, 132, 255, .35);
+        }
+
+        select {
+            -webkit-appearance: none;
+            appearance: none;
+            padding-right: 34px;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ebebf5' fill-opacity='0.6' d='M6 8.6 1.4 4h9.2z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            cursor: pointer;
+        }
+
+        /* ---------------- 播放區 ---------------- */
         #multi-stream-container-wrapper {
-            display: flex; gap: 0.9375em; padding: 0.9375em;
-            flex-grow: 1; min-height: 70vh; contain: layout;
+            display: flex;
+            gap: .9375em;
+            padding: .9375em;
+            flex-grow: 1;
+            min-height: 70vh;
+            contain: layout;
         }
-        .video-wrapper, .chat {
-            background: #000; border-radius: 12px; border: 1px solid #333;
-            min-height: 400px; contain: layout paint;
-        }
-        .video-wrapper { flex: 3; padding: 0.9375em; display: flex; flex-direction: column; }
-        .chat { flex: 1; }
-        iframe, video { contain: layout paint; }
-        .video, .video1, .full-screen-video { width: 100%; height: 100%; border: none; }
 
+        .video-wrapper, .chat {
+            background: #000;
+            border-radius: 14px;
+            border: .5px solid rgba(255, 255, 255, .10);
+            min-height: 400px;
+            overflow: hidden;
+            contain: layout paint;
+        }
+
+        .video-wrapper {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat { flex: 1; }
+
+        iframe, video { contain: layout paint; }
+
+        .video, .video1, .full-screen-video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ---------------- Kick 縮放容器 ---------------- */
         .kick-wrapper {
-            position: relative; width: 100%; height: 100%;
-            overflow: hidden; border-radius: inherit;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: inherit;
         }
         .kick-iframe {
-            position: absolute; top: 0; left: 0; width: 220%; height: 220%;
-            transform: scale(0.454545); transform-origin: top left;
-            border: none; border-radius: inherit;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 220%;
+            height: 220%;
+            transform: scale(0.454545);
+            transform-origin: top left;
+            border: none;
+            border-radius: inherit;
         }
-        .kick-iframe:fullscreen, .kick-iframe:-webkit-full-screen, .kick-iframe:-moz-full-screen {
-            width: 100% !important; height: 100% !important; transform: none !important;
+        .kick-iframe:fullscreen,
+        .kick-iframe:-webkit-full-screen,
+        .kick-iframe:-moz-full-screen {
+            width: 100% !important;
+            height: 100% !important;
+            transform: none !important;
         }
 
         #multi-stream-container {
-            display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr;
-            gap: 0.625em; height: 100%; width: 100%; overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+            gap: .625em;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
         }
+
         .hls-video-element {
-            width: 100%; height: 100%; object-fit: contain;
-            background: #000; border-radius: 8px;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+            border-radius: 10px;
         }
 
-        #mobile-menu-btn { display: none; background: #6a35bb; }
+        /* ---------------- 手機頻道全屏選單 ---------------- */
         #channel-menu {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0a0a0a; z-index: 1000; padding: 0; overflow: hidden; contain: strict;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 1000;
+            overflow: hidden;
+            contain: strict;
         }
-        #channel-menu-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.9375em 1.25em; background: #111; border-bottom: 1px solid #333;
-            position: sticky; top: 0; z-index: 1001;
-        }
-        #menu-channel-list {
-            display: flex; flex-direction: column; gap: 0.625em;
-            padding: 0.9375em 1.25em; height: calc(100% - 4.375em);
-            overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
-        .menu-status-button {
-            width: 100%; text-align: left; padding: 0.75em 0.9375em;
-            margin-bottom: 0.3125em; font-size: clamp(13px, 1vw, 15px);
-        }
-        .status-indicator {
-            display: inline-block; width: 10px; height: 10px;
-            border-radius: 50%; margin-right: 0.5em;
-        }
-        .status-live { background-color: #00ff88; }
-        .status-not-live { background-color: #ff3333; }
-        .status-unknown { background-color: #cccccc; }
 
+        #channel-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.15rem;
+            background: rgba(20, 20, 22, .82);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: .5px solid var(--sep);
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        #channel-menu-header h3 {
+            font-size: 1.05rem !important;
+            font-weight: 700 !important;
+            letter-spacing: -.01em;
+        }
+
+        #menu-channel-list {
+            display: flex;
+            flex-direction: column;
+            gap: .5em;
+            padding: .9375em 1.15em calc(1.15em + env(safe-area-inset-bottom));
+            height: calc(100% - 4.5em);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .menu-status-button {
+            width: 100%;
+            justify-content: flex-start;
+            text-align: left;
+            min-height: 48px;
+            padding: .75em 1em;
+            border-radius: 12px;
+            font-size: clamp(13px, 1vw, 15px);
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-right: .55em;
+            flex-shrink: 0;
+        }
+        .status-live     { background-color: var(--green); box-shadow: 0 0 8px rgba(48, 209, 88, .6); }
+        .status-not-live { background-color: var(--red); }
+        .status-unknown  { background-color: #636366; }
+
+        /* ---------------- 模態視窗 ---------------- */
         .modal-mask {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-            visibility: hidden; opacity: 0;
-            transition: visibility 0.1s, opacity 0.1s;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility .25s, opacity .25s;
         }
         .modal-mask.active { visibility: visible; opacity: 1; }
-        .modal-panel {
-            background: #1e1e2a; border-radius: 16px; width: 90%;
-            max-width: 560px; padding: 1.8rem 1.5rem;
-            border: 1px solid #333; box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-        }
-        .modal-panel h3 {
-            margin-top: 0; margin-bottom: 1.2rem; font-size: 1.5rem;
-            display: flex; align-items: center; gap: 8px; color: #00ff88;
-            border-left: 4px solid #00ff88; padding-left: 15px;
-        }
-        .delete-channel-list {
-            max-height: 55vh; overflow-y: auto; margin: 1rem 0;
-            background: #0f0f17; border-radius: 12px; padding: 0.75rem;
-        }
-        .channel-item-delete {
-            display: flex; align-items: center; padding: 10px 12px;
-            margin-bottom: 6px; background: #252530; border-radius: 8px; gap: 12px;
-        }
-        .channel-item-delete input {
-            width: 20px; height: 20px; cursor: pointer; accent-color: #00ff88; flex-shrink: 0;
-        }
-        .channel-info { flex: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .del-status-bullet { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .del-channel-name { font-weight: 500; font-size: 0.95rem; }
-        .del-channel-meta {
-            font-size: 0.7rem; color: #aaa; background: #1a1a24;
-            padding: 2px 8px; border-radius: 20px;
-        }
-        .form-group { margin-bottom: 1.2rem; }
-        .modal-buttons { display: flex; gap: 12px; margin-top: 16px; }
-        .modal-buttons button {
-            flex: 1; justify-content: center; height: 44px;
-            font-weight: bold; font-size: 1rem;
-        }
-        .btn-confirm { background: #b91c1c; border: none; }
-        .btn-confirm:hover { background: #dc2626; }
-        .btn-cancel { background: #3a3a44; border: 1px solid #555; }
-        .select-all-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 0 12px 0; border-bottom: 1px solid #3a3a44; margin-bottom: 12px;
-        }
-        .select-all-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
 
+        .modal-panel {
+            background: rgba(28, 28, 30, .94);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            backdrop-filter: blur(30px) saturate(180%);
+            border: .5px solid rgba(255, 255, 255, .12);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 520px;
+            padding: 1.5rem 1.4rem;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .85);
+            transform: scale(.94) translateY(10px);
+            opacity: 0;
+            transition: transform .3s cubic-bezier(.32, .72, 0, 1), opacity .25s ease;
+        }
+        .modal-mask.active .modal-panel {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-panel h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            line-height: 1.4;
+            color: var(--label);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.15rem;
+        }
+
+        .modal-panel input[type="text"],
+        .modal-panel select { width: 100%; }
+
+        .delete-channel-list {
+            max-height: 55vh;
+            overflow-y: auto;
+            margin: 1rem 0;
+            background: #0b0b0d;
+            border-radius: 14px;
+            padding: .6rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .channel-item-delete {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: var(--bg-1);
+            border-radius: 12px;
+            gap: 12px;
+            transition: background-color .15s;
+        }
+        .channel-item-delete:last-child { margin-bottom: 0; }
+        .channel-item-delete:hover { background: var(--bg-2); }
+
+        .channel-item-delete input {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            padding: 0;
+            cursor: pointer;
+            accent-color: var(--green);
+            flex-shrink: 0;
+        }
+
+        .channel-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+        .del-status-bullet {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .del-channel-name { font-weight: 500; font-size: .92rem; }
+        .del-channel-meta {
+            font-size: .68rem;
+            color: var(--label-2);
+            background: rgba(120, 120, 128, .24);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .form-group { margin-bottom: 1.1rem; }
+        .form-group label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 500;
+            color: var(--label-2);
+            margin-bottom: .45rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            height: 46px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            justify-content: center;
+        }
+        .btn-confirm { background: var(--red); color: #fff; }
+        .btn-confirm:hover { background: #ff5f55; }
+        .btn-cancel {
+            background: var(--bg-2);
+            color: var(--label);
+            border: none;
+        }
+        .btn-cancel:hover { background: var(--bg-3); }
+
+        .select-all-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 0 12px 0;
+            border-bottom: .5px solid var(--sep);
+            margin-bottom: 4px;
+        }
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: .85rem;
+        }
+        .select-all-label input {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            padding: 0;
+            accent-color: var(--green);
+            cursor: pointer;
+        }
+
+        /* ---------------- 看更台浮動面板 ---------------- */
+        #channel-selection {
+            display: none;
+            position: fixed;
+            top: 72px;
+            right: 18px;
+            z-index: 1000;
+            width: 280px;
+            max-height: 72vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 18px;
+            color: var(--label);
+            background: rgba(28, 28, 30, .92);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            backdrop-filter: blur(30px) saturate(180%);
+            border: .5px solid rgba(255, 255, 255, .12);
+            border-radius: 20px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .8);
+            contain: layout paint;
+        }
+
+        #channel-selection h3 {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: .8rem;
+            letter-spacing: -.01em;
+        }
+
+        #channel-options > div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 8px;
+            border-radius: 10px;
+            transition: background-color .15s;
+        }
+        #channel-options > div:hover { background: rgba(255, 255, 255, .06); }
+
+        #channel-options input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            padding: 0;
+            accent-color: var(--green);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        #channel-selection button {
+            width: 100%;
+            margin-top: 8px;
+            justify-content: center;
+        }
+
+        /* ---------------- 手機適配 ---------------- */
         @media (max-width: 768px) {
             body { font-size: 14px; }
+
             #multi-stream-container-wrapper {
-                flex-direction: column; padding: 0.625em; gap: 0.625em; flex: 1; min-height: 0;
+                flex-direction: column;
+                padding: .625em;
+                gap: .625em;
+                flex: 1;
+                min-height: 0;
             }
-            .chat { flex: 3; display: flex; flex-direction: column; min-height: 0; }
-            .chat iframe#chat_embed { flex: 1; width: 100%; height: 100%; border-radius: inherit; }
-            .video-wrapper { flex: 4; min-height: 0; display: flex; flex-direction: column; }
+            .chat {
+                flex: 3;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            .chat iframe#chat_embed {
+                flex: 1;
+                width: 100%;
+                height: 100%;
+                border-radius: inherit;
+            }
+            .video-wrapper {
+                flex: 4;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+            }
             #multi-stream-container { flex: 1; min-height: 0; }
+
             #input-container {
-                flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.3125em;
-                margin-top: 0; width: 100%; justify-content: flex-start;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: .3em;
+                margin-top: 0;
+                width: 100%;
+                justify-content: flex-start;
+                scrollbar-width: none;
             }
-            #lists { display: none; }
+            #input-container::-webkit-scrollbar { display: none; }
+
             #mobile-menu-btn { display: inline-flex; }
-            .top-container { flex-direction: column; align-items: stretch; gap: 0.5em; }
-            #top-bar { padding: 0.5em; min-height: auto; }
-            .modal-panel { padding: 1rem; width: 95%; }
+            .top-container { flex-direction: column; align-items: stretch; gap: .5em; }
+            #top-bar { padding: .5em; min-height: auto; }
+
+            .modal-panel { padding: 1.2rem 1rem; width: 100%; }
             .delete-channel-list { max-height: 50vh; }
+
+            #channel-selection {
+                top: auto;
+                bottom: 12px;
+                left: 12px;
+                right: 12px;
+                width: auto;
+                max-height: 60vh;
+            }
         }
+
         @media (min-width: 769px) {
             #mobile-menu-btn { display: none !important; }
             #lists { display: flex; }
         }
+
+        /* ---------------- 全域滾動條 ---------------- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(235, 235, 245, .22);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(235, 235, 245, .4); }
     </style>
 </head>
 <body>
@@ -282,7 +753,7 @@
                 <select id="modal-channel-platform"></select>
             </div>
             <div class="modal-buttons">
-                <button class="btn-confirm" id="confirmAddChannel" style="background: #00b359;">➕ 確認加台</button>
+                <button class="btn-confirm" id="confirmAddChannel" style="background: var(--green); color: #000;">➕ 確認加台</button>
                 <button class="btn-cancel" id="cancelAddChannel">取消</button>
             </div>
         </div>
@@ -295,10 +766,10 @@
                 <label class="select-all-label">
                     <input type="checkbox" id="deleteSelectAll"> 全選 / 全不選
                 </label>
-                <span style="font-size:0.75rem; color:#aaa;">✔️ 勾選後確認將被移除</span>
+                <span style="font-size:0.72rem; color:var(--label-2);">✔️ 勾選後確認將被移除</span>
             </div>
             <div id="deleteChannelListContainer" class="delete-channel-list">
-                <div style="color:#aaa; text-align:center; padding:20px;">載入頻道中...</div>
+                <div style="color:var(--label-2); text-align:center; padding:20px;">載入頻道中...</div>
             </div>
             <div class="modal-buttons">
                 <button class="btn-confirm" id="confirmDeleteChannels">✔️ 確認刪除</button>
@@ -311,8 +782,8 @@
         <h3>📡 選擇要同時觀看的台：</h3>
         <div id="channel-options"></div>
         <button onclick="watchSelectedChannels()">▶️ 開始觀看</button>
-        <button onclick="checkAllLiveChannels()" style="background: #00ff88; color: #0d0d0d; font-weight: bold; border: none; padding: 4px 12px; font-size: 0.85rem;">所有在線頻道</button>
-        <button onclick="clearAllChannelSelection()" style="background: #333; color: #ccc; border: 1px solid #444; padding: 4px 12px; font-size: 0.85rem;">全選</button>
+        <button onclick="checkAllLiveChannels()" style="background: var(--green); color: #000; font-weight: 600;">所有在線頻道</button>
+        <button onclick="clearAllChannelSelection()" style="background: var(--bg-2); color: var(--label);">全選</button>
     </div>
 
     <div id="multi-stream-container-wrapper">
@@ -324,8 +795,8 @@
 
     <div id="channel-menu" style="display: none;">
         <div id="channel-menu-header">
-            <h3 style="margin: 0; font-size: 1.2rem;">頻道列表 (共 <span id="channel-count">0</span> 個頻道)</h3>
-            <button onclick="toggleChannelMenu()" style="background: #b91c1c; padding: 8px 15px; font-size: 0.9rem; border:none;">✕ 關閉</button>
+            <h3 style="margin: 0;">頻道列表 (共 <span id="channel-count">0</span> 個頻道)</h3>
+            <button onclick="toggleChannelMenu()" style="background: var(--red); color: #fff; padding: 8px 15px; font-size: 0.9rem;">✕ 關閉</button>
         </div>
         <div id="menu-channel-list"></div>
     </div>
@@ -608,7 +1079,7 @@ const RENDERERS = {
 
 function buildErrorDiv(msg) {
     const d = document.createElement('div');
-    d.style.cssText = 'color:red;display:flex;align-items:center;justify-content:center;width:100%;height:100%;';
+    d.style.cssText = 'color:var(--red);display:flex;align-items:center;justify-content:center;width:100%;height:100%;';
     d.textContent = msg;
     return d;
 }
@@ -698,7 +1169,7 @@ function displaySingleChannel(channel) {
     container.style.gridTemplateRows = "1fr";
 
     if (!channel) {
-        container.innerHTML = `<div style="color:#aaa; text-align:center; padding:2rem;">未選擇頻道</div>`;
+        container.innerHTML = `<div style="color:var(--label-2); text-align:center; padding:2rem;">未選擇頻道</div>`;
         currentDisplayChannel = null;
         return;
     }
@@ -725,7 +1196,7 @@ function watchSelectedChannels() {
         .filter(Boolean);
 
     if (fullSelected.length === 0) {
-        container.innerHTML = `<div style="color:#aaa; text-align:center; padding:2rem;">未選擇任何頻道</div>`;
+        container.innerHTML = `<div style="color:var(--label-2); text-align:center; padding:2rem;">未選擇任何頻道</div>`;
         return;
     }
 
@@ -941,7 +1412,6 @@ function generateChannelOptions() {
         const idSafe = statusKey.replace(/[^a-zA-Z0-9]/g, '_');
         const icon = platformIcon(ch.platform);
         const wrapper = document.createElement("div");
-        wrapper.style.margin = "5px 0";
         wrapper.innerHTML = `<input type="checkbox" value="${escapeHtml(ch.id)}" data-platform="${ch.platform}" data-name="${escapeHtml(ch.name)}" id="chk_${idSafe}">
                              <label class="channel-option-label" id="status-label-${idSafe}" for="chk_${idSafe}"> ${icon} ${escapeHtml(ch.name)}</label>`;
         frag.appendChild(wrapper);
@@ -1020,7 +1490,7 @@ function renderDeleteChannelList() {
     const container = document.getElementById('deleteChannelListContainer');
     if (!container) return;
     if (!channels.length) {
-        container.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">📭 沒有任何頻道可刪除</div>';
+        container.innerHTML = '<div style="color:var(--label-2); text-align:center; padding:20px;">📭 沒有任何頻道可刪除</div>';
         return;
     }
     container.innerHTML = '';
@@ -1028,9 +1498,9 @@ function renderDeleteChannelList() {
     channels.forEach((ch, idx) => {
         const statusKey = `${ch.platform}_${ch.id}`;
         const status = channelStatuses[statusKey] || 'unknown';
-        let statusColor = '#aaa';
-        if (status === 'live') statusColor = '#00ff88';
-        else if (status === 'not-live') statusColor = '#ff3333';
+        let statusColor = '#636366';
+        if (status === 'live') statusColor = 'var(--green)';
+        else if (status === 'not-live') statusColor = 'var(--red)';
         const icon = platformIcon(ch.platform);
         const div = document.createElement('div');
         div.className = 'channel-item-delete';
@@ -1040,7 +1510,7 @@ function renderDeleteChannelList() {
                 <span class="del-status-bullet" style="background: ${statusColor};"></span>
                 <span class="del-channel-name">${icon} ${escapeHtml(ch.name)}</span>
                 <span class="del-channel-meta">${escapeHtml(platformLabel(ch.platform))}</span>
-                <span style="font-size:0.65rem; color:#aaa;">${escapeHtml(String(ch.id).substring(0,28))}</span>
+                <span style="font-size:0.65rem; color:var(--label-2);">${escapeHtml(String(ch.id).substring(0,28))}</span>
             </div>
         `;
         frag.appendChild(div);
