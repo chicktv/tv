@@ -147,6 +147,7 @@
         body.hide-timestamps .chat-line { padding-bottom: 1px !important; }
         body.hide-timestamps.theme-discord .chat-line { padding-bottom: 8px !important; }
         body.hide-timestamps.theme-whatsapp .chat-line { padding-bottom: 6px !important; }
+        body.hide-timestamps.theme-whatsapp-dark .chat-line { padding-bottom: 6px !important; }
 
 @keyframes blink {
     50% { opacity: 0.7; }
@@ -642,6 +643,237 @@
             color: #111b21;
         }
 
+/* ===================== 主題：WhatsApp 群組聊天 (深色) ===================== */
+        body.theme-whatsapp-dark {
+            --t-bg: #0b141a;
+            --t-alt: #202c33;
+            --t-purp: #00a884;
+            --t-purp-hover: #06cf9c;
+            --t-purp-muted: rgba(0, 168, 132, 0.18);
+            --t-purp-border: rgba(0, 168, 132, 0.38);
+            --t-text: #e9edef;
+            --text-main: #e9edef;
+            --text-muted: #8696a0;
+            --text-inverse: #0b141a;
+            --bg-base: #0b141a;
+            --bg-surface: #202c33;
+            --bg-surface-hover: #2a3942;
+            --bg-surface-active: #2a3942;
+            --bg-panel: #111b21;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.16);
+            --danger: #f15c6d;
+            background: #0b141a;
+            color: #e9edef;
+        }
+
+        body.theme-whatsapp-dark .header-bar {
+            background: #202c33;
+            border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+        body.theme-whatsapp-dark #status { color: #e9edef; }
+        body.theme-whatsapp-dark #status::before { background-color: #00a884; }
+        body.theme-whatsapp-dark #userName { color: #e9edef; }
+        body.theme-whatsapp-dark #loginBtn { background: #00a884; color: #ffffff; }
+        body.theme-whatsapp-dark #loginBtn:hover { background: #06cf9c; }
+        body.theme-whatsapp-dark #logoutBtn { background: rgba(255, 255, 255, 0.12); }
+        body.theme-whatsapp-dark #logoutBtn:hover { background: rgba(255, 255, 255, 0.22); }
+
+        body.theme-whatsapp-dark #chat-container {
+            background: #0b141a;
+            padding: 0;
+        }
+        body.theme-whatsapp-dark #messages {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            padding: 10px 12px 10px 12px;
+            min-height: 100%;
+            box-sizing: border-box;
+        }
+
+        body.theme-whatsapp-dark .chat-line {
+            position: relative;
+            width: fit-content;
+            max-width: 65%;
+            background: #202c33;
+            border-radius: 7.5px;
+            border-top-left-radius: 0;
+            padding: 6px 9px 19px 9px;
+            margin-bottom: 2px;
+            margin-left: 8px;
+            color: #e9edef;
+            font-size: 14.2px;
+            line-height: 19px;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.35);
+            overflow: visible;
+            border: 1px solid transparent;
+        }
+        body.theme-whatsapp-dark .chat-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -7px;
+            width: 8px;
+            height: 13px;
+            background: #202c33;
+            border-bottom-right-radius: 12px;
+            z-index: 1;
+        }
+        body.theme-whatsapp-dark .chat-line:hover {
+            background: #2a3942;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+        }
+
+        body.theme-whatsapp-dark .chat-line.msg-self {
+            background: #005c4b;
+            align-self: flex-end;
+            margin-right: 8px;
+            margin-left: 0;
+            border-top-left-radius: 7.5px;
+            border-top-right-radius: 0;
+        }
+        body.theme-whatsapp-dark .chat-line.msg-self::before {
+            left: auto;
+            right: -7px;
+            background: #005c4b;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 12px;
+        }
+        body.theme-whatsapp-dark .chat-line.msg-self:hover { background: #005c4b; }
+
+        body.theme-whatsapp-dark .chat-line:has(.wa-audio-player) {
+            width: 100%;
+            max-width: 85%;
+        }
+
+        body.theme-whatsapp-dark .chat-line b:not(.self-name) {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 2px;
+            letter-spacing: 0.2px;
+        }
+
+        body.theme-whatsapp-dark .msg-time {
+            color: rgba(233, 237, 239, 0.5);
+            opacity: 1;
+            bottom: 3px;
+            right: 9px;
+        }
+
+        body.theme-whatsapp-dark .chat-line:has(.quote-box) {
+            background: #202c33 !important;
+            border: 1px solid transparent !important;
+            margin-left: 8px;
+        }
+        body.theme-whatsapp-dark .chat-line.msg-self:has(.quote-box) {
+            background: #005c4b !important;
+        }
+        body.theme-whatsapp-dark .quote-box {
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-left: 3px solid #00a884;
+            color: #8696a0;
+        }
+        body.theme-whatsapp-dark .quote-box:hover { background: rgba(0, 0, 0, 0.32); }
+        body.theme-whatsapp-dark .quote-user { color: #00a884; font-weight: 600; }
+        body.theme-whatsapp-dark .quote-box .quote-box {
+            border-left: 3px solid #00a884;
+            background: rgba(0, 0, 0, 0.18);
+        }
+        body.theme-whatsapp-dark .mention-self-tag {
+            background-color: #00a884;
+            color: #ffffff !important;
+        }
+
+        body.theme-whatsapp-dark #chat-container img.media-preview,
+        body.theme-whatsapp-dark #chat-container video.media-preview {
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        body.theme-whatsapp-dark .footer {
+            background: #202c33;
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+        body.theme-whatsapp-dark .tool-link { color: #8696a0; }
+        body.theme-whatsapp-dark .tool-link:hover { color: #00a884; background: #2a3942; }
+        body.theme-whatsapp-dark .setting-btn { color: #8696a0; }
+        body.theme-whatsapp-dark .setting-btn:hover { color: #00a884; background: #2a3942; }
+        body.theme-whatsapp-dark .input-box-wrapper {
+            background: #2a3942;
+            border-color: transparent;
+            border-radius: 20px;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
+        }
+        body.theme-whatsapp-dark .input-box-wrapper:focus-within {
+            border-color: #00a884;
+            background: #2a3942;
+            box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.22);
+        }
+        body.theme-whatsapp-dark #msginput { color: #e9edef; }
+        body.theme-whatsapp-dark #msginput:empty:before { color: #8696a0; }
+        body.theme-whatsapp-dark #sendbtn {
+            background: #00a884;
+            border-radius: 20px;
+            color: #ffffff;
+        }
+        body.theme-whatsapp-dark #sendbtn:hover:not(:disabled) { background: #06cf9c; }
+        body.theme-whatsapp-dark #sendbtn:disabled { background: #2a3942; color: #8696a0; }
+
+        body.theme-whatsapp-dark #reply-indicator {
+            background: rgba(0, 168, 132, 0.1);
+            border: 1px solid rgba(0, 168, 132, 0.32);
+            color: #8696a0;
+        }
+        body.theme-whatsapp-dark #reply-indicator span { color: #00a884; }
+
+        body.theme-whatsapp-dark .reply-btn,
+        body.theme-whatsapp-dark .reply-btn2 {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        body.theme-whatsapp-dark .reply-btn:hover,
+        body.theme-whatsapp-dark .reply-btn2:hover { background-color: #00a884; }
+
+        body.theme-whatsapp-dark #scrollToBottomBtn {
+            background: rgba(0, 168, 132, 0.9);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        body.theme-whatsapp-dark #scrollToBottomBtn:hover { background: #00a884; }
+
+        body.theme-whatsapp-dark #mention-list {
+            background: #202c33;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e9edef;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        body.theme-whatsapp-dark .mention-item { color: #e9edef; }
+        body.theme-whatsapp-dark .mention-item:hover,
+        body.theme-whatsapp-dark .mention-item.selected { background: rgba(0, 168, 132, 0.18); }
+        body.theme-whatsapp-dark .mention-item .display-name { color: #00a884; }
+        body.theme-whatsapp-dark .mention-item .login-name { color: #8696a0; }
+        body.theme-whatsapp-dark .mention-header {
+            color: #8696a0;
+            border-bottom-color: rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        body.theme-whatsapp-dark .wa-audio-player {
+            background: #2a3942;
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        body.theme-whatsapp-dark .wa-play-btn { color: #00a884; }
+        body.theme-whatsapp-dark .wa-duration { color: #8696a0; }
+        body.theme-whatsapp-dark .wa-waveform { color: #00a884; }
+        body.theme-whatsapp-dark .audio-icon-btn { background: rgba(0, 168, 132, 0.15); color: #00a884; }
+        body.theme-whatsapp-dark .audio-icon-btn.playing { background: #00a884; color: #ffffff; }
+
+        body.theme-whatsapp-dark #settingsPanel {
+            background: #202c33;
+            color: #e9edef;
+        }
+
  /* ===================== 主題：LINE 深色 ===================== */
         body.theme-discord {
             --t-bg: #111111; --t-alt: #1c1c1e; --t-purp: #06c755; --t-purp-hover: #1ed760;
@@ -724,7 +956,7 @@
         <button onclick="closeSettings()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;">✕</button>
     </div>
     
-    <div  style="display:block">
+    <div  style="display:none">
         <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 5px;">切換頻道:</label>
         <div style="display:flex; gap:8px;">
             <input type="text" id="channelInput" placeholder="輸入 Twitch 頻道帳號" class="custom-input" style="flex:1;">
@@ -736,7 +968,8 @@
         <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 5px;">聊天室樣式:</label>
         <select id="themeSelect" onchange="changeTheme(this.value)" class="custom-input" style="width:100%; cursor:pointer;">
             <option value="default">Twitch</option>
-            <option value="whatsapp">WhatsApp 群組</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="whatsapp-dark">WhatsApp(深色)</option>
             <option value="discord" selected >Line 樣式</option>
         </select>
     </div>
@@ -2152,7 +2385,7 @@ function toggleShowTimestamp(enabled) {
     }
 }
 function applyTheme(theme) {
-    document.body.classList.remove('theme-whatsapp', 'theme-discord');
+    document.body.classList.remove('theme-whatsapp', 'theme-whatsapp-dark', 'theme-discord');
     if (theme && theme !== 'default') { document.body.classList.add('theme-' + theme); }
 }
 
