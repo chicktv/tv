@@ -106,7 +106,7 @@
             word-wrap: break-word; 
             color: var(--t-text); 
             transition: background 0.3s, border 0.3s; 
-            padding: 1px; 
+            padding: 1px 1px 18px 1px; 
             margin-bottom: 5px; 
             border: 1px solid transparent;
             content-visibility: visible !important;
@@ -129,7 +129,25 @@
             transition: background var(--transition-fast), transform var(--transition-fast);
         }
         .btn-primary:hover { background: var(--t-purp-hover); transform: translateY(-1px); }
-		
+
+        /* ===================== 統一時間戳 (所有主題右下角) ===================== */
+        .msg-time {
+            position: absolute;
+            bottom: 2px;
+            right: 8px;
+            font-size: 10px;
+            line-height: 14px;
+            color: #adadb8;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+            opacity: 0.85;
+        }
+        body.hide-timestamps .msg-time { display: none; }
+        body.hide-timestamps .chat-line { padding-bottom: 1px !important; }
+        body.hide-timestamps.theme-discord .chat-line { padding-bottom: 8px !important; }
+        body.hide-timestamps.theme-whatsapp .chat-line { padding-bottom: 6px !important; }
+
 @keyframes blink {
     50% { opacity: 0.7; }
 }
@@ -222,15 +240,15 @@
         }
         
         .wa-audio-player {
-            display: flex; /* 改為 flex 以便正確佔滿容器寬度 */
+            display: flex;
             align-items: center;
             gap: 8px;
             background: var(--bg-surface-active);
             padding: 6px 14px;
             border-radius: 24px;
-            max-width: 100%; /* 改為 100% 避免超出父容器 */
+            max-width: 100%;
             width: 100%;
-            box-sizing: border-box; /* 確保 padding 不會增加總寬度 */
+            box-sizing: border-box;
             vertical-align: middle;
             margin: 4px 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -249,7 +267,7 @@
         }
         .wa-waveform {
             flex: 1; 
-            min-width: 40px; /* 防止波形被壓縮到看不見 */
+            min-width: 40px;
             height: 26px; display: flex; align-items: center;
             overflow: hidden; color: var(--t-purp); opacity: 0.5; transition: opacity 0.2s;
         }
@@ -415,7 +433,6 @@
             color: #111b21;
         }
 
-        /* 頂部導覽列 */
         body.theme-whatsapp .header-bar {
             background: #008069;
             border-bottom-color: rgba(0, 0, 0, 0.15);
@@ -428,7 +445,6 @@
         body.theme-whatsapp #logoutBtn { background: rgba(255, 255, 255, 0.18); }
         body.theme-whatsapp #logoutBtn:hover { background: rgba(255, 255, 255, 0.3); }
 
-        /* 聊天區背景 */
         body.theme-whatsapp #chat-container {
             background: #efeae2;
             padding: 0;
@@ -443,7 +459,6 @@
             box-sizing: border-box;
         }
 
-        /* 訊息氣泡 (雙方共用) */
         body.theme-whatsapp .chat-line {
             position: relative;
             width: fit-content;
@@ -461,7 +476,6 @@
             overflow: visible;
             border: 1px solid transparent;
         }
-        /* 對方的氣泡尾巴 (左上角) */
         body.theme-whatsapp .chat-line::before {
             content: '';
             position: absolute;
@@ -478,7 +492,6 @@
             box-shadow: 0 2px 4px rgba(11, 20, 26, 0.15);
         }
 
-        /* 自己的訊息 (綠色 + 靠右) */
         body.theme-whatsapp .chat-line.msg-self {
             background: #d9fdd3;
             align-self: flex-end;
@@ -496,13 +509,11 @@
         }
         body.theme-whatsapp .chat-line.msg-self:hover { background: #d9fdd3; }
 
-        /* 讓含有語音播放器的氣泡可以稍微寬一點，且不超過容器 */
         body.theme-whatsapp .chat-line:has(.wa-audio-player) {
             width: 100%;
             max-width: 85%;
         }
 
-        /* 群組發送者名稱顯示在氣泡內頂部 */
         body.theme-whatsapp .chat-line b:not(.self-name) {
             display: block;
             font-size: 13px;
@@ -512,21 +523,13 @@
         }
         body.theme-whatsapp .chat-line.msg-self b.self-name { display: none; }
 
-        /* 時間戳 */
         body.theme-whatsapp .msg-time {
-            position: absolute;
+            color: rgba(17, 27, 33, 0.45);
+            opacity: 1;
             bottom: 3px;
             right: 9px;
-            font-size: 11px;
-            line-height: 15px;
-            color: rgba(17, 27, 33, 0.45);
-            user-select: none;
-            pointer-events: none;
-            white-space: nowrap;
         }
-        body.theme-whatsapp .chat-line:not(.msg-self) .msg-time { right: 9px; }
 
-        /* 引用框 */
         body.theme-whatsapp .chat-line:has(.quote-box) {
             background: #ffffff !important;
             border: 1px solid transparent !important;
@@ -552,13 +555,11 @@
             color: #ffffff !important;
         }
 
-        /* 媒體預覽 */
         body.theme-whatsapp #chat-container img.media-preview,
         body.theme-whatsapp #chat-container video.media-preview {
             border-color: rgba(0, 0, 0, 0.08) !important;
         }
 
-        /* 底部工具列與輸入框 */
         body.theme-whatsapp .footer {
             background: #f0f2f5;
             border-top-color: rgba(0, 0, 0, 0.08);
@@ -588,7 +589,6 @@
         body.theme-whatsapp #sendbtn:hover:not(:disabled) { background: #06cf9c; }
         body.theme-whatsapp #sendbtn:disabled { background: #d1d7db; color: #8696a0; }
 
-        /* 回覆提示 */
         body.theme-whatsapp #reply-indicator {
             background: rgba(0, 168, 132, 0.08);
             border: 1px solid rgba(0, 168, 132, 0.3);
@@ -596,7 +596,6 @@
         }
         body.theme-whatsapp #reply-indicator span { color: #00a884; }
 
-        /* 回覆按鈕 */
         body.theme-whatsapp .reply-btn,
         body.theme-whatsapp .reply-btn2 {
             background: rgba(0, 0, 0, 0.55);
@@ -605,14 +604,12 @@
         body.theme-whatsapp .reply-btn:hover,
         body.theme-whatsapp .reply-btn2:hover { background-color: #00a884; }
 
-        /* 回到最新按鈕 */
         body.theme-whatsapp #scrollToBottomBtn {
             background: rgba(0, 168, 132, 0.9);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
         }
         body.theme-whatsapp #scrollToBottomBtn:hover { background: #00a884; }
 
-        /* @提及清單 */
         body.theme-whatsapp #mention-list {
             background: #ffffff;
             border-color: rgba(0, 0, 0, 0.1);
@@ -630,7 +627,6 @@
             background: rgba(0, 0, 0, 0.02);
         }
 
-        /* 音訊播放器 */
         body.theme-whatsapp .wa-audio-player {
             background: #e9edef;
             border-color: rgba(0, 0, 0, 0.08);
@@ -641,7 +637,6 @@
         body.theme-whatsapp .audio-icon-btn { background: rgba(0, 168, 132, 0.15); color: #008069; }
         body.theme-whatsapp .audio-icon-btn.playing { background: #00a884; color: #ffffff; }
 
-        /* 設定面板淺色 */
         body.theme-whatsapp #settingsPanel {
             background: #ffffff;
             color: #111b21;
@@ -662,7 +657,7 @@
         body.theme-discord #messages { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
         body.theme-discord .chat-line {
             width: fit-content; max-width: 78%; background: #2b2b2d; border-radius: 18px;
-            padding: 8px 12px; margin-bottom: 6px; border: 1px solid transparent;
+            padding: 8px 12px 20px 12px; margin-bottom: 6px; border: 1px solid transparent;
             color: #eaeaea; line-height: 1.5;
         }
         body.theme-discord .chat-line:hover { background: #333336; }
@@ -677,6 +672,7 @@
         body.theme-discord .quote-box:hover { background: rgba(0, 0, 0, 0.45); border-left-color: #1ed760; }
         body.theme-discord .quote-user { color: #9a9a9a; }
         body.theme-discord .mention-self-tag { background-color: #06c755; color: #111111 !important; }
+        body.theme-discord .msg-time { color: #9a9a9a; opacity: 0.75; right: 12px; bottom: 4px; }
         body.theme-discord .input-box-wrapper { background: #2a2a2c; border-color: transparent; border-radius: 20px; }
         body.theme-discord .input-box-wrapper:focus-within {
             border-color: #06c755; background: #2a2a2c; box-shadow: 0 0 0 2px rgba(6, 199, 85, 0.2);
@@ -745,11 +741,21 @@
         </select>
     </div>
 
+    <!-- 顯示 Username 開關 -->
     <div>
         <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 5px;">名稱顯示:</label>
         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color: var(--text-main); user-select:none;">
             <input type="checkbox" id="showUsernameToggle" onchange="toggleShowUsername(this.checked)" style="width:16px; height:16px; cursor:pointer; accent-color: var(--t-purp);">
             <span>顯示 Username</span>
+        </label>
+    </div>
+
+    <!-- 顯示時間戳開關 -->
+    <div>
+        <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 5px;">訊息時間:</label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color: var(--text-main); user-select:none;">
+            <input type="checkbox" id="showTimestampToggle" onchange="toggleShowTimestamp(this.checked)" style="width:16px; height:16px; cursor:pointer; accent-color: var(--t-purp);">
+            <span>顯示時間戳</span>
         </label>
     </div>
 </div>
@@ -847,6 +853,7 @@ let isDeleteMode = false;
 let isAudioDeleteMode = false;
 let myColor = "#9147ff";
 let showUsernameInChat = localStorage.getItem('chat_show_username') === 'true';
+let showTimestamp = localStorage.getItem('chat_show_timestamp') !== 'false'; // 預設開啟
 let reconnectTimer = null;
 let reconnectAttempts = 0;
 let maxReconnectDelay = 30000;
@@ -968,6 +975,7 @@ function formatMsgTime(ts) {
     return `${hh}:${mm}`;
 }
 function addTimestampsToElements($elements) {
+    if (!showTimestamp) return;
     $elements.filter('.chat-line').addBack('.chat-line').each(function() {
         const $el = $(this);
         if ($el.find('.msg-time').length) return;
@@ -1749,7 +1757,7 @@ function sendMessage() {
             <div class="reply-btn" onclick="replyNative('${myLoginId}','${selfTs}','${myDisplayName}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
             <div class="reply-btn2" onclick="insertRecursiveQuote('${myLoginId}','${selfTs}')" title="sk回覆格式">🔗</div>
         </div>
-        ${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${formatNameHtml(myDisplayName || myLoginId, myLoginId)}</b> <span>${parseContent(processedContentForDisplay)}</span>
+        ${replyDisplay}${badgeHtml}<b class="self-name" style="color:${myColor}">${formatNameHtml(myDisplayName || myLoginId, myLoginId)}:</b> <span>${parseContent(processedContentForDisplay)}</span>
     </div>`;
     appendMessageWithScroll(line);
     cancelReply();
@@ -1816,7 +1824,7 @@ async function fetchRecentMessages() {
                                 <div class="reply-btn" onclick="replyNative('${displayName}','${ts}','${userLogin}')"><img src="https://chicktv.github.io/tv/re2.png"></div>
                                 <div class="reply-btn2" onclick="insertRecursiveQuote('${displayName}','${ts}')" title="引用">🔗</div>
                             </div>
-                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${displayName}')">${formatNameHtml(displayName, userLogin)}</b> 
+                            <b class="display-name" style="color:${userColor}; cursor:pointer;" onclick="insertTag('${displayName}')">${formatNameHtml(displayName, userLogin)}:</b> 
                             <span class="message">${contentHtml}</span>
                         </div>`;
                 }
@@ -1946,7 +1954,7 @@ function startChat() {
                 </div>
                 ${replyHtml}
                 ${badgeHtml}
-                <b style="color:${color}">${formatNameHtml(user, userLogin)}</b> <span>${contentHtml}</span>
+                <b style="color:${color}">${formatNameHtml(user, userLogin)}:</b> <span>${contentHtml}</span>
             </div>`;
             appendMessageWithScroll(line);
         } catch(err) { console.error('處理訊息錯誤:', err, e.data); }
@@ -2109,6 +2117,7 @@ function openSettings() {
     const savedTheme = localStorage.getItem('chat_theme') || 'default';
     $('#themeSelect').val(savedTheme);
     $('#showUsernameToggle').prop('checked', showUsernameInChat);
+    $('#showTimestampToggle').prop('checked', showTimestamp);
     $('#settingsPanel').css('display', 'flex');
 }
 function closeSettings() { $('#settingsPanel').hide(); }
@@ -2126,6 +2135,22 @@ function toggleShowUsername(enabled) {
     showUsernameInChat = enabled;
     location.reload();
 }
+function toggleShowTimestamp(enabled) {
+    localStorage.setItem('chat_show_timestamp', enabled ? 'true' : 'false');
+    showTimestamp = enabled;
+    document.body.classList.toggle('hide-timestamps', !enabled);
+    if (enabled) {
+        // 立即補上時間戳
+        $('.chat-line').each(function() {
+            const $el = $(this);
+            if ($el.find('.msg-time').length) return;
+            const ts = $el.attr('data-msg-ts');
+            $el.append(`<span class="msg-time">${formatMsgTime(ts)}</span>`);
+        });
+    } else {
+        $('.msg-time').remove();
+    }
+}
 function applyTheme(theme) {
     document.body.classList.remove('theme-whatsapp', 'theme-discord');
     if (theme && theme !== 'default') { document.body.classList.add('theme-' + theme); }
@@ -2134,6 +2159,7 @@ function applyTheme(theme) {
 $(document).ready(function() {
     const savedTheme = localStorage.getItem('chat_theme') || 'discord';
     applyTheme(savedTheme);
+    if (!showTimestamp) document.body.classList.add('hide-timestamps');
     const msgContainer = document.getElementById('messages');
     if (msgContainer) {
         const chatObserver = new MutationObserver((mutations) => {
