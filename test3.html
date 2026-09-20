@@ -222,14 +222,15 @@
         }
         
         .wa-audio-player {
-            display: inline-flex;
+            display: flex; /* 改為 flex 以便正確佔滿容器寬度 */
             align-items: center;
             gap: 8px;
             background: var(--bg-surface-active);
             padding: 6px 14px;
             border-radius: 24px;
-            max-width: 280px;
+            max-width: 100%; /* 改為 100% 避免超出父容器 */
             width: 100%;
+            box-sizing: border-box; /* 確保 padding 不會增加總寬度 */
             vertical-align: middle;
             margin: 4px 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -247,7 +248,9 @@
             flex-shrink: 0; min-width: 34px; text-align: right;
         }
         .wa-waveform {
-            flex: 1; height: 26px; display: flex; align-items: center;
+            flex: 1; 
+            min-width: 40px; /* 防止波形被壓縮到看不見 */
+            height: 26px; display: flex; align-items: center;
             overflow: hidden; color: var(--t-purp); opacity: 0.5; transition: opacity 0.2s;
         }
         .wa-waveform.playing { opacity: 1; }
@@ -493,6 +496,12 @@
         }
         body.theme-whatsapp .chat-line.msg-self:hover { background: #d9fdd3; }
 
+        /* 讓含有語音播放器的氣泡可以稍微寬一點，且不超過容器 */
+        body.theme-whatsapp .chat-line:has(.wa-audio-player) {
+            width: 100%;
+            max-width: 85%;
+        }
+
         /* 群組發送者名稱顯示在氣泡內頂部 */
         body.theme-whatsapp .chat-line b:not(.self-name) {
             display: block;
@@ -515,7 +524,6 @@
             pointer-events: none;
             white-space: nowrap;
         }
-        /* 對方氣泡內若無尾巴補償，仍對齊右下 */
         body.theme-whatsapp .chat-line:not(.msg-self) .msg-time { right: 9px; }
 
         /* 引用框 */
@@ -720,7 +728,7 @@
         <button onclick="closeSettings()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;">✕</button>
     </div>
     
-    <div  style="display:block">
+    <div  style="display:none">
         <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 5px;">切換頻道:</label>
         <div style="display:flex; gap:8px;">
             <input type="text" id="channelInput" placeholder="輸入 Twitch 頻道帳號" class="custom-input" style="flex:1;">
