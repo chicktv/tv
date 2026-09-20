@@ -427,7 +427,7 @@
             padding: 16px;
             visibility: hidden;
             opacity: 0;
-            transition: visibility .25s, opacity .25s;
+            transition: visibility 0.1s, opacity 0.1s;
             contain: strict;
         }
         .modal-mask.active { visibility: visible; opacity: 1; }
@@ -442,9 +442,9 @@
             box-shadow: 0 24px 70px rgba(0, 0, 0, .85);
             transform: scale(.94) translateY(10px);
             opacity: 0;
-            transition: transform .3s cubic-bezier(.32, .72, 0, 1), opacity .25s ease;
+            
             contain: layout paint;
-            will-change: transform, opacity;
+           
         }
         .modal-mask.active .modal-panel {
             transform: scale(1) translateY(0);
