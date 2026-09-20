@@ -515,13 +515,13 @@
         }
 
         body.theme-whatsapp .chat-line b:not(.self-name) {
-            display: block;
+            
             font-size: 13px;
             font-weight: 500;
             margin-bottom: 2px;
             letter-spacing: 0.2px;
         }
-        body.theme-whatsapp .chat-line.msg-self b.self-name { display: none; }
+        body.theme-whatsapp .chat-line.msg-self b.self-name { display: block; }
 
         body.theme-whatsapp .msg-time {
             color: rgba(17, 27, 33, 0.45);
@@ -661,7 +661,7 @@
             color: #eaeaea; line-height: 1.5;
         }
         body.theme-discord .chat-line:hover { background: #333336; }
-        body.theme-discord .chat-line.msg-self { background: #2f6b46; align-self: flex-end; }
+        body.theme-discord .chat-line.msg-self { background: #2f6b46; }
         body.theme-discord .chat-line.msg-self:hover { background: #377a51; }
         body.theme-discord .chat-line:has(.quote-box) { background: #2b2b2d !important; margin-left: 0; }
         body.theme-discord .chat-line.msg-self:has(.quote-box) { background: #2a5c3d !important; }
