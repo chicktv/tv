@@ -427,7 +427,7 @@
             padding: 16px;
             visibility: hidden;
             opacity: 0;
-            transition: visibility .25s, opacity .25s;
+            transition: visibility 0.1s, opacity 0.1s;
             contain: strict;
         }
         .modal-mask.active { visibility: visible; opacity: 1; }
@@ -442,9 +442,9 @@
             box-shadow: 0 24px 70px rgba(0, 0, 0, .85);
             transform: scale(.94) translateY(10px);
             opacity: 0;
-            transition: transform .3s cubic-bezier(.32, .72, 0, 1), opacity .25s ease;
+            
             contain: layout paint;
-            will-change: transform, opacity;
+           
         }
         .modal-mask.active .modal-panel {
             transform: scale(1) translateY(0);
@@ -961,7 +961,7 @@
                 <button id="addChannelBtn">➕ 加台</button>
                 <button id="delChannelBtn">🗑 del台</button>
                 <button id="more-channels-btn" onclick="toggleChannelSelection()">📺 看更台</button>
-                <button id="open-admin-btn">通知</button>
+   
                 <label class="toggle-switch purple-toggle" id="chatToggleWrapper">
                     <span class="toggle-label" id="chatToggleLabel">TWITCH</span>
                     <input type="checkbox" id="chatToggle">
@@ -1042,7 +1042,7 @@
         <div id="multi-stream-container" class="video-wrapper">
             <iframe id="MyFrame" class="video1" src="https://ok.ru/videoembed/10268974521971?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
         </div>
-        <iframe class="chat" id="chat_embed" src="https://chicktv.github.io/tv/dark.html" allowfullscreen="true" scrolling="yes"></iframe>
+        <iframe class="chat" id="chat_embed" src="https://chicktv.github.io/tv/test3.html" allowfullscreen="true" scrolling="yes"></iframe>
     </div>
 
     <div id="channel-menu" style="display: none;">
@@ -1056,6 +1056,38 @@
 <script>
 /* =====================================================================================
    ★★★  平台註冊表 (PLATFORM REGISTRY)  ★★★
+   -------------------------------------------------------------------------------------
+   想新增一個平台？只需要在下面 PLATFORMS 加一個 key 就好，其他程式都不用改。
+
+   每個平台可以填的欄位：
+     label          選單上顯示的名稱
+     icon           按鈕前面的小圖示
+     type           播放器型別，可選：
+                      'iframe'       → 一般 iframe (buildUrl 回傳網址)
+                      'scaledIframe' → Kick 那種「欺騙大播放器」的縮放 iframe
+                      'hls'          → 用 hls.js 播 .m3u8 (id 直接當網址)
+                      'flv'          → 用 flv.js 播 .flv   (buildUrl 回傳網址)
+     buildUrl(ch, muted) → 回傳播放網址 (iframe / flv 需要)
+     allow          iframe 的 allow 屬性 (可選)
+     referrerPolicy iframe 的 referrerpolicy (可選)
+     aliases        API 回傳的舊平台名稱，例如 ['vl'] 會被對應到 kick
+     status(ch)     async 函式，回傳 'live' | 'not-live' | 'unknown' | 'unknown2'
+                    ('unknown2' 表示「有開台但無法偵測」→ 亮綠燈)
+     idPlaceholder  加台視窗中「頻道ID」欄位的提示文字
+
+   新增範例：
+     myplatform: {
+         label: 'MyPlatform',
+         icon: 'Ⓜ',
+         type: 'iframe',
+         buildUrl: (ch, muted) => `https://myplatform.com/embed/${ch.id}?mute=${muted ? 1 : 0}`,
+         status: async (ch) => {
+             const r = await fetch(`https://api.myplatform.com/${ch.id}`);
+             const d = await r.json();
+             return d.live ? 'live' : 'not-live';
+         },
+         idPlaceholder: 'MyPlatform 頻道 ID'
+     }
    ===================================================================================== */
 const PLATFORMS = {
     twitch: {
@@ -1825,7 +1857,7 @@ function showPopup() {
         if (isAltChat) {
             iframe.src = `https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=${encodeURIComponent(parent)}`;
         } else {
-            iframe.src = 'https://chicktv.github.io/tv/dark.html';
+            iframe.src = 'https://chicktv.github.io/tv/test3.html';
         }
     }
     const savedState = localStorage.getItem('chatToggleState');
