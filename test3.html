@@ -133,16 +133,22 @@
 
         /* ===================== 統一時間戳 (所有主題右下角) ===================== */
         .msg-time {
-            position: absolute;
-            bottom: 2px;
-            right: 8px;
-            font-size: 10px;
-            line-height: 14px;
-            color: #adadb8;
-            pointer-events: none;
-            user-select: none;
+            position: static !important;
+            display: inline !important;
+            margin: 0 6px 0 0 !important;
+            padding: 0 !important;
+            color: #dadada !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            font-weight: normal !important;
+            pointer-events: auto !important;
+            user-select: text !important;
             white-space: nowrap;
-            opacity: 0.85;
+            opacity: 1 !important;
+            bottom: auto !important;
+            right: auto !important;
+            vertical-align: baseline;
+            text-shadow: none;
         }
         body.hide-timestamps .msg-time { display: none; }
         body.hide-timestamps .chat-line { padding-bottom: 1px !important; }
