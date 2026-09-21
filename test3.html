@@ -38,7 +38,11 @@
             
             --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
             --transition-fast: 0.15s ease;
-            --transition-normal: 0.25s ease; }
+            --transition-normal: 0.25s ease;
+
+            /* === 統一媒體大小設定（可由設定面板調整） === */
+            --media-img-max-height: 180px;
+            --media-video-max-height: 250px; }
         
         #chat-container::-webkit-scrollbar, #emojiContent::-webkit-scrollbar, #emojiTabs::-webkit-scrollbar, #mention-list::-webkit-scrollbar { width: 8px; height: 8px; }
         #chat-container::-webkit-scrollbar-track, #emojiContent::-webkit-scrollbar-track, #emojiTabs::-webkit-scrollbar-track, #mention-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
@@ -79,11 +83,11 @@
         }
         #chat-container iframe[src*="threads.com"] { background: #FFF !important; }
         #chat-container img.media-preview {
-            max-height: 180px !important;
+            max-height: var(--media-img-max-height) !important;
             min-height: auto !important;
         }
         #chat-container video.media-preview {
-            max-height: 250px !important;
+            max-height: var(--media-video-max-height) !important;
             min-height: auto !important;
         }
 
@@ -1098,7 +1102,7 @@
         /* 媒體在氣泡內 */
         body.theme-sk #chat-container img.media-preview {
             max-width: 100% !important;
-            max-height: 150px !important;
+            max-height: var(--media-img-max-height) !important;
             min-height: auto !important;
             border-radius: 8px !important;
             border: none !important;
@@ -1108,7 +1112,7 @@
 
         body.theme-sk #chat-container video.media-preview {
             max-width: 100% !important;
-            max-height: 200px !important;
+            max-height: var(--media-video-max-height) !important;
             min-height: auto !important;
             border-radius: 8px !important;
             border: none !important;
@@ -1294,6 +1298,28 @@
             <span>顯示時間戳</span>
         </label>
     </div>
+
+    <!-- === 統一媒體大小設定 === -->
+    <div>
+        <label style="font-size: 13px; color: var(--text-muted); display:block; margin-bottom: 8px;">媒體顯示大小 (所有樣式通用):</label>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--text-main); user-select:none;">
+                <span style="flex-shrink:0; width:90px;">圖片大小:</span>
+                <input type="number" id="imgMaxHeightInput" min="20" max="2000" step="10"
+                       onchange="changeImgMaxHeight(this.value)"
+                       class="custom-input" style="flex:1; padding:5px 8px; text-align:right;">
+                <span style="width:20px;">px</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--text-main); user-select:none;">
+                <span style="flex-shrink:0; width:90px;">影片大小:</span>
+                <input type="number" id="videoMaxHeightInput" min="20" max="2000" step="10"
+                       onchange="changeVideoMaxHeight(this.value)"
+                       class="custom-input" style="flex:1; padding:5px 8px; text-align:right;">
+                <span style="width:20px;">px</span>
+            </label>
+            <button onclick="resetMediaSize()" class="btn-primary" style="padding:6px 12px; font-size:12px; align-self:flex-end;">重設為預設 (圖180 / 影250)</button>
+        </div>
+    </div>
 </div>
 <footer class="footer">
     <div id="reply-indicator">
@@ -1347,6 +1373,46 @@ if (savedChannel) CHANNEL = savedChannel;
 
 const REDIRECT_URI = encodeURIComponent(location.origin + location.pathname);
 const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=chat:read+chat:edit`;
+
+// ===================== 媒體大小設定 =====================
+const DEFAULT_IMG_MAX_HEIGHT = 180;
+const DEFAULT_VIDEO_MAX_HEIGHT = 250;
+
+function applyMediaSizeFromStorage() {
+    let imgH = parseInt(localStorage.getItem('chat_img_max_height'), 10);
+    let videoH = parseInt(localStorage.getItem('chat_video_max_height'), 10);
+    if (isNaN(imgH) || imgH < 20) imgH = DEFAULT_IMG_MAX_HEIGHT;
+    if (isNaN(videoH) || videoH < 20) videoH = DEFAULT_VIDEO_MAX_HEIGHT;
+    document.body.style.setProperty('--media-img-max-height', imgH + 'px');
+    document.body.style.setProperty('--media-video-max-height', videoH + 'px');
+}
+function changeImgMaxHeight(val) {
+    let v = parseInt(val, 10);
+    if (isNaN(v) || v < 20) v = DEFAULT_IMG_MAX_HEIGHT;
+    v = Math.min(Math.max(v, 20), 2000);
+    localStorage.setItem('chat_img_max_height', v);
+    document.body.style.setProperty('--media-img-max-height', v + 'px');
+    const el = document.getElementById('imgMaxHeightInput');
+    if (el) el.value = v;
+    setTimeout(() => forceScrollToBottom(true), 80);
+}
+function changeVideoMaxHeight(val) {
+    let v = parseInt(val, 10);
+    if (isNaN(v) || v < 20) v = DEFAULT_VIDEO_MAX_HEIGHT;
+    v = Math.min(Math.max(v, 20), 2000);
+    localStorage.setItem('chat_video_max_height', v);
+    document.body.style.setProperty('--media-video-max-height', v + 'px');
+    const el = document.getElementById('videoMaxHeightInput');
+    if (el) el.value = v;
+    setTimeout(() => forceScrollToBottom(true), 80);
+}
+function resetMediaSize() {
+    changeImgMaxHeight(DEFAULT_IMG_MAX_HEIGHT);
+    changeVideoMaxHeight(DEFAULT_VIDEO_MAX_HEIGHT);
+}
+window.changeImgMaxHeight = changeImgMaxHeight;
+window.changeVideoMaxHeight = changeVideoMaxHeight;
+window.resetMediaSize = resetMediaSize;
 
 // ===================== CPU 優化全局變數 =====================
 let messageBuffer = []; 
@@ -2597,6 +2663,9 @@ function setupEmojiPanelDrag() {
 
 // ===================== 初始化應用 =====================
 async function initApp() {
+    // 先套用媒體大小設定（避免畫面閃爍）
+    applyMediaSizeFromStorage();
+
     if (location.hash.includes('access_token=')) {
         const token = new URLSearchParams(location.hash.slice(1)).get('access_token');
         if (token) {
@@ -2648,6 +2717,13 @@ function openSettings() {
     $('#themeSelect').val(savedTheme);
     $('#showUsernameToggle').prop('checked', showUsernameInChat);
     $('#showTimestampToggle').prop('checked', showTimestamp);
+    // 載入媒體大小設定
+    let imgH = parseInt(localStorage.getItem('chat_img_max_height'), 10);
+    let videoH = parseInt(localStorage.getItem('chat_video_max_height'), 10);
+    if (isNaN(imgH) || imgH < 20) imgH = DEFAULT_IMG_MAX_HEIGHT;
+    if (isNaN(videoH) || videoH < 20) videoH = DEFAULT_VIDEO_MAX_HEIGHT;
+    $('#imgMaxHeightInput').val(imgH);
+    $('#videoMaxHeightInput').val(videoH);
     $('#settingsPanel').css('display', 'flex');
 }
 function closeSettings() { $('#settingsPanel').hide(); }
