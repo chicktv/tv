@@ -16,5 +16,5 @@ W,whw9457,kick,$2y$10$4jHIbQIp5ZoJ6x/g/EMStu/zseIFTqKnDZOyYkCK3yLtyeSjTkucC,187.
 ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,186.247.39.59,
 槍戰,step1h,twitch,$2y$10$c9EMnE1pN3KDe5iyZBT4cOY1P28cfLLETKeL2MEn22J4hgPOXYTCe,1.64.165.142,
 美1,triplestarhunters,vaughn,$2y$10$qxq70LoR4n/xi89wl5WKCebuvZ5yEKqxbrdyDLJ8cAR5HhuPU0M62,186.247.39.108,
-美2,meidingdang,vaughn,$2y$10$4qXKvvFyjwtjkDME.Brf/OInUCJv1vCRn422vYdMAmLKHkRBfl7pa,187.40.227.116,
+美2,meidingdang0,gosh,$2y$10$NozLhYBt6yL3VUji392bDeGH8DXxoNm9TpsXN9XbRv3i4fzSnGWgm,187.40.227.116,
 金剛,kingkong_tv,vaughn,$2y$10$mHZ7xiTon/V80OzZu1tC/uF3dqrHrnIMkwguzHLWuZPDgPyIrA4FK,175.145.39.252,
