@@ -17,4 +17,4 @@ ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,1
 槍戰,step1h,twitch,$2y$10$c9EMnE1pN3KDe5iyZBT4cOY1P28cfLLETKeL2MEn22J4hgPOXYTCe,1.64.165.142,
 美1,meidingdang,gosh,$2y$10$U.enMv/Oj.3rvy54HjAe3eP1ny/lnw3rnITXubTro0edHETVBl5CK,186.247.39.108,
 美2,meidingdang0,gosh,$2y$10$NozLhYBt6yL3VUji392bDeGH8DXxoNm9TpsXN9XbRv3i4fzSnGWgm,187.40.227.116,
-金剛,kingkong_tv,vaughn,$2y$10$mHZ7xiTon/V80OzZu1tC/uF3dqrHrnIMkwguzHLWuZPDgPyIrA4FK,175.145.39.252,
+金剛,kingkong_tv,gosh,$2y$10$7zCvJS8PaeBHcKJoKT2EEea6i.tVllozATYQJZpEMGh/FSxTz/o6e,175.145.39.252,
