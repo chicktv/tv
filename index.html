@@ -1146,6 +1146,18 @@ function getNextProxy() {
  * @param {string} targetUrl  要代理的目標網址
  * @param {'quest'|'raw'} mode 'quest' → 用 ?quest= 拼接；'raw' → 直接接在後面
  */
+ const GOSH_PROXY_LIST = [
+    'https://gosh.chicktv02.workers.dev',
+    'https://dry-wildflower-371d.forgosh.workers.dev'
+];
+let _goshProxyIndex = 0;
+
+function getNextGoshProxy() {
+    const proxy = GOSH_PROXY_LIST[_goshProxyIndex];
+    _goshProxyIndex = (_goshProxyIndex + 1) % GOSH_PROXY_LIST.length;
+    return proxy;
+}
+ 
 function fetchViaProxy(targetUrl, mode = 'quest') {
     const proxy = getNextProxy();
     const url = (mode === 'quest')
@@ -1316,32 +1328,28 @@ const PLATFORMS = {
     },
 	
 	gosh: {
-        label: 'Gosh',
-        icon: 'Ⓖ',
-        type: 'hls',
-        status: async (ch) => {
-            try {
-                // 透過 worker 查詢狀態
-                const resp = await fetch(`https://gosh.chicktv02.workers.dev/?channelId=${ch.id}`);
-                const data = await resp.json();
-                
-                // 根據你提供的 JSON 格式，判斷 isLive 欄位
-                return data.isLive === true ? 'live' : 'not-live';
-            } catch (e) {
-                console.warn('[Gosh status error]', e);
-                return 'unknown';
-            }
-        },
-        // 點擊播放時，動態獲取時效性的 m3u8 網址
-        getStreamUrl: async (ch) => {
-            const resp = await fetch(`https://gosh.chicktv02.workers.dev/?channelId=${ch.id}`);
+    label: 'Gosh',
+    icon: 'Ⓖ',
+    type: 'hls',
+    status: async (ch) => {
+        try {
+            const proxy = getNextGoshProxy();   // ★ 輪詢
+            const resp = await fetch(`${proxy}/?channelId=${ch.id}`);
             const data = await resp.json();
-            
-            // 根據你提供的 JSON 格式，回傳 m3u8Url 欄位
-            return data.m3u8Url; 
-        },
-        idPlaceholder: 'Gosh 頻道 ID (例: meidingdang0)'
+            return data.isLive === true ? 'live' : 'not-live';
+        } catch (e) {
+            console.warn('[Gosh status error]', e);
+            return 'unknown';
+        }
     },
+    getStreamUrl: async (ch) => {
+        const proxy = getNextGoshProxy();       // ★ 輪詢
+        const resp = await fetch(`${proxy}/?channelId=${ch.id}`);
+        const data = await resp.json();
+        return data.m3u8Url;
+    },
+    idPlaceholder: 'Gosh 頻道 ID (例: meidingdang0)'
+},
 	
     goodgame: {
         label: 'GoodGame',
