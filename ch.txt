@@ -18,4 +18,3 @@ ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,1
 美1,triplestarhunters,vaughn,$2y$10$qxq70LoR4n/xi89wl5WKCebuvZ5yEKqxbrdyDLJ8cAR5HhuPU0M62,186.247.39.108,
 美2,meidingdang,vaughn,$2y$10$4qXKvvFyjwtjkDME.Brf/OInUCJv1vCRn422vYdMAmLKHkRBfl7pa,187.40.227.116,
 金剛,kingkong_tv,vaughn,$2y$10$mHZ7xiTon/V80OzZu1tC/uF3dqrHrnIMkwguzHLWuZPDgPyIrA4FK,175.145.39.252,
-美2,meidingdang0,gosh,$2y$10$hP0s8t8AS6ehnzuoOPFnrOxaiNdWQhzTOiQ6Xc.TY0xFyCmv53biK,210.6.142.164,
