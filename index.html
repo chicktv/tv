@@ -1281,6 +1281,35 @@ const PLATFORMS = {
         },
         idPlaceholder: 'Vaughn 頻道 ID'
     },
+
+    gosh: {
+        label: 'Gosh',
+        icon: 'Ⓖ',
+        type: 'hls',
+        status: async (ch) => {
+            try {
+                // 透過 worker 查詢狀態
+                const resp = await fetch(`https://gosh.chicktv02.workers.dev/?channelId=${ch.id}`);
+                const data = await resp.json();
+                
+                // 根據你提供的 JSON 格式，判斷 isLive 欄位
+                return data.isLive === true ? 'live' : 'not-live';
+            } catch (e) {
+                console.warn('[Gosh status error]', e);
+                return 'unknown';
+            }
+        },
+        // 點擊播放時，動態獲取時效性的 m3u8 網址
+        getStreamUrl: async (ch) => {
+            const resp = await fetch(`https://gosh.chicktv02.workers.dev/?channelId=${ch.id}`);
+            const data = await resp.json();
+            
+            // 根據你提供的 JSON 格式，回傳 m3u8Url 欄位
+            return data.m3u8Url; 
+        },
+        idPlaceholder: 'Gosh 頻道 ID (例: meidingdang0)'
+    },
+	
     goodgame: {
         label: 'GoodGame',
         icon: 'Ⓖ',
@@ -1349,24 +1378,46 @@ const RENDERERS = {
         return wrapper;
     },
 
-    hls(channel, p, muted, wrapperClass) {
+   hls(channel, p, muted, wrapperClass) {
         const video = document.createElement('video');
         video.className = `hls-video-element ${wrapperClass}`;
         video.controls = true;
         video.autoplay = true;
         video.muted = muted;
         video.playsInline = true;
-        if (Hls.isSupported()) {
-            const hls = new Hls(HLS_CONFIG);
-            hls.loadSource(channel.id);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-            currentHLSInstances.push(hls);
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = channel.id;
-        } else {
-            return buildErrorDiv('⚠️ 瀏覽器不支援 HLS');
-        }
+
+        // 建立一個非同步函式來處理具有時效性的動態網址
+        const initPlayer = async () => {
+            let streamUrl = channel.id; // 預設使用頻道 ID 作為網址（相容舊有 m3u8 平台）
+            
+            // 如果該平台有定義 getStreamUrl (例如 gosh)，就動態獲取最新的網址
+            if (p.getStreamUrl) {
+                try {
+                    streamUrl = await p.getStreamUrl(channel);
+                    if (!streamUrl) throw new Error("無法獲取 m3u8 網址");
+                } catch (e) {
+                    console.warn('[HLS getStreamUrl error]', e);
+                    video.replaceWith(buildErrorDiv('⚠️ 無法取得實時影片網址'));
+                    return; 
+                }
+            }
+
+            // 網址取得後，才開始初始化 hls.js 或原生播放
+            if (Hls.isSupported()) {
+                const hls = new Hls(HLS_CONFIG);
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+                currentHLSInstances.push(hls);
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = streamUrl;
+            } else {
+                video.replaceWith(buildErrorDiv('⚠️ 瀏覽器不支援 HLS'));
+            }
+        };
+
+        // 呼叫執行
+        initPlayer();
         return video;
     },
 
