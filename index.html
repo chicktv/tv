@@ -1124,6 +1124,37 @@
 
 <script>
 /* =====================================================================================
+   ★★★  代理池 (PROXY POOL)  ★★★
+   -------------------------------------------------------------------------------------
+   多個 Cloudflare Worker 代理輪流使用，避免單一代理超限額。
+   新增代理只需往 PROXY_LIST 加網址即可。
+   ===================================================================================== */
+const PROXY_LIST = [
+    'https://young-cloud-e59f.chicktv001.workers.dev',
+    'https://wispy-sound-ef1a.for-api.workers.dev'
+];
+let _proxyIndex = 0;
+
+function getNextProxy() {
+    const proxy = PROXY_LIST[_proxyIndex];
+    _proxyIndex = (_proxyIndex + 1) % PROXY_LIST.length;
+    return proxy;
+}
+
+/**
+ * 通用：透過代理池輪詢發送請求
+ * @param {string} targetUrl  要代理的目標網址
+ * @param {'quest'|'raw'} mode 'quest' → 用 ?quest= 拼接；'raw' → 直接接在後面
+ */
+function fetchViaProxy(targetUrl, mode = 'quest') {
+    const proxy = getNextProxy();
+    const url = (mode === 'quest')
+        ? `${proxy}/?quest=${encodeURIComponent(targetUrl)}`
+        : `${proxy}/${targetUrl}`;
+    return fetch(url);
+}
+
+/* =====================================================================================
    ★★★  平台註冊表 (PLATFORM REGISTRY)  ★★★
    -------------------------------------------------------------------------------------
    想新增一個平台？只需要在下面 PLATFORMS 加一個 key 就好，其他程式都不用改。
@@ -1197,7 +1228,8 @@ const PLATFORMS = {
             `https://ok.ru/videoembed/${ch.id}?nochat=1&autoplay=1${muted ? '&muted=1' : ''}`,
         aliases: ['okru'],
         status: async (ch) => {
-            const resp = await fetch(`https://young-cloud-e59f.chicktv001.workers.dev/https://ok.ru/videoembed/${ch.id}`);
+            // ★ 透過代理池輪詢
+            const resp = await fetchViaProxy(`https://ok.ru/videoembed/${ch.id}`, 'raw');
             const html = await resp.text();
             console.log(`[OK Check Raw Text]`, JSON.stringify(html));
             const upperText = html.toUpperCase();
@@ -1274,7 +1306,8 @@ const PLATFORMS = {
             return `https://cold-frost-3328.chicktv02.workers.dev/?url=${encodeURIComponent(originalUrl)}`;
         },
         status: async (ch) => {
-            const resp = await fetch(`https://young-cloud-e59f.chicktv001.workers.dev/?quest=https://api.vaughnsoft.net/v1/stream/vl/${ch.id}`);
+            // ★ 透過代理池輪詢
+            const resp = await fetchViaProxy(`https://api.vaughnsoft.net/v1/stream/vl/${ch.id}`, 'quest');
             if (!resp.ok) return 'not-live';
             const data = await resp.json();
             return data.live === true ? 'live' : 'not-live';
@@ -1320,9 +1353,8 @@ const PLATFORMS = {
             try {
                 const username = ch.ggUsername || ch.id;
                 const api = `https://goodgame.ru/api/4/users/${encodeURIComponent(username)}/stream`;
-                const resp = await fetch(
-                    `https://young-cloud-e59f.chicktv001.workers.dev/?quest=${encodeURIComponent(api)}`
-                );
+                // ★ 透過代理池輪詢
+                const resp = await fetchViaProxy(api, 'quest');
                 if (!resp.ok) return 'not-live';
                 const data = await resp.json();
                 if (!data || !data.id) return 'not-live';
@@ -1336,9 +1368,8 @@ const PLATFORMS = {
         idPlaceholder: 'GoodGame 頻道名 (例: Pomi)',
         async resolveId(input) {
             const api = `https://goodgame.ru/api/4/users/${encodeURIComponent(input)}/stream`;
-            const resp = await fetch(
-                `https://young-cloud-e59f.chicktv001.workers.dev/?quest=${encodeURIComponent(api)}`
-            );
+            // ★ 透過代理池輪詢
+            const resp = await fetchViaProxy(api, 'quest');
             if (!resp.ok) throw new Error('無法連接 GoodGame API');
             const data = await resp.json();
             if (!data || !data.id) throw new Error('找不到該頻道');
@@ -1647,7 +1678,11 @@ async function loadChannelsFromUrl(providedTxtRaw) {
     } catch (e) {}
 
     try {
-        const resp = await fetch('https://young-cloud-e59f.chicktv001.workers.dev/?quest=https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918');
+        // ★ 透過代理池輪詢
+        const resp = await fetchViaProxy(
+            'https://live.sk-knower.com/skgamerversion_api.php?page=whitewing918',
+            'quest'
+        );
         const data = await resp.json();
         if (data.channels) {
             apiChannelsTemp = data.channels.map(item => {
