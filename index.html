@@ -2285,7 +2285,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(fetchAllStatuses, 300000);
 
     // ★ ch1.txt 內容偵測：每 60 秒一次（可自行調整）
-    setInterval(pollCh1TxtForUpdates, 360000);
+    setInterval(pollCh1TxtForUpdates, 1080000);
     // 分頁重新回到前景時也檢查一次，手機切回來能馬上同步
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) pollCh1TxtForUpdates();
