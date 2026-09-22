@@ -37,6 +37,10 @@
             --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
                     "PingFang TC", "PingFang SC", "Helvetica Neue", "Microsoft JhengHei",
                     system-ui, sans-serif;
+
+            /* 手機模式影片 / 聊天 的預設比例（4 : 3） */
+            --video-flex: 4;
+            --chat-flex:  3;
         }
 
         html {
@@ -144,10 +148,10 @@
 
         #mobile-menu-btn {
             display: none;
-            background: var(--purple);
+            background: var(--bg-1);
             color: #fff;
         }
-        #mobile-menu-btn:hover { background: #cf7ef7; }
+        #mobile-menu-btn:hover { background: var(--bg-1); }
 
         .button-wrapper {
             position: relative;
@@ -283,14 +287,14 @@
             contain: layout;
         }
 
-        .video-wrapper, .chat {
-            background: #000;
-            border-radius: 14px;
-            border: .5px solid rgba(255, 255, 255, .10);
-            min-height: 400px;
-            overflow: hidden;
-            contain: layout paint;
-        }
+       .video-wrapper, .chat {
+    background: #000;
+    border-radius: 14px;
+    border: .5px solid rgba(255, 255, 255, .10);
+    min-height: 0;           /* ← 改成 0 */
+    overflow: hidden;
+    contain: layout paint;
+}
 
         .video-wrapper {
             flex: 3;
@@ -704,28 +708,28 @@
             #multi-stream-container-wrapper {
                 flex-direction: column;
                 padding: .625em;
-                gap: .625em;
+                gap: 0;               /* 間距交給分隔條處理 */
                 flex: 1;
                 min-height: 0;
             }
-            .chat {
-                flex: 3;
-                display: flex;
-                flex-direction: column;
-                min-height: 0;
-            }
+             .chat {
+        flex: var(--chat-flex, 3) 1 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0 !important;   /* ★ 強制覆蓋 400px */
+    }
             .chat iframe#chat_embed {
                 flex: 1;
                 width: 100%;
                 height: 100%;
                 border-radius: inherit;
             }
-            .video-wrapper {
-                flex: 4;
-                min-height: 0;
-                display: flex;
-                flex-direction: column;
-            }
+             .video-wrapper {
+        flex: var(--video-flex, 4) 1 0;
+        min-height: 0 !important;   /* ★ 強制覆蓋 400px */
+        display: flex;
+        flex-direction: column;
+    }
             #multi-stream-container { flex: 1; min-height: 0; }
 
             #input-container {
@@ -774,6 +778,51 @@
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover { background: rgba(235, 235, 245, .4); }
+
+        /* =====================================================================
+           手機模式：影片 / 聊天 可拖曳分隔條
+           ===================================================================== */
+        #mobile-resizer { display: none; }
+
+        @media (max-width: 768px) {
+           #mobile-resizer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 36px;        /* 從 22px 改成 36px */
+    height: 36px;
+    cursor: row-resize;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+            #mobile-resizer::before {
+                content: "";
+                width: 46px;
+                height: 5px;
+                border-radius: 999px;
+                background: rgba(235, 235, 245, .25);
+                transition: background-color .18s ease, transform .18s ease;
+            }
+            #mobile-resizer:active::before,
+            #mobile-resizer.dragging::before {
+                background: var(--green);
+                transform: scaleY(1.4);
+            }
+
+            /* ★ 拖曳時提高層級，避免被 #top-bar 蓋住 */
+            #mobile-resizer.dragging {
+                z-index: 200;
+            }
+
+            /* 拖曳期間避免 iframe 搶事件 */
+            #multi-stream-container-wrapper.resizing { cursor: row-resize; }
+            #multi-stream-container-wrapper.resizing iframe,
+            #multi-stream-container-wrapper.resizing video {
+                pointer-events: none;
+            }
+        }
 
         /* ============ iOS 風格通知系統（輕量版） ============ */
 
@@ -944,6 +993,22 @@
         }
         .close-notice-btn:hover  { background: rgba(255, 255, 255, 0.2); }
         .close-notice-btn:active { background: rgba(255, 255, 255, 0.3); }
+		
+		@media (max-width: 768px) {
+    /* 解鎖 #multi-stream-container 的高度束縛 */
+    #multi-stream-container {
+        height: auto !important;
+        min-height: 0 !important;
+    }
+    /* 兩個 pane 都不准有最小高度 */
+    #multi-stream-container,
+    #chat_embed,
+    .video-wrapper,
+    .chat {
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -1033,7 +1098,7 @@
     <div id="channel-selection" style="display: none;">
         <h3>📡 選擇要同時觀看的台：</h3>
         <div id="channel-options"></div>
-        <button onclick="watchSelectedChannels()">▶️ 開始觀看</button>
+        <button onclick="watchSelectedChannels()" style="background: #9147ff; color: #000; font-weight: 600;">▶️ 開始觀看</button>
         <button onclick="checkAllLiveChannels()" style="background: var(--green); color: #000; font-weight: 600;">所有在線頻道</button>
         <button onclick="clearAllChannelSelection()" style="background: var(--bg-2); color: var(--label);">全選</button>
     </div>
@@ -1042,7 +1107,11 @@
         <div id="multi-stream-container" class="video-wrapper">
             <iframe id="MyFrame" class="video1" src="https://ok.ru/videoembed/10268974521971?nochat=1&autoplay=1" frameborder="0" allowfullscreen></iframe>
         </div>
-        <iframe class="chat" id="chat_embed" src="https://chicktv.github.io/tv/test3.html" allowfullscreen="true" scrolling="yes"></iframe>
+
+        <!-- 手機模式拖曳分隔條（已移除 title，避免 iOS 長按系統提示） -->
+        <div id="mobile-resizer" aria-label="拖曳調整影片與聊天大小"></div>
+
+        <iframe class="chat" id="chat_embed" src="https://chicktv.github.io/tv/dark.html" allowfullscreen="true" scrolling="yes"></iframe>
     </div>
 
     <div id="channel-menu" style="display: none;">
@@ -1212,6 +1281,32 @@ const PLATFORMS = {
         },
         idPlaceholder: 'Vaughn 頻道 ID'
     },
+	gosh: {
+    label: 'GOSH',
+    icon: 'Ⓖ',
+    type: 'hls',
+    buildUrl: (ch) => ch.m3u8Url || '',
+    status: async (ch) => {
+        try {
+            // 請替換為你的 Cloudflare Worker 網址
+            const workerUrl = `https://gosh.chicktv02.workers.dev/?channelid=dev/?channelId=${encodeURIComponent(ch.id)}`;
+            const res = await fetch(workerUrl);
+            if (!res.ok) return 'not-live';
+            
+            const data = await res.json();
+            if (data.isLive && data.m3u8Url) {
+                // 將 Worker 取得的 m3u8 網址寫入頻道物件，供 HLS 播放器調用
+                ch.m3u8Url = data.m3u8Url;
+                return 'live';
+            }
+            return 'not-live';
+        } catch (e) {
+            console.error('GOSH 狀態偵測失敗:', e);
+            return 'unknown';
+        }
+    },
+    idPlaceholder: 'GOSH 頻道 ID (例如: meidingdang0)'
+},
     goodgame: {
         label: 'GoodGame',
         icon: 'Ⓖ',
@@ -1675,6 +1770,7 @@ function generateChannelOptions() {
     });
     container.appendChild(frag);
     channels.forEach(ch => updateChannelOptionLabel(ch));
+	fetchAllStatuses();
 }
 
 function checkAllLiveChannels() {
@@ -1857,7 +1953,7 @@ function showPopup() {
         if (isAltChat) {
             iframe.src = `https://www.twitch.tv/embed/whitewing940920/chat?darkpopout&parent=${encodeURIComponent(parent)}`;
         } else {
-            iframe.src = 'https://chicktv.github.io/tv/test3.html';
+            iframe.src = 'https://chicktv.github.io/tv/dark.html';
         }
     }
     const savedState = localStorage.getItem('chatToggleState');
@@ -1869,6 +1965,126 @@ function showPopup() {
         const checked = e.target.checked;
         applyChatState(checked);
         localStorage.setItem('chatToggleState', checked);
+    });
+})();
+
+/* ======================== 手機模式：自由調整 影片 / 聊天 大小 ========================
+   ★ 修正重點：
+   1. pointermove / pointerup / pointercancel 改掛在 document 上，
+      避免 iOS Safari 的 setPointerCapture 失效導致事件斷線。
+   2. onPointerMove 加入 PAD 提前量，手指不用真的貼到螢幕頂端也能推到極限。
+   ================================================================================= */
+(function initMobileResizer() {
+    const wrapper   = document.getElementById('multi-stream-container-wrapper');
+    const videoPane = document.getElementById('multi-stream-container');
+    const resizer   = document.getElementById('mobile-resizer');
+    if (!wrapper || !videoPane || !resizer) return;
+
+    const STORAGE_KEY   = 'mobileVideoChatRatio';
+    const DEFAULT_RATIO = 4 / 7;   // 對應原本的 flex 4 : 3
+    const MIN_RATIO     = 0.02;    // 影片最小高度比例（= chat 最大 98%）
+    const MAX_RATIO     = 0.98;    // 影片最大高度比例（= chat 最小 2%）
+    const PAD           = 48;      // 手指提前量（px）：上下各留 48px 緩衝
+
+    const clamp = r => Math.min(MAX_RATIO, Math.max(MIN_RATIO, r));
+    let currentRatio = DEFAULT_RATIO;
+
+   function applyRatio(ratio) {
+    currentRatio = clamp(ratio);
+
+    // CSS 變數只在手機模式下被消費，桌面無影響
+    wrapper.style.setProperty('--video-flex', String(currentRatio));
+    wrapper.style.setProperty('--chat-flex',  String(1 - currentRatio));
+
+    const isMobile = window.innerWidth <= 768;
+    const vp = document.getElementById('multi-stream-container');
+    const ce = document.getElementById('chat_embed');
+    if (!vp || !ce) return;
+
+    if (isMobile) {
+        // ★ 只在手機模式打 inline style
+        vp.style.setProperty('flex',      `${currentRatio} 1 0`, 'important');
+        vp.style.setProperty('min-height', '0',                'important');
+        vp.style.setProperty('height',     'auto',             'important');
+        ce.style.setProperty('flex',      `${1 - currentRatio} 1 0`, 'important');
+        ce.style.setProperty('min-height', '0',                'important');
+        ce.style.setProperty('height',     'auto',             'important');
+    } else {
+        // ★ 桌面模式：清掉所有 inline style，交還給 CSS
+        vp.style.removeProperty('flex');
+        vp.style.removeProperty('min-height');
+        vp.style.removeProperty('height');
+        ce.style.removeProperty('flex');
+        ce.style.removeProperty('min-height');
+        ce.style.removeProperty('height');
+    }
+}
+
+    // 還原上次拖曳的比例
+    const saved = parseFloat(localStorage.getItem(STORAGE_KEY));
+    applyRatio(Number.isFinite(saved) ? saved : DEFAULT_RATIO);
+
+    let dragging  = false;
+    let pointerId = null;
+
+    function onPointerDown(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        dragging  = true;
+        pointerId = e.pointerId;
+        resizer.classList.add('dragging');
+        wrapper.classList.add('resizing');
+        try { resizer.setPointerCapture(pointerId); } catch (_) {}
+        e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+        if (!dragging || e.pointerId !== pointerId) return;
+
+        const rect = wrapper.getBoundingClientRect();
+        const cs   = getComputedStyle(wrapper);
+        const padTop    = parseFloat(cs.paddingTop)    || 0;
+        const padBottom = parseFloat(cs.paddingBottom) || 0;
+        const resizerH  = resizer.offsetHeight || 0;
+
+        const top    = rect.top + padTop;
+        const usable = rect.height - padTop - padBottom - resizerH;
+        if (usable <= 0) return;
+
+        // ★ 提前量：手指不用真的貼到頂 / 底，也能推到 0 / 1
+        const ratio = (e.clientY - (top - PAD)) / (usable + PAD * 2);
+
+        applyRatio(ratio);
+        e.preventDefault();
+    }
+
+    function endDrag(e) {
+        if (!dragging) return;
+        if (e && e.pointerId !== undefined && e.pointerId !== pointerId) return;
+        dragging = false;
+        resizer.classList.remove('dragging');
+        wrapper.classList.remove('resizing');
+        if (pointerId !== null) {
+            try { resizer.releasePointerCapture(pointerId); } catch (_) {}
+        }
+        pointerId = null;
+        localStorage.setItem(STORAGE_KEY, String(currentRatio));
+    }
+
+    // ★ 只在 resizer 上監聽 pointerdown，其餘掛在 document
+    resizer.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove',   onPointerMove);
+    document.addEventListener('pointerup',     endDrag);
+    document.addEventListener('pointercancel', endDrag);
+
+    // 雙擊還原預設比例
+    resizer.addEventListener('dblclick', () => {
+	
+        applyRatio(DEFAULT_RATIO);
+        localStorage.setItem(STORAGE_KEY, String(currentRatio));
+		
+    });
+	 window.addEventListener('resize', () => {
+        applyRatio(currentRatio);
     });
 })();
 
