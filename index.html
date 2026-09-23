@@ -1436,7 +1436,7 @@ const RENDERERS = {
                     if (!streamUrl) throw new Error("無法獲取 m3u8 網址");
                 } catch (e) {
                     console.warn('[HLS getStreamUrl error]', e);
-                    video.replaceWith(buildErrorDiv('⚠️ 無法取得實時影片網址'));
+                    video.replaceWith(buildErrorDiv('⚠️ 直播主已離線'));
                     return; 
                 }
             }
