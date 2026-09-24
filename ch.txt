@@ -18,3 +18,4 @@ ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,1
 美1,meidingdang,gosh,$2y$10$U.enMv/Oj.3rvy54HjAe3eP1ny/lnw3rnITXubTro0edHETVBl5CK,186.247.39.108,
 美2,meidingdang0,gosh,$2y$10$NozLhYBt6yL3VUji392bDeGH8DXxoNm9TpsXN9XbRv3i4fzSnGWgm,187.40.227.116,
 金剛,kingkong_tv,gosh,$2y$10$7zCvJS8PaeBHcKJoKT2EEea6i.tVllozATYQJZpEMGh/FSxTz/o6e,175.145.39.252,
+美3,meidingdang1,gosh,$2y$10$tHbUTnnMyvZ5MO8ZS3jDked3AMRGBuhEZsjnchWAULhHUBZrTJMSG,182.62.19.81,
