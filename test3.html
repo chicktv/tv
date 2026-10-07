@@ -2008,11 +2008,17 @@ function renderTabContent(name) {
     const content = $("#emojiContent").empty();
     if (name === "BTTV") {
         content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
-        emojiLists[name].emojis.forEach(e => {
-            const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}"><img src="${e.src}" style="max-width:40px;" loading="lazy"><div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${e.src}')">✕</div></div>`);
-            item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` [s] ${e.src} [e] `); $("#emojiPanel").hide(); } });
-            content.append(item);
-        });
+         emojiLists[name].emojis.forEach(e => {
+        const src = e.src || '';
+        // 判斷是否為影片檔（支援 mp4 / webm / mov / m3u8 / flv）
+        const isVideo = /\.(mp4|webm|mov|m3u8|flv)(\?|#|$)/i.test(src);
+        const previewHtml = isVideo
+            ? `<video src="${src}" style="max-width:40px;max-height:40px;border-radius:4px;display:block;" muted loop autoplay playsinline preload="metadata"></video>`
+            : `<img src="${src}" style="max-width:40px;" loading="lazy">`;
+        const item = $(`<div class="emoji-item ${isDeleteMode ? 'show-del' : ''}">${previewHtml}<div class="delete-btn" onclick="event.stopPropagation();deleteBTTV('${src}')">✕</div></div>`);
+        item.on('click', () => { if(!isDeleteMode) { insertTextAtCursor(` [s] ${src} [e] `); $("#emojiPanel").hide(); } });
+        content.append(item);
+    });
     } else if (name === "音訊") {
         content.append(`<div class="audio-input-form" style="flex-wrap:wrap"><input type="text" id="audioName" class="custom-input" placeholder="音訊名稱" style="flex:1;min-width:120px;"><input type="text" id="audioUrl" class="custom-input" placeholder="音訊網址" style="flex:2;min-width:180px;"><div style="display:flex;gap:5px;"><button onclick="addAudio()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存音訊</button><button onclick="isAudioDeleteMode=!isAudioDeleteMode;renderTabContent('音訊')" style="background:${isAudioDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isAudioDeleteMode?'取消':'刪除'}</button></div></div>`);
         audioLists[name].audios.forEach((a, idx) => {
