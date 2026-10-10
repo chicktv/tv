@@ -22,5 +22,5 @@ ATV,collartv,kick,$2y$10$B7cDQOD.xCfglOdhXw5A9eNykgK7l9vkK5J/KBR9HhwkBTe0vH48u,1
 wc,no25no2501,gosh,$2y$10$B/NaDl0fQZRUnq96kvYnH.65SjXWENZPuKcLji6eEiS4ho9JBGnXa,104.28.215.68,
 有片,fish3345678,gosh,$2y$10$20i.PQsgwyoVvJDJpa7zsuzeD5ZaI4d2FAtMTNGY0NxHHvwOawiy6,58.153.164.144,
 利雲,zero_cobra,vaughn,$2y$10$WTGQ9Z99.adS6iK.T0Vgd.jZjPLiapXwzC/OsP1GkQF0QvYhhxHvG,119.237.215.109,
-ka,kinganime,gosh,$2y$10$baP2jSQzgvf6IlaUe6RGjuPmC6sWL3sULu2r9JvpYmCPFtuQ2HLDu,60.246.73.0,
+ka,AnimeAkuma,gosh,$2y$10$P7Bg3N6y4wWwKDBpn4KYVOAqU3ur66LW/SDcoogxSCWHZYYOQyZPq,60.246.73.0,
 友,yaubotai01,gosh,$2y$10$MpQfDQvcU/z574Olkir4PuWOPA9prwwxv8WmlDHIGybfJbld0tz.2,186.247.40.246,
