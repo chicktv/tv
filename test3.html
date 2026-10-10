@@ -1072,7 +1072,7 @@
             margin: 0 1px 0 0 !important;
             padding: 0 !important;
             color: #dadada !important;
-            font-size: 14px !important;
+            font-size: 15px !important;
             line-height: 1.5 !important;
             font-weight: normal !important;
             pointer-events: auto !important;
@@ -1257,6 +1257,37 @@
         @keyframes ucIn {
             from { opacity: 0; transform: translateY(6px) scale(0.98); }
             to { opacity: 1; transform: none; }
+        }
+
+        /* === 右上角關閉按鈕 === */
+        #userCard .uc-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            padding: 0;
+            font-family: inherit;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+        #userCard .uc-close:hover {
+            background: rgba(233, 25, 22, 0.9);
+            transform: scale(1.08);
+        }
+        #userCard .uc-close:active {
+            transform: scale(0.96);
         }
 
         #userCard .uc-banner { height: 62px; position: relative; border-radius: 10px 10px 0 0; }
@@ -2112,7 +2143,7 @@ function renderEmojiPanel() {
 function renderTabContent(name) {
     const content = $("#emojiContent").empty();
     if (name === "BTTV") {
-     content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片或影片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
+    content.append(`<div class="bttv-input-area"><input type="text" id="bttvUrl" class="custom-input" placeholder="貼上圖片或影片網址..." style="flex:1"><div style="display:flex;gap:5px;"><button onclick="addBTTV()" style="background:var(--t-purp);color:white;border:none;border-radius:4px;padding:5px 15px;">儲存</button><button onclick="isDeleteMode=!isDeleteMode;renderTabContent('BTTV')" style="background:${isDeleteMode?'#666':'#c42b1c'};color:white;border:none;border-radius:4px;padding:5px 15px;">${isDeleteMode?'取消':'刪除'}</button></div></div>`);
           emojiLists[name].emojis.forEach(e => {
         const src = e.src || '';
         const isVideo = /\.(mp4|webm|mov|m3u8|flv)(\?|#|$)/i.test(src);
@@ -3062,6 +3093,20 @@ function hideUserCard() {
     }
 }
 
+/**
+ * 設定卡片內容並自動綁定關閉按鈕
+ */
+function setUserCardContent(card, innerHtml) {
+    card.innerHTML = `<button class="uc-close" type="button" aria-label="關閉" title="關閉">✕</button>${innerHtml}`;
+    const closeBtn = card.querySelector('.uc-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hideUserCard();
+        });
+    }
+}
+
 function positionUserCard(card, anchor) {
     const r = anchor.getBoundingClientRect();
     const cw = card.offsetWidth;
@@ -3090,7 +3135,7 @@ async function showUserCard(anchorEl, login) {
     const card = ensureUserCardEl();
     const reqId = ++userCardRequestId;
 
-    card.innerHTML = '<div class="uc-loading">載入中…</div>';
+    setUserCardContent(card, '<div class="uc-loading">載入中…</div>');
     card.style.visibility = 'hidden';
     card.style.display = 'block';
     positionUserCard(card, anchorEl);
@@ -3100,11 +3145,11 @@ async function showUserCard(anchorEl, login) {
     if (reqId !== userCardRequestId) return; // 已關閉或被新請求取代
 
     if (data === undefined) {
-        card.innerHTML = '<div class="uc-loading">載入失敗，請稍後再試</div>';
+        setUserCardContent(card, '<div class="uc-loading">載入失敗，請稍後再試</div>');
     } else if (!data) {
-        card.innerHTML = '<div class="uc-loading">找不到此用戶</div>';
+        setUserCardContent(card, '<div class="uc-loading">找不到此用戶</div>');
     } else {
-        card.innerHTML = buildUserCardHtml(data);
+        setUserCardContent(card, buildUserCardHtml(data));
         const copyBtn = card.querySelector('.uc-copy-btn');
         if (copyBtn) {
             copyBtn.addEventListener('click', () => {
